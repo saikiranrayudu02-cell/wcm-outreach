@@ -1,0 +1,265 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  COORDINATOR
+  STATE_LEADER
+  ZONE_LEADER
+}
+
+enum ReportStatus {
+  DRAFT
+  SUBMITTED
+  ZONE_LEADER_REVIEW
+  STATE_LEADER_REVIEW
+  ADMIN_REVIEW
+  STATE_AND_ADMIN_REVIEW
+  APPROVED
+  REJECTED
+  REQUEST_CHANGES
+}
+
+model User {
+  id                    String                @id @default(uuid())
+  username              String                @unique
+  passwordHash          String                @map("password_hash")
+  role                  Role
+  state                 String?
+  part                  String?
+  zone                  String?
+  name                  String
+  email                 String                @unique
+  emailVerified         Boolean               @map("email_verified")
+  image                 String?
+  phoneNumber           String?               @map("phone_number")
+  createdAt             DateTime              @default(now()) @map("created_at")
+  updatedAt             DateTime              @updatedAt @map("updated_at")
+  
+  accounts              Account[]
+  sessions              Session[]
+  meetingConfirmations  MeetingConfirmation[]
+  receivedNotifications Notification[]        @relation("ReceivedNotifications")
+  sentNotifications     Notification[]        @relation("SentNotifications")
+  
+  meetingReports        MeetingReport[]
+  reportAuditLogs       ReportAuditLog[]
+  reviewerComments      ReviewerComment[]
+
+  @@index([username])
+  @@index([role])
+  @@index([state])
+  @@index([part])
+  @@index([zone])
+  @@index([phoneNumber])
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  expiresAt DateTime @map("expires_at")
+  token     String   @unique
+  createdAt DateTime @map("created_at")
+  updatedAt DateTime @map("updated_at")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id @default(uuid())
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  userId                String    @map("user_id")
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @map("created_at")
+  updatedAt             DateTime  @map("updated_at")
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("accounts")
+}
+
+model Verification {
+  id         String    @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime  @map("expires_at")
+  createdAt  DateTime? @map("created_at")
+  updatedAt  DateTime? @map("updated_at")
+
+  @@map("verifications")
+}
+
+model MeetingReport {
+  id                 String              @id @default(uuid())
+  reportId           String              @unique @map("report_id") // E.g., MR-2026-00015
+  leaderId           String              @map("leader_id")
+  leader             User                @relation(fields: [leaderId], references: [id], onDelete: Cascade)
+  status             ReportStatus        @default(DRAFT)
+  version            Int                 @default(1)
+  submittedAt        DateTime?           @map("submitted_at")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+  requestedChangesBy String?             @map("requested_changes_by") // "ZONE", "STATE", "ADMIN"
+
+  verificationSheet  VerificationSheet?
+  attendanceRecord   AttendanceRecord?
+  afterMeetingReport AfterMeetingReport?
+
+  auditLogs          ReportAuditLog[]
+  reviewerComments   ReviewerComment[]
+
+  @@index([leaderId])
+  @@index([status])
+  @@map("meeting_reports")
+}
+
+model ReviewerComment {
+  id              String        @id @default(uuid())
+  meetingReportId String        @map("meeting_report_id")
+  meetingReport   MeetingReport @relation(fields: [meetingReportId], references: [id], onDelete: Cascade)
+  reviewerId      String        @map("reviewer_id")
+  reviewer        User          @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+  comment         String
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  @@index([meetingReportId])
+  @@index([reviewerId])
+  @@map("reviewer_comments")
+}
+
+model VerificationSheet {
+  id                     String        @id @default(uuid())
+  meetingReportId        String        @unique @map("meeting_report_id")
+  meetingReport          MeetingReport @relation(fields: [meetingReportId], references: [id], onDelete: Cascade)
+  createdAt              DateTime      @default(now()) @map("created_at")
+  updatedAt              DateTime      @updatedAt @map("updated_at")
+  convenerName           String        @map("convener_name")
+  churchMinistryName     String        @map("church_ministry_name")
+  stateDistrictCity      String        @map("state_district_city")
+  contactNumber          String        @map("contact_number")
+  meetingDates           String        @map("meeting_dates")
+  numberOfDays           Int           @map("number_of_days")
+  expectedAttendance     Int           @map("expected_attendance")
+  yearsOfMinistry        Int           @map("years_of_ministry")
+  churchMembers          Int           @map("church_members")
+  workersLeaders         Int           @map("workers_leaders")
+  knowAboutWcm           String        @map("know_about_wcm")
+  readWcmBooks           Boolean       @map("read_wcm_books")
+  attendedProphetMeeting Boolean       @map("attended_prophet_kiran_meeting")
+  meetingHallStage       String        @map("meeting_hall_stage")
+  soundSystem            String        @map("sound_system")
+  accommodationTeam      String        @map("accommodation_team")
+  volunteerSupport       String        @map("volunteer_support")
+
+  @@map("verification_sheets")
+}
+
+model AttendanceRecord {
+  id              String        @id @default(uuid())
+  meetingReportId String        @unique @map("meeting_report_id")
+  meetingReport   MeetingReport @relation(fields: [meetingReportId], references: [id], onDelete: Cascade)
+  date            DateTime      @db.Date
+  location        String
+  fieldExecuter   String        @map("field_executer")
+  coordinator     String        @default("") @map("coordinator")
+  membersAttended Int           @map("members_attended")
+  pastorsAttended Int           @map("pastors_attended")
+  remarks         String
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  @@index([date])
+  @@map("attendance_records")
+}
+
+model AfterMeetingReport {
+  id                       String        @id @default(uuid())
+  meetingReportId          String        @unique @map("meeting_report_id")
+  meetingReport            MeetingReport @relation(fields: [meetingReportId], references: [id], onDelete: Cascade)
+  createdAt                DateTime      @default(now()) @map("created_at")
+  updatedAt                DateTime      @updatedAt @map("updated_at")
+  overallMeetingOutcome    String        @map("overall_meeting_outcome")
+  congregationResponse     String        @map("congregation_response")
+  continueFellowship       Boolean       @map("continue_fellowship")
+  futureOpportunities      String[]      @map("future_opportunities")
+  localChurchInfluence     String        @map("local_church_influence")
+  networkOfPastors         String        @map("network_of_pastors")
+  strengthsObserved        String        @map("strengths_observed")
+  challengesObserved       String        @map("challenges_observed")
+  opportunityForWcm        String        @map("opportunity_for_wcm")
+  coordinatorName          String        @map("coordinator_name")
+  designation              String
+  signature                String
+  submissionDate           DateTime      @map("submission_date") @db.Date
+  followingWcmMembersCount Int           @default(0) @map("following_wcm_members_count")
+
+  @@map("after_meeting_reports")
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  recipientId String   @map("recipient_id")
+  senderId    String   @map("sender_id")
+  title       String   @default("New Message")
+  message     String
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  recipient   User     @relation("ReceivedNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
+  sender      User     @relation("SentNotifications", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model MeetingConfirmation {
+  id                 String   @id @default(uuid())
+  leaderId           String   @map("leader_id")
+  meetingDates       String   @map("meeting_dates")
+  location           String
+  expectedAttendance Int      @map("expected_attendance")
+  message            String
+  status             String   @default("PENDING")
+  adminFeedback      String?  @map("admin_feedback")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  leader             User     @relation(fields: [leaderId], references: [id], onDelete: Cascade)
+
+  @@index([leaderId])
+  @@index([status])
+  @@map("meeting_confirmations")
+}
+
+model ReportAuditLog {
+  id              String        @id @default(uuid())
+  meetingReportId String        @map("meeting_report_id")
+  meetingReport   MeetingReport @relation(fields: [meetingReportId], references: [id], onDelete: Cascade)
+  actorId         String        @map("actor_id")
+  actor           User          @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  action          String
+  details         String?
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  @@index([meetingReportId])
+  @@index([actorId])
+  @@index([createdAt])
+  @@map("report_audit_logs")
+}
