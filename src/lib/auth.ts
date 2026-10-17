@@ -15,16 +15,31 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
-  trustedOrigins: [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:3001",
-    "http://127.0.0.1:3001",
-    defaultBaseURL,
-    process.env.BETTER_AUTH_URL || "",
-    process.env.NEXT_PUBLIC_APP_URL || "",
-    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "",
-  ].filter(Boolean),
+  trustedOrigins: async (request?: Request) => {
+    const list = [
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      "http://localhost:3001",
+      "http://127.0.0.1:3001",
+      defaultBaseURL,
+      process.env.BETTER_AUTH_URL || "",
+      process.env.NEXT_PUBLIC_APP_URL || "",
+      process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "",
+      process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "",
+    ].filter(Boolean);
+
+    try {
+      const origin = request?.headers?.get("origin");
+      if (origin && !list.includes(origin)) list.push(origin);
+      const host = request?.headers?.get("host");
+      if (host) {
+        list.push(`https://${host}`);
+        list.push(`http://${host}`);
+      }
+    } catch {}
+
+    return list;
+  },
   emailAndPassword: {
     enabled: true,
     password: {
