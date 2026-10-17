@@ -4,7 +4,14 @@ import { username } from "better-auth/plugins";
 import { prisma } from "./prisma";
 import bcrypt from "bcrypt";
 
+const defaultBaseURL =
+  process.env.BETTER_AUTH_URL ||
+  process.env.NEXT_PUBLIC_APP_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
 export const auth = betterAuth({
+  baseURL: defaultBaseURL,
+  secret: process.env.BETTER_AUTH_SECRET || "vmlrs_super_secure_session_secret_2026_key_abc123",
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
@@ -13,8 +20,10 @@ export const auth = betterAuth({
     "http://127.0.0.1:3000",
     "http://localhost:3001",
     "http://127.0.0.1:3001",
+    defaultBaseURL,
     process.env.BETTER_AUTH_URL || "",
     process.env.NEXT_PUBLIC_APP_URL || "",
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "",
   ].filter(Boolean),
   emailAndPassword: {
     enabled: true,
