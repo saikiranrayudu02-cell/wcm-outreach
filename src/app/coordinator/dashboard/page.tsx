@@ -138,36 +138,40 @@ export default function CoordinatorDashboardPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8 animate-fadeIn">
+      <div className="space-y-6 sm:space-y-8 animate-fadeIn">
         {/* Welcome Header */}
-        <div className="rounded-3xl bg-linear-to-r from-blue-600 via-indigo-650 to-indigo-800 p-5 sm:p-8 md:p-10 text-white shadow-xl text-left border border-blue-500/10">
-          <h2 className="text-2xl md:text-3xl font-black tracking-tight uppercase">
-            {translate("Welcome", language)}, {username}!
-          </h2>
-          <p className="mt-3 text-xs md:text-sm text-indigo-100 max-w-xl font-bold uppercase tracking-wider leading-relaxed">
-            Centralized portal to record details, attendance, and assess outcomes for WCM outreach meetings.
-          </p>
+        <div className="relative rounded-3xl p-5 sm:p-8 md:p-10 text-white overflow-hidden text-left" style={{ background: "var(--gradient-hero)" }}>
+          <div className="absolute inset-0 dot-pattern opacity-20" />
+          <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full opacity-10" style={{ background: "radial-gradient(circle, rgba(167,139,250,0.6) 0%, transparent 70%)" }} />
+          <div className="relative z-10">
+            <h2 className="text-2xl md:text-3xl font-black tracking-tight uppercase">
+              {translate("Welcome", language)}, {username}!
+            </h2>
+            <p className="mt-3 text-xs md:text-sm text-indigo-200/60 max-w-xl font-semibold leading-relaxed">
+              Centralized portal to record details, attendance, and assess outcomes for WCM outreach meetings.
+            </p>
+          </div>
         </div>
 
         {/* Modules Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 text-left">
           {/* Card 1: Create Meeting Report */}
-          <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-250/60 dark:border-slate-800/80 p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-300 flex flex-col justify-between group">
+          <div className="glass-card rounded-2xl p-5 sm:p-6 flex flex-col justify-between group">
             <div>
-              <div className="inline-flex rounded-2xl bg-blue-50 dark:bg-blue-950/20 p-3.5 text-blue-600 dark:text-blue-400 border border-blue-500/10">
+              <div className="inline-flex rounded-2xl p-3.5 text-white border border-indigo-400/10" style={{ background: "var(--gradient-accent)" }}>
                 <FileText className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 text-base font-black text-slate-800 dark:text-white uppercase tracking-wider">
+              <h3 className="mt-4 text-base font-black text-foreground uppercase tracking-wider">
                 Outreach Meeting Reports
               </h3>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+              <p className="mt-2 text-sm text-foreground/50 font-medium leading-relaxed">
                 Create a unified Meeting Report comprising the Verification, Attendance, and After Meeting sheets. Save drafts anytime and submit when complete.
               </p>
             </div>
             <button
               onClick={handleCreateReport}
               disabled={creatingReport}
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition-all duration-150 w-fit cursor-pointer disabled:opacity-50 active:scale-[0.98]"
+              className="mt-6 inline-flex items-center gap-2 rounded-xl px-5 py-3 text-xs font-bold uppercase tracking-wider text-white transition-all duration-200 w-fit cursor-pointer disabled:opacity-50 active:scale-[0.97] btn-primary"
             >
               {creatingReport ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
               Create New Report
@@ -175,21 +179,21 @@ export default function CoordinatorDashboardPage() {
           </div>
 
           {/* Card 2: Upcoming Confirmations */}
-          <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-250/60 dark:border-slate-800/80 p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02),0_4px_12px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-300 flex flex-col justify-between group">
+          <div className="glass-card rounded-2xl p-5 sm:p-6 flex flex-col justify-between group">
             <div>
-              <div className="inline-flex rounded-2xl bg-amber-50 dark:bg-amber-950/20 p-3.5 text-amber-600 dark:text-amber-400 border border-amber-500/10">
+              <div className="inline-flex rounded-2xl bg-amber-500/10 dark:bg-amber-500/10 p-3.5 text-amber-600 dark:text-amber-400 border border-amber-500/10">
                 <CalendarCheck className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 text-base font-black text-slate-800 dark:text-white uppercase tracking-wider">
+              <h3 className="mt-4 text-base font-black text-foreground uppercase tracking-wider">
                 Meeting Confirmations
               </h3>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+              <p className="mt-2 text-sm text-foreground/50 font-medium leading-relaxed">
                 Propose upcoming outreach meeting dates and locations to admin. Track approval and view feedback.
               </p>
             </div>
             <button
               onClick={() => router.push("/coordinator/confirmations")}
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-250 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all duration-150 w-fit cursor-pointer active:scale-[0.98]"
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-accent hover:bg-accent/80 px-5 py-3 text-xs font-bold uppercase tracking-wider text-accent-foreground border border-border/50 hover:border-primary/20 transition-all duration-200 w-fit cursor-pointer active:scale-[0.97]"
             >
               Manage Confirmations
             </button>
@@ -197,9 +201,9 @@ export default function CoordinatorDashboardPage() {
         </div>
 
         {/* Announcements Panel */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-250/60 dark:border-slate-800/80 rounded-2xl shadow-sm text-left p-4 sm:p-6">
-          <h3 className="text-xs font-black uppercase tracking-widest text-slate-800 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
-            <Bell className="h-4.5 w-4.5 text-blue-600 dark:text-blue-400" />
+        <div className="glass-card rounded-2xl text-left p-4 sm:p-6">
+          <h3 className="text-xs font-black uppercase tracking-widest text-foreground flex items-center gap-2 border-b border-border/30 pb-3 mb-4">
+            <Bell className="h-4.5 w-4.5 text-primary" />
             Admin Announcements
           </h3>
 
@@ -248,9 +252,9 @@ export default function CoordinatorDashboardPage() {
         </div>
 
         {/* Meeting Reports Table */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-250/60 dark:border-slate-800/80 rounded-2xl shadow-sm text-left p-4 sm:p-6">
-          <h3 className="text-xs font-black uppercase tracking-widest text-slate-800 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
-            <FileText className="h-4.5 w-4.5 text-blue-600" />
+        <div className="glass-card rounded-2xl text-left p-4 sm:p-6">
+          <h3 className="text-xs font-black uppercase tracking-widest text-foreground flex items-center gap-2 border-b border-border/30 pb-3 mb-4">
+            <FileText className="h-4.5 w-4.5 text-primary" />
             My Meeting Reports
           </h3>
 
@@ -270,7 +274,7 @@ export default function CoordinatorDashboardPage() {
                 {reports.map((r: any) => (
                   <div
                     key={r.id}
-                    className="p-4 rounded-2xl bg-slate-50/60 dark:bg-slate-950/40 border border-slate-200/80 dark:border-slate-800 space-y-3 shadow-xs"
+                    className="p-4 rounded-2xl bg-accent/30 dark:bg-accent/20 border border-border/30 space-y-3"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
@@ -345,7 +349,7 @@ export default function CoordinatorDashboardPage() {
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-slate-150 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/10 text-[10px] font-bold text-slate-450 uppercase tracking-widest text-left">
+                    <tr className="border-b border-border/30 bg-accent/30 dark:bg-accent/20 text-[10px] font-bold text-foreground/40 uppercase tracking-widest text-left">
                       <th className="px-6 py-4">Report ID</th>
                       <th className="px-6 py-4">Dates / Location</th>
                       <th className="px-6 py-4 text-center">Version</th>
@@ -445,7 +449,7 @@ export default function CoordinatorDashboardPage() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
               {detailLoading ? (
                 <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
                   <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>

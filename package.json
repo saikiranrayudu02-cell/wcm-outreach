@@ -40,5 +40,23 @@
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
+  },
+  "allowScripts": {
+    "@prisma/client": true,
+    "@prisma/client@5.22.0": true,
+    "@prisma/engines": true,
+    "@prisma/engines@5.22.0": true,
+    "bcrypt": true,
+    "bcrypt@6.0.0": true,
+    "esbuild": true,
+    "esbuild@0.28.1": true,
+    "fsevents": true,
+    "fsevents@2.3.3": true,
+    "prisma": true,
+    "prisma@5.22.0": true,
+    "sharp": true,
+    "sharp@0.33.5": true,
+    "unrs-resolver": true,
+    "unrs-resolver@1.12.2": true
   }
 }

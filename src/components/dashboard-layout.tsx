@@ -8,7 +8,7 @@ import { translate } from "@/lib/translations";
 import { 
   Menu, X, LogOut, LayoutDashboard, FileCheck, Users, 
   FileSpreadsheet, ClipboardList, Sun, Moon, ShieldAlert,
-  Bell, CheckCheck, CalendarCheck, User as UserIcon
+  Bell, CheckCheck, CalendarCheck, User as UserIcon, Sparkles, ChevronRight
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
@@ -101,10 +101,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-slate-50 dark:bg-[#090d16]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-          <p className="text-sm font-bold text-slate-500 tracking-wide animate-pulse">Loading WMLRS...</p>
+      <div className="flex h-screen w-screen items-center justify-center" style={{ background: "var(--gradient-hero)" }}>
+        <div className="flex flex-col items-center gap-5">
+          <div className="relative">
+            <div className="h-12 w-12 rounded-2xl border-2 border-indigo-400/30 border-t-indigo-400 animate-spin" />
+            <div className="absolute inset-0 rounded-2xl animate-pulseGlow" />
+          </div>
+          <p className="text-sm font-bold text-indigo-200/70 tracking-widest uppercase animate-pulse">Loading...</p>
         </div>
       </div>
     );
@@ -149,19 +152,26 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100 font-sans">
+    <div className="flex min-h-screen font-sans w-full max-w-full overflow-x-clip">
       {/* Desktop Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-20 hidden w-64 bg-slate-950 border-r border-slate-900 text-slate-100 transition-transform duration-300 md:block ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`fixed inset-y-0 left-0 z-20 hidden w-65 text-white transition-transform duration-300 md:block ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+        style={{ background: "var(--gradient-sidebar)" }}
+      >
         <div className="flex flex-col h-full justify-between">
           <div>
             {/* Logo Section */}
-            <div className="flex h-16 items-center px-6 border-b border-slate-900 gap-3">
-              <img src="/wcm-logo.png" alt="WCM Logo" className="h-8 w-auto object-contain rounded-md bg-black p-1 border border-slate-800" />
-              <span className="text-sm font-black tracking-wider text-white uppercase">WCM Outreach</span>
+            <div className="flex h-18 items-center px-6 gap-3 border-b border-white/5">
+              <div className="relative">
+                <img src="/wcm-logo.png" alt="WCM Logo" className="h-9 w-auto object-contain rounded-xl" style={{ filter: "drop-shadow(0 2px 8px rgba(129,140,248,0.3))" }} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-black tracking-wider text-white uppercase">WCM</span>
+                <span className="text-[9px] font-semibold tracking-widest text-indigo-300/50 uppercase">Outreach</span>
+              </div>
             </div>
 
             {/* Navigation Links */}
-            <nav className="space-y-1.5 px-4 py-6">
+            <nav className="space-y-1 px-3 py-6">
               {links.map((link) => {
                 const active = pathname === link.href;
                 const Icon = link.icon;
@@ -173,17 +183,18 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       e.preventDefault();
                       router.push(link.href);
                     }}
-                    className={`relative flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
+                    className={`relative flex items-center gap-3 rounded-2xl px-4 py-3.5 text-[11px] font-bold uppercase tracking-wider transition-all duration-200 group ${
                       active 
-                        ? "bg-slate-900 text-white shadow-sm border border-slate-800" 
-                        : "text-slate-400 hover:bg-slate-900/50 hover:text-white"
+                        ? "bg-white/10 text-white shadow-sm backdrop-blur-sm" 
+                        : "text-indigo-200/50 hover:bg-white/5 hover:text-white"
                     }`}
                   >
                     {active && (
-                      <span className="absolute left-0 top-1/4 bottom-1/4 w-1 rounded-r bg-blue-500"></span>
+                      <span className="absolute left-0 top-1/4 bottom-1/4 w-0.75 rounded-r-full bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.5)]"></span>
                     )}
-                    <Icon className={`h-5 w-5 transition-colors ${active ? "text-blue-500" : "text-slate-400"}`} />
+                    <Icon className={`h-4.5 w-4.5 transition-all ${active ? "text-indigo-300" : "text-indigo-300/40 group-hover:text-indigo-300/70"}`} />
                     {translate(link.name, language)}
+                    {active && <ChevronRight className="h-3 w-3 ml-auto text-indigo-300/50" />}
                   </a>
                 );
               })}
@@ -191,32 +202,33 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* User profile & logout info at bottom of sidebar */}
-          <div className="border-t border-slate-900 p-4 bg-slate-950/40">
+          <div className="border-t border-white/5 p-3">
             <button
               onClick={() => router.push("/profile")}
-              className="flex w-full items-center gap-3 mb-4 p-2 rounded-xl bg-slate-900/35 hover:bg-slate-900/70 border border-slate-900/40 hover:border-slate-800 transition-all text-left cursor-pointer group"
+              className="flex w-full items-center gap-3 mb-3 p-3 rounded-2xl bg-white/5 hover:bg-white/10 backdrop-blur-sm border border-white/5 hover:border-indigo-400/20 transition-all text-left cursor-pointer group"
               title="View and edit your profile"
             >
               {user?.image ? (
                 <img
                   src={user.image}
                   alt={user?.name || user?.username || "Avatar"}
-                  className="h-9 w-9 rounded-xl object-cover border border-blue-500/30 group-hover:scale-105 transition-transform shrink-0"
+                  className="h-10 w-10 rounded-xl object-cover border border-indigo-400/20 group-hover:scale-105 transition-transform shrink-0"
                 />
               ) : (
-                <div className="h-9 w-9 rounded-xl bg-blue-600/10 border border-blue-500/25 flex items-center justify-center font-black text-blue-500 text-sm uppercase shadow-inner group-hover:scale-105 transition-transform shrink-0">
+                <div className="h-10 w-10 rounded-xl flex items-center justify-center font-black text-sm uppercase shrink-0 group-hover:scale-105 transition-transform"
+                  style={{ background: "var(--gradient-accent)", color: "#fff" }}
+                >
                   {user?.username?.[0] || "U"}
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-white truncate group-hover:text-blue-400 transition-colors">{user?.name || user?.username}</p>
-                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">{user?.role?.replace(/_/g, " ")}</p>
+                <p className="text-xs font-bold text-white truncate group-hover:text-indigo-300 transition-colors">{user?.name || user?.username}</p>
+                <p className="text-[9px] text-indigo-300/40 font-semibold uppercase tracking-wider mt-0.5">{user?.role?.replace(/_/g, " ")}</p>
               </div>
-              <span className="text-[10px] font-bold text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">Edit</span>
             </button>
             <button
               onClick={handleLogout}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-650/10 hover:bg-red-600 text-red-500 hover:text-white border border-red-500/20 px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer border border-red-500/10 hover:border-red-500"
             >
               <LogOut className="h-4 w-4" />
               {translate("Logout", language)}
@@ -227,16 +239,21 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
       {/* Mobile Drawer Sidebar */}
       <div className={`fixed inset-0 z-30 md:hidden transition-opacity duration-300 ${mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}>
-        <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-        <aside className={`absolute inset-y-0 left-0 w-64 max-w-[85vw] bg-slate-950 border-r border-slate-900 text-slate-100 p-4 transition-transform duration-300 ${mobileOpen ? "translate-x-0" : "-translate-x-full"} flex flex-col justify-between`}>
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+        <aside className={`absolute inset-y-0 left-0 w-70 max-w-[85vw] text-white p-4 transition-transform duration-300 ${mobileOpen ? "translate-x-0" : "-translate-x-full"} flex flex-col justify-between`}
+          style={{ background: "var(--gradient-sidebar)" }}
+        >
           <div>
             <div className="flex h-12 items-center justify-between mb-6 px-2">
               <div className="flex items-center gap-2.5">
-                <img src="/wcm-logo.png" alt="WCM Logo" className="h-7 w-auto object-contain rounded-md bg-black p-0.5 border border-slate-800" />
-                <span className="text-xs font-black uppercase tracking-wider text-white">WCM OUTREACH</span>
+                <img src="/wcm-logo.png" alt="WCM Logo" className="h-8 w-auto object-contain rounded-xl" style={{ filter: "drop-shadow(0 2px 8px rgba(129,140,248,0.3))" }} />
+                <div className="flex flex-col">
+                  <span className="text-sm font-black uppercase tracking-wider text-white">WCM</span>
+                  <span className="text-[9px] font-semibold tracking-widest text-indigo-300/50 uppercase">Outreach</span>
+                </div>
               </div>
-              <button onClick={() => setMobileOpen(false)} className="text-slate-400 hover:text-white cursor-pointer p-1">
-                <X className="h-6 w-6" />
+              <button onClick={() => setMobileOpen(false)} className="text-indigo-200/50 hover:text-white cursor-pointer p-1 rounded-xl hover:bg-white/10 transition-colors">
+                <X className="h-5 w-5" />
               </button>
             </div>
             <nav className="space-y-1">
@@ -252,11 +269,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       setMobileOpen(false);
                       router.push(link.href);
                     }}
-                    className={`flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${
-                      active ? "bg-slate-900 text-white" : "text-slate-400 hover:bg-slate-900/50 hover:text-white"
+                    className={`flex items-center gap-3 rounded-2xl px-4 py-3.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
+                      active ? "bg-white/10 text-white" : "text-indigo-200/50 hover:bg-white/5 hover:text-white"
                     }`}
                   >
-                    <Icon className={`h-5 w-5 ${active ? "text-blue-500" : "text-slate-400"}`} />
+                    <Icon className={`h-4.5 w-4.5 ${active ? "text-indigo-300" : "text-indigo-300/40"}`} />
                     {translate(link.name, language)}
                   </a>
                 );
@@ -264,33 +281,35 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </nav>
           </div>
           
-          <div className="border-t border-slate-900 pt-4">
+          <div className="border-t border-white/5 pt-4">
             <button
               onClick={() => {
                 setMobileOpen(false);
                 router.push("/profile");
               }}
-              className="flex w-full items-center gap-3 mb-4 p-2 rounded-xl bg-slate-900/40 hover:bg-slate-900 border border-slate-800 text-left cursor-pointer"
+              className="flex w-full items-center gap-3 mb-4 p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 text-left cursor-pointer"
             >
               {user?.image ? (
                 <img
                   src={user.image}
                   alt={user?.name || user?.username || "Avatar"}
-                  className="h-9 w-9 rounded-xl object-cover border border-blue-500/30 shrink-0"
+                  className="h-10 w-10 rounded-xl object-cover border border-indigo-400/20 shrink-0"
                 />
               ) : (
-                <div className="h-9 w-9 rounded-xl bg-blue-500/10 flex items-center justify-center font-bold text-blue-500 uppercase text-sm shrink-0">
+                <div className="h-10 w-10 rounded-xl flex items-center justify-center font-bold uppercase text-sm shrink-0"
+                  style={{ background: "var(--gradient-accent)", color: "#fff" }}
+                >
                   {user?.username?.[0] || "U"}
                 </div>
               )}
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold text-white truncate">{user?.name || user?.username}</p>
-                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">{user?.role?.replace(/_/g, " ")}</p>
+                <p className="text-[9px] text-indigo-300/40 font-semibold uppercase tracking-wider mt-0.5">{user?.role?.replace(/_/g, " ")}</p>
               </div>
             </button>
             <button
               onClick={handleLogout}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-500/10 text-red-500 px-4 py-2.5 text-xs font-bold uppercase tracking-wider border border-red-500/15 cursor-pointer"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-500/10 text-red-400 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider border border-red-500/10 cursor-pointer hover:bg-red-500 hover:text-white transition-all"
             >
               <LogOut className="h-4 w-4" />
               {translate("Logout", language)}
@@ -300,10 +319,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Main Container */}
-      <div className={`flex flex-col flex-1 transition-all duration-300 ${sidebarOpen ? "md:pl-64" : ""}`}>
+      <div className={`flex flex-col flex-1 min-w-0 max-w-full w-full transition-all duration-300 ${sidebarOpen ? "md:pl-65" : ""}`}>
         {/* Top Navbar */}
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-slate-200 dark:border-slate-800/80 bg-white/80 dark:bg-[#090d16]/80 backdrop-blur-md px-3 sm:px-6">
-          <div className="flex items-center gap-2 sm:gap-4">
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-border/50 glass px-3 sm:px-6">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button 
               onClick={() => {
                 if (window.innerWidth < 768) {
@@ -312,30 +331,30 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   toggleSidebar();
                 }
               }}
-              className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
+              className="text-foreground/50 hover:text-foreground rounded-xl p-2 hover:bg-accent/80 transition-all cursor-pointer"
             >
               <Menu className="h-5 w-5" />
             </button>
-            <div className="flex items-center gap-2">
-              <img src="/wcm-logo.png" alt="WCM Logo" className="h-7 w-auto object-contain rounded-md bg-black p-1 border border-slate-800 dark:border-slate-700" />
-              <h1 className="text-xs font-extrabold uppercase tracking-widest text-slate-700 dark:text-slate-200 hidden sm:block">
-                WCM Ministry Reporting System
+            <div className="flex items-center gap-2.5">
+              <img src="/wcm-logo.png" alt="WCM Logo" className="h-7 w-auto object-contain rounded-lg" style={{ filter: "drop-shadow(0 1px 4px rgba(99,102,241,0.2))" }} />
+              <h1 className="text-[11px] font-extrabold uppercase tracking-widest text-foreground/70 hidden sm:block">
+                WCM Reporting
               </h1>
             </div>
           </div>
           
-          <div className="flex items-center gap-1.5 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Notification Bell */}
             <div className="relative">
               <button
                 onClick={() => setShowNotifDropdown(!showNotifDropdown)}
-                className="relative rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-850 transition-colors focus:outline-none cursor-pointer border border-transparent hover:border-slate-100 dark:hover:border-slate-800"
+                className="relative rounded-xl p-2 text-foreground/50 hover:bg-accent/80 hover:text-primary transition-all focus:outline-none cursor-pointer"
               >
                 <Bell className="h-4.5 w-4.5" />
                 {notifications.filter(n => !n.read).length > 0 && (
-                  <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                  <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500 border border-white dark:border-[#0f0e2a]"></span>
                   </span>
                 )}
               </button>
@@ -347,15 +366,15 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     className="fixed inset-0 z-40" 
                     onClick={() => setShowNotifDropdown(false)}
                   />
-                  <div className="absolute -right-12 sm:right-0 mt-2.5 z-50 w-[calc(100vw-24px)] max-w-sm sm:w-96 rounded-2xl border border-slate-200 dark:border-slate-805 bg-white dark:bg-slate-900 shadow-2xl p-4 animate-fadeIn text-left">
-                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-2">
-                      <span className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider">
+                  <div className="absolute -right-12 sm:right-0 mt-2 z-50 w-[calc(100vw-24px)] max-w-sm sm:w-96 rounded-2xl border border-border/50 glass-card p-4 animate-slideDown text-left" style={{ boxShadow: "var(--shadow-float)" }}>
+                    <div className="flex items-center justify-between border-b border-border/50 pb-3 mb-2">
+                      <span className="text-[11px] font-bold text-foreground uppercase tracking-wider">
                         Notifications ({notifications.filter(n => !n.read).length} unread)
                       </span>
                       {notifications.filter(n => !n.read).length > 0 && (
                         <button
                           onClick={markAllAsRead}
-                          className="text-[10px] font-bold uppercase tracking-wider text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1 cursor-pointer"
+                          className="text-[10px] font-bold uppercase tracking-wider text-primary hover:text-primary-hover flex items-center gap-1 cursor-pointer"
                         >
                           <CheckCheck className="h-3.5 w-3.5" />
                           Mark all read
@@ -363,9 +382,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       )}
                     </div>
 
-                    <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60 space-y-1">
+                    <div className="max-h-72 overflow-y-auto divide-y divide-border/30 space-y-1">
                       {notifications.length === 0 ? (
-                        <div className="py-6 text-center text-xs text-slate-500 dark:text-slate-400 font-medium italic">
+                        <div className="py-6 text-center text-xs text-foreground/40 font-medium italic">
                           No notifications
                         </div>
                       ) : (
@@ -375,24 +394,24 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                             onClick={() => {
                               if (!n.read) markAsRead(n.id);
                             }}
-                            className={`py-3 px-2 flex flex-col gap-1 rounded-xl transition-colors cursor-pointer text-left ${
+                            className={`py-3 px-2 flex flex-col gap-1 rounded-xl transition-all cursor-pointer text-left ${
                               n.read 
-                                ? "hover:bg-slate-50 dark:hover:bg-slate-800/30" 
-                                : "bg-blue-50/50 dark:bg-blue-950/10 hover:bg-blue-50 dark:hover:bg-blue-950/20 border-l-2 border-blue-500 pl-1.5"
+                                ? "hover:bg-accent/50" 
+                                : "bg-primary/5 hover:bg-primary/10 border-l-2 border-primary pl-2"
                             }`}
                           >
                             <div className="flex justify-between items-start gap-2">
-                              <span className={`text-xs font-bold text-slate-800 dark:text-white ${!n.read ? "text-blue-600 dark:text-blue-400" : ""}`}>
+                              <span className={`text-xs font-bold ${!n.read ? "text-primary" : "text-foreground"}`}>
                                 {n.title}
                               </span>
-                              <span className="text-[9px] text-slate-400 dark:text-slate-500 font-mono whitespace-nowrap">
+                              <span className="text-[9px] text-foreground/30 font-mono whitespace-nowrap">
                                 {new Date(n.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                               </span>
                             </div>
-                            <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 font-medium">
+                            <p className="text-[11px] text-foreground/60 line-clamp-3 font-medium">
                               {n.message}
                             </p>
-                            <span className="text-[10px] text-slate-405 dark:text-slate-500 font-semibold mt-1">
+                            <span className="text-[10px] text-foreground/30 font-semibold mt-1">
                               From: {n.sender?.username || "Admin"}
                             </span>
                           </div>
@@ -408,7 +427,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value as any)}
-              className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors focus:outline-none cursor-pointer"
+              className="rounded-xl border border-border/50 bg-card px-2.5 py-1.5 text-[11px] font-bold text-foreground/70 hover:bg-accent/80 transition-all focus:outline-none cursor-pointer"
             >
               <option value="en">EN</option>
               <option value="hi">HI</option>
@@ -418,7 +437,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             {/* Theme Toggle */}
             <button 
               onClick={toggleTheme} 
-              className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-850 transition-colors border border-transparent hover:border-slate-105 dark:hover:border-slate-800 cursor-pointer"
+              className="rounded-xl p-2 text-foreground/50 hover:bg-accent/80 hover:text-primary transition-all cursor-pointer"
             >
               {theme === "light" ? <Moon className="h-4.5 w-4.5" /> : <Sun className="h-4.5 w-4.5" />}
             </button>
@@ -426,25 +445,27 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             {/* Profile info on Navbar */}
             <button
               onClick={() => router.push("/profile")}
-              className="flex items-center gap-2 sm:gap-2.5 sm:border-l sm:border-slate-200 sm:dark:border-slate-800 sm:pl-3 hover:opacity-85 transition-opacity cursor-pointer text-left group"
+              className="flex items-center gap-2 sm:gap-2.5 sm:border-l sm:border-border/50 sm:pl-3 hover:opacity-85 transition-opacity cursor-pointer text-left group"
               title="Click to view and edit profile"
             >
               {user?.image ? (
                 <img
                   src={user.image}
                   alt={user?.name || user?.username || "Avatar"}
-                  className="h-8 w-8 sm:h-7 sm:w-7 rounded-xl sm:rounded-lg object-cover border border-blue-500/30 group-hover:scale-105 transition-transform shrink-0"
+                  className="h-8 w-8 sm:h-8 sm:w-8 rounded-xl object-cover border border-primary/20 group-hover:scale-105 transition-transform shrink-0 shadow-sm"
                 />
               ) : (
-                <div className="h-8 w-8 sm:h-7 sm:w-7 rounded-xl sm:rounded-lg bg-blue-600/10 dark:bg-blue-400/10 text-blue-600 dark:text-blue-400 font-black text-xs flex items-center justify-center border border-blue-500/20 group-hover:scale-105 transition-transform shrink-0">
+                <div className="h-8 w-8 sm:h-8 sm:w-8 rounded-xl font-black text-xs flex items-center justify-center group-hover:scale-105 transition-transform shrink-0 shadow-sm text-white"
+                  style={{ background: "var(--gradient-accent)" }}
+                >
                   {user?.username?.[0]?.toUpperCase() || "U"}
                 </div>
               )}
               <div className="hidden sm:block">
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 block leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                <span className="text-xs font-bold text-foreground/80 block leading-tight group-hover:text-primary transition-colors">
                   {user?.name || user?.username}
                 </span>
-                <span className="text-[9px] bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-500/10 px-1.5 py-0.2 rounded font-black uppercase tracking-wider inline-block">
+                <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider inline-block">
                   {user?.role}
                 </span>
               </div>
@@ -456,15 +477,15 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         {showNotifDropdown && (
           <div className="fixed inset-0 z-50 flex flex-col justify-end sm:hidden">
             <div 
-              className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"
+              className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
               onClick={() => setShowNotifDropdown(false)}
             />
-            <div className="relative w-full rounded-t-3xl bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shadow-2xl p-4 max-h-[82vh] flex flex-col pb-safe animate-sheetSlideUp z-50 text-left">
-              <div className="h-1.5 w-12 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto mb-3 shrink-0" />
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-2 shrink-0">
+            <div className="relative w-full rounded-t-3xl bg-card border-t border-border/50 shadow-2xl p-4 max-h-[82vh] flex flex-col pb-safe animate-sheetSlideUp z-50 text-left">
+              <div className="h-1 w-10 rounded-full bg-foreground/10 mx-auto mb-3 shrink-0" />
+              <div className="flex items-center justify-between border-b border-border/50 pb-3 mb-2 shrink-0">
                 <div className="flex items-center gap-2">
-                  <Bell className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                  <span className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider">
+                  <Bell className="h-4 w-4 text-primary" />
+                  <span className="text-[11px] font-bold text-foreground uppercase tracking-wider">
                     Notifications ({notifications.filter(n => !n.read).length} unread)
                   </span>
                 </div>
@@ -472,7 +493,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   {notifications.filter(n => !n.read).length > 0 && (
                     <button
                       onClick={markAllAsRead}
-                      className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1 cursor-pointer"
+                      className="text-[10px] font-bold uppercase tracking-wider text-primary flex items-center gap-1 cursor-pointer"
                     >
                       <CheckCheck className="h-3.5 w-3.5" />
                       Mark all
@@ -480,16 +501,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   )}
                   <button
                     onClick={() => setShowNotifDropdown(false)}
-                    className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                    className="p-1 rounded-lg text-foreground/40 hover:text-foreground cursor-pointer"
                   >
                     <X className="h-5 w-5" />
                   </button>
                 </div>
               </div>
 
-              <div className="overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60 space-y-1 pr-1 flex-1">
+              <div className="overflow-y-auto divide-y divide-border/30 space-y-1 pr-1 flex-1">
                 {notifications.length === 0 ? (
-                  <div className="py-12 text-center text-xs text-slate-500 dark:text-slate-400 font-medium italic">
+                  <div className="py-12 text-center text-xs text-foreground/40 font-medium italic">
                     No notifications
                   </div>
                 ) : (
@@ -501,22 +522,22 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       }}
                       className={`py-3 px-2 flex flex-col gap-1 rounded-xl transition-colors cursor-pointer text-left ${
                         n.read 
-                          ? "hover:bg-slate-50 dark:hover:bg-slate-800/30" 
-                          : "bg-blue-50/50 dark:bg-blue-950/10 hover:bg-blue-50 dark:hover:bg-blue-950/20 border-l-2 border-blue-500 pl-1.5"
+                          ? "hover:bg-accent/50" 
+                          : "bg-primary/5 hover:bg-primary/10 border-l-2 border-primary pl-2"
                       }`}
                     >
                       <div className="flex justify-between items-start gap-2">
-                        <span className={`text-xs font-bold text-slate-800 dark:text-white ${!n.read ? "text-blue-600 dark:text-blue-400" : ""}`}>
+                        <span className={`text-xs font-bold ${!n.read ? "text-primary" : "text-foreground"}`}>
                           {n.title}
                         </span>
-                        <span className="text-[9px] text-slate-400 dark:text-slate-500 font-mono whitespace-nowrap">
+                        <span className="text-[9px] text-foreground/30 font-mono whitespace-nowrap">
                           {new Date(n.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 font-medium">
+                      <p className="text-[11px] text-foreground/60 line-clamp-3 font-medium">
                         {n.message}
                       </p>
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-1">
+                      <span className="text-[10px] text-foreground/30 font-semibold mt-1">
                         From: {n.sender?.username || "Admin"}
                       </span>
                     </div>
@@ -528,17 +549,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Main Content Area */}
-        <main className="flex-1 p-3.5 sm:p-6 md:p-8 max-w-7xl w-full mx-auto animate-slideUp pb-24 md:pb-8">
+        <main className="flex-1 p-3 sm:p-5 md:p-8 max-w-7xl w-full mx-auto animate-slideUp pb-24 md:pb-8 min-w-0">
           {children}
         </main>
 
         {/* Footer */}
-        <footer className="py-4 border-t border-slate-200 dark:border-slate-850/50 bg-white dark:bg-slate-950 text-center text-[10px] uppercase font-bold tracking-widest text-slate-400 dark:text-slate-500 mb-16 md:mb-0">
+        <footer className="py-4 border-t border-border/30 text-center text-[10px] uppercase font-semibold tracking-widest text-foreground/25 mb-16 md:mb-0">
           &copy; {new Date().getFullYear()} WCM Ministry. All rights reserved.
         </footer>
 
         {/* Native Mobile Bottom Navigation Bar */}
-        <nav className="fixed bottom-0 left-0 right-0 z-30 flex md:hidden items-center justify-around border-t border-slate-200/90 dark:border-slate-800/90 bg-white/95 dark:bg-slate-950/95 backdrop-blur-lg px-2 py-1.5 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+        <nav className="fixed bottom-0 left-0 right-0 z-30 flex md:hidden items-center justify-around border-t border-border/30 glass px-2 py-1.5 pb-safe shadow-[0_-4px_24px_rgba(0,0,0,0.08)]">
           {links.map((link) => {
             const active = pathname === link.href;
             const Icon = link.icon;
@@ -548,11 +569,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 onClick={() => router.push(link.href)}
                 className={`flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-2xl transition-all cursor-pointer min-h-11 min-w-14 active-press ${
                   active 
-                    ? "text-blue-600 dark:text-blue-400 font-bold" 
-                    : "text-slate-450 dark:text-slate-400 font-medium hover:text-slate-700 dark:hover:text-slate-200"
+                    ? "text-primary font-bold" 
+                    : "text-foreground/40 font-medium hover:text-foreground/70"
                 }`}
               >
-                <div className={`p-1 rounded-xl transition-colors ${active ? "bg-blue-50 dark:bg-blue-950/60" : ""}`}>
+                <div className={`p-1.5 rounded-xl transition-all ${active ? "bg-primary/10 shadow-sm" : ""}`}>
                   <Icon className="h-5 w-5" />
                 </div>
                 <span className="text-[10px] uppercase tracking-wider leading-none">
@@ -565,12 +586,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           {/* Quick Notifications Button in Mobile Bottom Bar */}
           <button
             onClick={() => setShowNotifDropdown(true)}
-            className="flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-2xl transition-all cursor-pointer min-h-11 min-w-14 active-press text-slate-450 dark:text-slate-400 font-medium hover:text-slate-700 dark:hover:text-slate-200"
+            className="flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-2xl transition-all cursor-pointer min-h-11 min-w-14 active-press text-foreground/40 font-medium hover:text-foreground/70"
           >
-            <div className="relative p-1 rounded-xl">
+            <div className="relative p-1.5 rounded-xl">
               <Bell className="h-5 w-5" />
               {notifications.filter(n => !n.read).length > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-red-500 text-[9px] font-black text-white shadow-xs">
+                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 px-1 items-center justify-center rounded-full text-[9px] font-black text-white shadow-sm"
+                  style={{ background: "var(--gradient-accent)" }}
+                >
                   {notifications.filter(n => !n.read).length}
                 </span>
               )}

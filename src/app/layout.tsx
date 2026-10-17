@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthSyncProvider } from "@/components/auth-sync-provider";
 import { PwaProvider } from "@/components/pwa-provider";
+import { SplashScreen } from "@/components/splash-screen";
 import { Toaster } from "sonner";
 
 const geistSans = Geist({
@@ -22,13 +23,11 @@ const geistMono = Geist_Mono({
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#2563eb" },
-    { media: "(prefers-color-scheme: dark)", color: "#090d16" },
+    { media: "(prefers-color-scheme: light)", color: "#6366f1" },
+    { media: "(prefers-color-scheme: dark)", color: "#06061a" },
   ],
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: "cover",
 };
 
@@ -67,18 +66,29 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-background-gray text-text-dark dark:bg-slate-900 dark:text-slate-100">
+      <body className="min-h-full flex flex-col">
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
           enableSystem
-          disableTransitionOnChange
+          disableTransitionOnChange={false}
         >
           <AuthSyncProvider>
             <PwaProvider>
+              <SplashScreen />
               {children}
             </PwaProvider>
-            <Toaster position="top-right" richColors />
+            <Toaster 
+              position="top-right" 
+              richColors 
+              toastOptions={{
+                style: {
+                  borderRadius: '16px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                },
+              }}
+            />
           </AuthSyncProvider>
         </ThemeProvider>
       </body>
