@@ -20,10 +20,27 @@ export async function POST(request: Request) {
 
     const user = session.user as any;
 
-    // Generate report ID (MR-YYYY-XXXXX) sequentially
-    const count = await prisma.meetingReport.count();
+    // Generate unique report ID (MR-YYYY-XXXXX) safely
     const year = new Date().getFullYear();
-    const reportId = `MR-${year}-${String(count + 1).padStart(5, "0")}`;
+    let reportId = "";
+    let attempts = 0;
+    while (attempts < 5) {
+      const count = await prisma.meetingReport.count();
+      const candidateId = attempts === 0
+        ? `MR-${year}-${String(count + 1).padStart(5, "0")}`
+        : `MR-${year}-${String(count + 1).padStart(5, "0")}-${Math.floor(100 + Math.random() * 900)}`;
+
+      const exists = await prisma.meetingReport.findUnique({ where: { reportId: candidateId } });
+      if (!exists) {
+        reportId = candidateId;
+        break;
+      }
+      attempts++;
+    }
+
+    if (!reportId) {
+      reportId = `MR-${year}-${Date.now().toString().slice(-6)}`;
+    }
 
     const report = await prisma.$transaction(async (tx) => {
       const createdReport = await tx.meetingReport.create({

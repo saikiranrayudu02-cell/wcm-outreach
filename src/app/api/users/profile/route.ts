@@ -155,12 +155,16 @@ export async function PUT(request: Request) {
 
     let newPasswordHash: string | null = null;
     if (validatedData.newPassword) {
-      // If currentPassword is provided, verify it
-      if (validatedData.currentPassword) {
-        const isMatch = await bcrypt.compare(validatedData.currentPassword, existingUser.passwordHash);
-        if (!isMatch) {
-          return NextResponse.json({ error: "Current password does not match" }, { status: 400 });
-        }
+      if (!validatedData.currentPassword) {
+        return NextResponse.json(
+          { error: "Current password is required to change your password" },
+          { status: 400 }
+        );
+      }
+
+      const isMatch = await bcrypt.compare(validatedData.currentPassword, existingUser.passwordHash);
+      if (!isMatch) {
+        return NextResponse.json({ error: "Current password does not match" }, { status: 400 });
       }
 
       newPasswordHash = await bcrypt.hash(validatedData.newPassword, 10);

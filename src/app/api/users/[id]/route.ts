@@ -80,11 +80,11 @@ export async function GET(
 
     // Role-based scoping
     if (sessionRole === "STATE_LEADER") {
-      if (user.state !== sessionUser.state || (user.role !== "ZONE_LEADER" && user.role !== "COORDINATOR")) {
+      if (!sessionUser.state || user.state !== sessionUser.state || (user.role !== "ZONE_LEADER" && user.role !== "COORDINATOR")) {
         return NextResponse.json({ error: "Forbidden: Candidate is outside your state scope" }, { status: 403 });
       }
     } else if (sessionRole === "ZONE_LEADER") {
-      if (user.zone !== sessionUser.zone || user.role !== "COORDINATOR") {
+      if (!sessionUser.zone || user.zone !== sessionUser.zone || user.role !== "COORDINATOR") {
         return NextResponse.json({ error: "Forbidden: Candidate is outside your zone scope" }, { status: 403 });
       }
     }
@@ -134,7 +134,7 @@ export async function PUT(
       if (existingUser.role !== "COORDINATOR") {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
-      if (existingUser.state !== sessionUser.state) {
+      if (!sessionUser.state || existingUser.state !== sessionUser.state) {
         return NextResponse.json({ error: "Forbidden: Coordinator belongs to another state" }, { status: 403 });
       }
       if (validatedData.role !== "COORDINATOR" || validatedData.state !== sessionUser.state) {
@@ -144,7 +144,7 @@ export async function PUT(
       if (existingUser.role !== "COORDINATOR") {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
-      if (existingUser.zone !== sessionUser.zone) {
+      if (!sessionUser.zone || existingUser.zone !== sessionUser.zone) {
         return NextResponse.json({ error: "Forbidden: Coordinator belongs to another zone" }, { status: 403 });
       }
       if (validatedData.role !== "COORDINATOR" || validatedData.zone !== sessionUser.zone) {
@@ -229,11 +229,11 @@ export async function DELETE(
 
     // Role boundaries checks
     if (sessionRole === "STATE_LEADER") {
-      if (existingUser.role !== "COORDINATOR" || existingUser.state !== sessionUser.state) {
+      if (existingUser.role !== "COORDINATOR" || !sessionUser.state || existingUser.state !== sessionUser.state) {
         return NextResponse.json({ error: "Forbidden: Cannot delete this user" }, { status: 403 });
       }
     } else if (sessionRole === "ZONE_LEADER") {
-      if (existingUser.role !== "COORDINATOR" || existingUser.zone !== sessionUser.zone) {
+      if (existingUser.role !== "COORDINATOR" || !sessionUser.zone || existingUser.zone !== sessionUser.zone) {
         return NextResponse.json({ error: "Forbidden: Cannot delete this user" }, { status: 403 });
       }
     }

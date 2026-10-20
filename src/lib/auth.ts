@@ -9,14 +9,20 @@ const defaultBaseURL =
   process.env.NEXT_PUBLIC_APP_URL ||
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
 
+const isProd = process.env.NODE_ENV === "production";
+const authSecret = process.env.BETTER_AUTH_SECRET;
+if (isProd && !authSecret) {
+  throw new Error("FATAL: BETTER_AUTH_SECRET environment variable must be set in production.");
+}
+
 export const auth = betterAuth({
   baseURL: defaultBaseURL,
-  secret: process.env.BETTER_AUTH_SECRET || "vmlrs_super_secure_session_secret_2026_key_abc123",
+  secret: authSecret || "vmlrs_super_secure_session_secret_2026_key_abc123",
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
   trustedOrigins: async (request?: Request) => {
-    const list = [
+    const trustedList = new Set<string>([
       "http://localhost:3000",
       "http://127.0.0.1:3000",
       "http://localhost:3001",
@@ -26,19 +32,28 @@ export const auth = betterAuth({
       process.env.NEXT_PUBLIC_APP_URL || "",
       process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "",
       process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "",
-    ].filter(Boolean);
+    ].filter(Boolean));
 
+    // Allow legitimate preview deployments on vercel.app or local network dev
     try {
       const origin = request?.headers?.get("origin");
-      if (origin && !list.includes(origin)) list.push(origin);
-      const host = request?.headers?.get("host");
-      if (host) {
-        list.push(`https://${host}`);
-        list.push(`http://${host}`);
+      if (origin) {
+        const originUrl = new URL(origin);
+        // Only allow if localhost, 127.0.0.1, or legitimate preview deployment for this specific project
+        const isLocal = originUrl.hostname === "localhost" || originUrl.hostname === "127.0.0.1";
+        const isProjectVercel =
+          originUrl.hostname.endsWith(".vercel.app") &&
+          (originUrl.hostname.startsWith("wcm-outreach") ||
+           originUrl.hostname.startsWith("wcm_outreach") ||
+           (process.env.VERCEL_PROJECT_PRODUCTION_URL && originUrl.hostname.includes(process.env.VERCEL_PROJECT_PRODUCTION_URL.replace(".vercel.app", ""))));
+
+        if (isLocal || isProjectVercel) {
+          trustedList.add(origin);
+        }
       }
     } catch {}
 
-    return list;
+    return Array.from(trustedList);
   },
   emailAndPassword: {
     enabled: true,

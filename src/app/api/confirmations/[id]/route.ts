@@ -47,11 +47,11 @@ export async function PUT(
     }
 
     if (userRole === "STATE_LEADER") {
-      if (existing.leader.state !== session.user.state) {
+      if (!session.user.state || !existing.leader.state || existing.leader.state !== session.user.state) {
         return NextResponse.json({ error: "Forbidden: Coordinator belongs to another state" }, { status: 403 });
       }
     } else if (userRole === "ZONE_LEADER") {
-      if (existing.leader.zone !== session.user.zone) {
+      if (!session.user.zone || !existing.leader.zone || existing.leader.zone !== session.user.zone) {
         return NextResponse.json({ error: "Forbidden: Coordinator belongs to another zone" }, { status: 403 });
       }
     }

@@ -39,16 +39,28 @@ export async function POST(
       return NextResponse.json({ error: "Report not found" }, { status: 404 });
     }
 
+    if (report.status === "APPROVED" || report.status === "REJECTED") {
+      return NextResponse.json({ error: "Cannot review a report that has already been finalized (Approved or Rejected)" }, { status: 400 });
+    }
+
+    if (report.status === "DRAFT") {
+      return NextResponse.json({ error: "Draft reports cannot be reviewed until submitted by the coordinator" }, { status: 400 });
+    }
+
     const { role } = session.user;
     let allowed = false;
 
     // Validate if user has permissions for this report's current stage
-    if (role === "ZONE_LEADER" && report.leader.zone === session.user.zone) {
-      allowed = report.status !== "DRAFT";
-    } else if (role === "STATE_LEADER" && report.leader.state === session.user.state) {
-      allowed = report.status !== "DRAFT";
+    if (role === "ZONE_LEADER") {
+      const isSameZone = Boolean(session.user.zone && report.leader.zone === session.user.zone);
+      const isZoneStage = ["SUBMITTED", "ZONE_LEADER_REVIEW"].includes(report.status);
+      allowed = isSameZone && isZoneStage;
+    } else if (role === "STATE_LEADER") {
+      const isSameState = Boolean(session.user.state && report.leader.state === session.user.state);
+      const isStateStage = ["STATE_LEADER_REVIEW", "STATE_AND_ADMIN_REVIEW"].includes(report.status);
+      allowed = isSameState && isStateStage;
     } else if (role === "ADMIN") {
-      allowed = report.status !== "DRAFT";
+      allowed = ["ADMIN_REVIEW", "STATE_AND_ADMIN_REVIEW", "STATE_LEADER_REVIEW", "ZONE_LEADER_REVIEW", "SUBMITTED"].includes(report.status);
     }
 
     if (!allowed) {

@@ -77,9 +77,9 @@ export async function GET(
     if (role === "ADMIN") {
       allowed = report.status !== "DRAFT";
     } else if (role === "STATE_LEADER") {
-      allowed = report.leader.state === session.user.state && report.status !== "DRAFT";
+      allowed = Boolean(session.user.state && report.leader.state === session.user.state) && report.status !== "DRAFT";
     } else if (role === "ZONE_LEADER") {
-      allowed = report.leader.zone === session.user.zone && report.status !== "DRAFT";
+      allowed = Boolean(session.user.zone && report.leader.zone === session.user.zone) && report.status !== "DRAFT";
     } else if (session.user.id === report.leaderId) {
       allowed = true;
     }
@@ -156,7 +156,7 @@ export async function PUT(
 
     const user = session.user as any;
     const isOwner = report.leaderId === user.id;
-    const isZoneLeader = user.role === "ZONE_LEADER" && report.leader.zone === user.zone;
+    const isZoneLeader = user.role === "ZONE_LEADER" && Boolean(user.zone && report.leader.zone === user.zone);
     const isAdmin = user.role === "ADMIN";
 
     if (!isOwner && !isZoneLeader && !isAdmin) {

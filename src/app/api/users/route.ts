@@ -41,11 +41,17 @@ export async function GET(request: Request) {
     // Build base role-based access scope
     let baseWhere: any = {};
     if (userRole === "STATE_LEADER") {
+      if (!sessionUser.state) {
+        return NextResponse.json([]);
+      }
       baseWhere = {
         state: sessionUser.state,
         role: { in: ["ZONE_LEADER", "COORDINATOR"] },
       };
     } else if (userRole === "ZONE_LEADER") {
+      if (!sessionUser.zone) {
+        return NextResponse.json([]);
+      }
       baseWhere = {
         zone: sessionUser.zone,
         role: "COORDINATOR",
@@ -173,9 +179,12 @@ export async function POST(request: Request) {
       return u;
     });
 
+    // Remove passwordHash before returning to client
+    const { passwordHash: _ph, ...safeUser } = user;
+
     return NextResponse.json({ 
       message: "User Created Successfully", 
-      user 
+      user: safeUser, 
     });
   } catch (err) {
     if (err instanceof z.ZodError) {

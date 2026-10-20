@@ -23,6 +23,9 @@ export async function GET(request: Request) {
       // Coordinator can see all of their own reports (Drafts, Submitted, etc.)
       whereClause = { leaderId: userId };
     } else if (role === "ZONE_LEADER") {
+      if (!zone) {
+        return NextResponse.json([]);
+      }
       // Zone Leader can see all submitted/reviewed reports in their zone, but NEVER drafts.
       whereClause = {
         leader: { zone: zone },
@@ -31,6 +34,9 @@ export async function GET(request: Request) {
         },
       };
     } else if (role === "STATE_LEADER") {
+      if (!state) {
+        return NextResponse.json([]);
+      }
       // State Leader can see all submitted/forwarded/reviewed reports from their state
       whereClause = {
         leader: { state: state },

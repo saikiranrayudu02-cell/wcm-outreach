@@ -42,6 +42,9 @@ export async function GET(request: Request) {
       });
       return NextResponse.json(confirmations);
     } else if (role === "STATE_LEADER") {
+      if (!session.user.state) {
+        return NextResponse.json([]);
+      }
       const confirmations = await prisma.meetingConfirmation.findMany({
         where: {
           leader: {
@@ -63,6 +66,9 @@ export async function GET(request: Request) {
       });
       return NextResponse.json(confirmations);
     } else if (role === "ZONE_LEADER") {
+      if (!session.user.zone) {
+        return NextResponse.json([]);
+      }
       const confirmations = await prisma.meetingConfirmation.findMany({
         where: {
           leader: {

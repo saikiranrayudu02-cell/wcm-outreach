@@ -33,8 +33,22 @@ export async function GET(request: Request) {
     const whereClause: any = { status: "APPROVED" };
 
     if (role === "STATE_LEADER") {
+      if (!userState) {
+        return NextResponse.json({
+          summary: { totalMeetings: 0, totalMembersAttended: 0, totalWcmFollowers: 0 },
+          pieChartData: [],
+          barChartData: [],
+        });
+      }
       leaderWhereClause = { state: userState };
     } else if (role === "ZONE_LEADER") {
+      if (!userZone) {
+        return NextResponse.json({
+          summary: { totalMeetings: 0, totalMembersAttended: 0, totalWcmFollowers: 0 },
+          pieChartData: [],
+          barChartData: [],
+        });
+      }
       leaderWhereClause = { zone: userZone };
     } else if (role === "ADMIN") {
       // Admin sees all approved reports
