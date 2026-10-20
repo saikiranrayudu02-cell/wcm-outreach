@@ -10,8 +10,9 @@ const defaultBaseURL =
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
 
 const isProd = process.env.NODE_ENV === "production";
+const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
 const authSecret = process.env.BETTER_AUTH_SECRET;
-if (isProd && !authSecret) {
+if (isProd && !authSecret && !isBuildPhase) {
   throw new Error("FATAL: BETTER_AUTH_SECRET environment variable must be set in production.");
 }
 
