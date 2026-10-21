@@ -5,11 +5,12 @@ import { useRouter, useParams } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { 
   FileCheck, ClipboardList, FileSpreadsheet, Save, Send, ArrowLeft, ArrowRight,
-  Loader2, AlertCircle
+  Loader2, AlertCircle, Lock, CheckCircle2, Clock
 } from "lucide-react";
 import { toast } from "sonner";
 import { useUIStore } from "@/store/ui-store";
 import { translate } from "@/lib/translations";
+import { FormStatusBadge } from "@/components/form-status-badge";
 
 export default function MeetingReportWizardPage() {
   const router = useRouter();
@@ -19,9 +20,13 @@ export default function MeetingReportWizardPage() {
   const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [submittingForm, setSubmittingForm] = useState<string | null>(null);
   const [reportNumber, setReportNumber] = useState("");
+  const [reportTitle, setReportTitle] = useState("");
   const [reportStatus, setReportStatus] = useState("");
+  const [vStatus, setVStatus] = useState("PENDING");
+  const [aStatus, setAStatus] = useState("PENDING");
+  const [rStatus, setRStatus] = useState("PENDING");
   const [comments, setComments] = useState<any[]>([]);
 
   // Section 1: Verification Form State
@@ -74,45 +79,51 @@ export default function MeetingReportWizardPage() {
     followingWcmMembersCount: 0,
   });
 
-  // Fetch report details on load
-  useEffect(() => {
-    const fetchReport = async () => {
-      try {
-        const res = await fetch(`/api/reports/${reportId}`);
-        if (!res.ok) throw new Error();
-        const data = await res.json();
-        
-        setReportNumber(data.reportId);
-        setReportStatus(data.status);
-        setComments(data.reviewerComments || []);
+  const fetchReport = async () => {
+    try {
+      const res = await fetch(`/api/reports/${reportId}`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      
+      setReportNumber(data.reportId);
+      setReportTitle(data.title || `Outreach Meeting ${data.reportId}`);
+      setReportStatus(data.status);
+      setVStatus(data.verificationStatus || data.verification?.status || "PENDING");
+      setAStatus(data.attendanceStatus || data.attendance?.status || "PENDING");
+      setRStatus(data.evaluationStatus || data.report?.status || "PENDING");
+      setComments(data.reviewerComments || []);
 
-        if (data.verificationSheet) {
-          setVForm((prev) => ({ ...prev, ...data.verificationSheet }));
-        }
-        if (data.attendanceRecord) {
-          const dateStr = data.attendanceRecord.date 
-            ? new Date(data.attendanceRecord.date).toISOString().split("T")[0]
-            : new Date().toISOString().split("T")[0];
-          setAForm((prev) => ({ ...prev, ...data.attendanceRecord, date: dateStr }));
-        }
-        if (data.afterMeetingReport) {
-          const subDateStr = data.afterMeetingReport.submissionDate 
-            ? new Date(data.afterMeetingReport.submissionDate).toISOString().split("T")[0]
-            : new Date().toISOString().split("T")[0];
-          setRForm((prev) => ({ ...prev, ...data.afterMeetingReport, submissionDate: subDateStr }));
-        }
-      } catch (err) {
-        toast.error("Failed to load report data");
-        router.push("/coordinator/dashboard");
-      } finally {
-        setLoading(false);
+      if (data.verification) {
+        setVForm((prev) => ({ ...prev, ...data.verification }));
       }
-    };
+      if (data.attendance) {
+        const dateStr = data.attendance.date 
+          ? new Date(data.attendance.date).toISOString().split("T")[0]
+          : new Date().toISOString().split("T")[0];
+        setAForm((prev) => ({ ...prev, ...data.attendance, date: dateStr }));
+      }
+      if (data.report) {
+        const subDateStr = data.report.submissionDate 
+          ? new Date(data.report.submissionDate).toISOString().split("T")[0]
+          : new Date().toISOString().split("T")[0];
+        setRForm((prev) => ({ ...prev, ...data.report, submissionDate: subDateStr }));
+      }
+    } catch (err) {
+      toast.error("Failed to load meeting forms");
+      router.push("/coordinator/dashboard");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchReport();
-  }, [reportId, router]);
+  }, [reportId]);
 
-  // Checklist Calculations
+  const isAttendanceLocked = vStatus !== "COMPLETED";
+  const isEvaluationLocked = vStatus !== "COMPLETED";
+
+  // Form Validation checks
   const checkVComplete = () => {
     return (
       vForm.convenerName.trim() !== "" &&
@@ -151,12 +162,13 @@ export default function MeetingReportWizardPage() {
     );
   };
 
+  // Completion percentages
   const getVPercent = () => {
     let score = 0;
     if (vForm.convenerName.trim()) score++;
-    if (vForm.churchMinistryName.trim() && vForm.churchMinistryName !== "Not Specified") score++;
-    if (vForm.stateDistrictCity.trim() && vForm.stateDistrictCity !== "Not Specified") score++;
-    if (vForm.contactNumber.trim() && vForm.contactNumber !== "Not Specified") score++;
+    if (vForm.churchMinistryName.trim()) score++;
+    if (vForm.stateDistrictCity.trim()) score++;
+    if (vForm.contactNumber.trim()) score++;
     if (vForm.meetingDates.trim()) score++;
     if (vForm.numberOfDays > 0) score++;
     if (vForm.expectedAttendance > 0) score++;
@@ -190,31 +202,28 @@ export default function MeetingReportWizardPage() {
     return Math.round((score / 8) * 100);
   };
 
-  const getOverallPercent = () => {
-    return Math.round((getVPercent() + getAPercent() + getRPercent()) / 3);
-  };
-
-  const canSubmit = checkVComplete() && checkAComplete() && checkRComplete();
-
-  const handleSaveDraft = async () => {
+  // Save specific form draft
+  const handleSaveForm = async (formType: "VERIFICATION" | "ATTENDANCE" | "EVALUATION") => {
     setSaving(true);
     try {
+      const payload: any = {};
+      if (formType === "VERIFICATION") payload.verification = vForm;
+      if (formType === "ATTENDANCE") payload.attendance = aForm;
+      if (formType === "EVALUATION") payload.report = rForm;
+
       const res = await fetch(`/api/reports/${reportId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          verification: vForm,
-          attendance: aForm,
-          report: rForm,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Failed to save draft");
+        throw new Error(data.error || `Failed to save ${formType} draft`);
       }
 
-      toast.success("Draft Report Saved Successfully");
+      toast.success(`${formType.replace(/_/g, " ")} draft saved successfully`);
+      await fetchReport();
     } catch (err: any) {
       toast.error(err.message || "An error occurred");
     } finally {
@@ -222,43 +231,115 @@ export default function MeetingReportWizardPage() {
     }
   };
 
-  const handleSubmitReport = async () => {
-    if (!canSubmit) {
-      toast.error("Please complete all sections before submitting.");
+  // Submit specific form
+  const handleSubmitForm = async (formType: "VERIFICATION" | "ATTENDANCE" | "EVALUATION") => {
+    if (formType === "VERIFICATION" && !checkVComplete()) {
+      toast.error("Please fill all required Verification Form fields.");
+      return;
+    }
+    if (formType === "ATTENDANCE" && !checkAComplete()) {
+      toast.error("Please fill all required Attendance Form fields.");
+      return;
+    }
+    if (formType === "EVALUATION" && !checkRComplete()) {
+      toast.error("Please fill all required After-Meeting Evaluation fields.");
       return;
     }
 
-    setSubmitting(true);
+    setSubmittingForm(formType);
     try {
-      // 1. Auto save current state first
+      // 1. Auto save draft first
+      const payload: any = {};
+      if (formType === "VERIFICATION") payload.verification = vForm;
+      if (formType === "ATTENDANCE") payload.attendance = aForm;
+      if (formType === "EVALUATION") payload.report = rForm;
+
+      const saveRes = await fetch(`/api/reports/${reportId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!saveRes.ok) {
+        const saveErr = await saveRes.json();
+        throw new Error(saveErr.error || "Failed to save updates before submission.");
+      }
+
+      // 2. Submit form to trigger approval workflow
+      const submitRes = await fetch(`/api/reports/${reportId}/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ formType }),
+      });
+
+      if (!submitRes.ok) {
+        const errData = await submitRes.json();
+        throw new Error(errData.error || `Failed to submit ${formType}`);
+      }
+
+      toast.success(`${formType.replace(/_/g, " ")} submitted successfully for review`);
+      await fetchReport();
+    } catch (err: any) {
+      toast.error(err.message || "An error occurred during submission");
+    } finally {
+      setSubmittingForm(null);
+    }
+  };
+
+  // Submit both Attendance & Evaluation in the same session
+  const handleSubmitBoth = async () => {
+    if (!checkAComplete() || !checkRComplete()) {
+      toast.error("Please fill all required fields in both Attendance and Evaluation forms.");
+      return;
+    }
+
+    setSubmittingForm("BOTH");
+    try {
+      // 1. Save both forms
       const saveRes = await fetch(`/api/reports/${reportId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          verification: vForm,
           attendance: aForm,
           report: rForm,
         }),
       });
 
-      if (!saveRes.ok) throw new Error("Failed to save final updates before submission.");
-
-      // 2. Submit the report
-      const submitRes = await fetch(`/api/reports/${reportId}/submit`, {
-        method: "POST",
-      });
-
-      if (!submitRes.ok) {
-        const data = await submitRes.json();
-        throw new Error(data.error || "Failed to submit report");
+      if (!saveRes.ok) {
+        const saveErr = await saveRes.json();
+        throw new Error(saveErr.error || "Failed to save forms.");
       }
 
-      toast.success("Meeting Report Submitted Successfully");
-      router.push("/coordinator/dashboard");
+      // 2. Submit Attendance
+      const submitARes = await fetch(`/api/reports/${reportId}/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ formType: "ATTENDANCE" }),
+      });
+
+      if (!submitARes.ok) {
+        const errA = await submitARes.json();
+        throw new Error(errA.error || "Failed to submit Attendance Form");
+      }
+
+      // 3. Submit Evaluation
+      const submitRRes = await fetch(`/api/reports/${reportId}/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ formType: "EVALUATION" }),
+      });
+
+      if (!submitRRes.ok) {
+        const errR = await submitRRes.json();
+        throw new Error(errR.error || "Failed to submit Evaluation Form");
+      }
+
+      toast.success("Both Attendance and Evaluation Forms submitted successfully!");
+      await fetchReport();
     } catch (err: any) {
-      toast.error(err.message || "An error occurred during submission");
+      toast.error(err.message || "An error occurred while submitting both forms.");
     } finally {
-      setSubmitting(false);
+      setSubmittingForm(null);
     }
   };
 
@@ -287,12 +368,16 @@ export default function MeetingReportWizardPage() {
     return (
       <DashboardLayout>
         <div className="py-24 flex flex-col items-center justify-center gap-3">
-          <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
-          <span className="text-sm font-bold uppercase tracking-wider text-slate-500">Loading meeting report builder...</span>
+          <Loader2 className="h-10 w-10 animate-spin text-indigo-400" />
+          <span className="text-sm font-bold uppercase tracking-wider text-slate-500">Loading meeting forms...</span>
         </div>
       </DashboardLayout>
     );
   }
+
+  const vComments = comments.filter((c) => c.formType === "VERIFICATION" || !c.formType);
+  const aComments = comments.filter((c) => c.formType === "ATTENDANCE");
+  const rComments = comments.filter((c) => c.formType === "EVALUATION" || c.formType === "AFTER_MEETING");
 
   return (
     <DashboardLayout>
@@ -301,665 +386,1027 @@ export default function MeetingReportWizardPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <button
             onClick={() => router.push("/coordinator/dashboard")}
-            className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-white transition-colors cursor-pointer"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Dashboard
           </button>
-          
-          <div className="flex items-center gap-3 self-end sm:self-auto">
-            <button
-              onClick={handleSaveDraft}
-              disabled={saving || submitting}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm disabled:opacity-50 cursor-pointer active:scale-[0.98]"
-            >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Save Draft
-            </button>
-            <button
-              onClick={handleSubmitReport}
-              disabled={!canSubmit || saving || submitting}
-              className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-md transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              Submit Report
-            </button>
-          </div>
         </div>
 
-        {/* Report Overview Panel */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-250/60 dark:border-slate-800/80 rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4 sm:gap-6">
-          <div>
-            <h2 className="text-sm sm:text-base font-black text-slate-800 dark:text-white uppercase tracking-wider flex flex-wrap items-center gap-2">
-              Meeting Report Builder
-              <span className="text-xs font-bold text-slate-400 font-mono tracking-normal">({reportNumber})</span>
-            </h2>
-            <p className="text-[10px] text-slate-450 dark:text-slate-500 font-bold uppercase tracking-widest mt-1">
-              Status: <span className="text-blue-600 dark:text-blue-400 font-black">{reportStatus.replace(/_/g, " ")}</span>
-            </p>
-          </div>
-
-          {/* Progress Tracker */}
-          <div className="flex-1 max-w-md space-y-2 w-full">
-            <div className="flex justify-between items-center text-xs font-bold text-slate-500">
-              <span>Overall Completion</span>
-              <span className="text-blue-600 dark:text-blue-450 font-black">{getOverallPercent()}%</span>
-            </div>
-            <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-linear-to-r from-blue-500 to-indigo-500 transition-all duration-505" 
-                style={{ width: `${getOverallPercent()}%` }}
-              ></div>
-            </div>
-          </div>
-        </div>
-
-        {/* Reviewer Comments Alert */}
-        {comments.length > 0 && reportStatus === "REQUEST_CHANGES" && (
-          <div className="bg-amber-50 dark:bg-amber-955/10 border border-amber-200/50 dark:border-amber-900/40 rounded-2xl p-4 sm:p-5 flex items-start gap-4 animate-fadeIn">
-            <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-            <div className="space-y-1.5 text-xs text-amber-800 dark:text-amber-300">
-              <h4 className="font-black uppercase tracking-wider">Changes Requested by Reviewer</h4>
-              <p className="font-semibold whitespace-pre-wrap leading-relaxed italic">
-                "{comments[0].comment}"
+        {/* Meeting Overview Panel */}
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-6 shadow-sm backdrop-blur-sm space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 font-mono text-xs font-black tracking-wider border border-indigo-500/30">
+                  {reportNumber}
+                </span>
+                <h2 className="text-lg font-black text-white uppercase tracking-wider">
+                  {reportTitle}
+                </h2>
+              </div>
+              <p className="text-xs text-indigo-200/60 font-medium mt-1">
+                One meeting with three linked lifecycle forms: Verification → Attendance → Evaluation
               </p>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-amber-600/80 dark:text-amber-400/80">
-                &bull; Requested by {comments[0].reviewer?.name || comments[0].reviewer?.username} ({comments[0].reviewer?.role?.replace(/_/g, " ")}) on {new Date(comments[0].createdAt).toLocaleDateString()}
+            </div>
+
+            {/* Quick Status Badges for all 3 forms */}
+            <div className="flex flex-wrap items-center gap-3 bg-white/5 border border-white/5 p-3 rounded-xl">
+              <div className="flex flex-col gap-1">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">1. Verification</span>
+                <FormStatusBadge status={vStatus} size="sm" />
+              </div>
+              <div className="h-6 w-px bg-white/10 hidden sm:block" />
+              <div className="flex flex-col gap-1">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">2. Attendance</span>
+                <FormStatusBadge status={aStatus} isLocked={isAttendanceLocked} size="sm" />
+              </div>
+              <div className="h-6 w-px bg-white/10 hidden sm:block" />
+              <div className="flex flex-col gap-1">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">3. Evaluation</span>
+                <FormStatusBadge status={rStatus} isLocked={isEvaluationLocked} size="sm" />
               </div>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Section Steps Navigation Tabs */}
-        <div className="grid grid-cols-3 border border-slate-200 dark:border-slate-805 bg-slate-105/50 dark:bg-slate-950 p-1 sm:p-1.5 rounded-2xl gap-1 sm:gap-2">
+        {/* Forms Navigation Tabs */}
+        <div className="grid grid-cols-3 border border-white/10 bg-white/5 p-1.5 rounded-2xl gap-2">
           <button
             onClick={() => setActiveStep(1)}
-            className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 px-1 sm:px-2 rounded-xl text-[10px] sm:text-xs font-bold transition-all cursor-pointer min-h-11 ${
+            className={`flex flex-col sm:flex-row items-center justify-center gap-2 py-3 px-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer min-h-12 ${
               activeStep === 1 
-                ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-100 dark:border-slate-800" 
-                : "text-slate-555 hover:text-slate-800 dark:hover:text-slate-350"
+                ? "bg-white/15 text-white shadow-sm border border-indigo-400/30" 
+                : "text-indigo-200/50 hover:text-white"
             }`}
           >
-            <FileCheck className={`h-4 w-4 sm:h-4.5 sm:w-4.5 ${activeStep === 1 ? "text-blue-500" : "text-slate-400"}`} />
-            <span className="text-center sm:text-left truncate">
-              <span className="hidden sm:inline">1. Verification</span>
-              <span className="sm:hidden">1. Verify</span> ({getVPercent()}%)
-            </span>
+            <FileCheck className={`h-4.5 w-4.5 ${activeStep === 1 ? "text-indigo-300" : "text-slate-400"}`} />
+            <div className="flex flex-col items-center sm:items-start leading-tight">
+              <span>1. Verification</span>
+              <span className="text-[9px] opacity-70">({getVPercent()}%)</span>
+            </div>
           </button>
 
           <button
             onClick={() => setActiveStep(2)}
-            className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 px-1 sm:px-2 rounded-xl text-[10px] sm:text-xs font-bold transition-all cursor-pointer min-h-11 ${
+            className={`flex flex-col sm:flex-row items-center justify-center gap-2 py-3 px-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer min-h-12 ${
               activeStep === 2 
-                ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-100 dark:border-slate-800" 
-                : "text-slate-555 hover:text-slate-800 dark:hover:text-slate-350"
+                ? "bg-white/15 text-white shadow-sm border border-indigo-400/30" 
+                : "text-indigo-200/50 hover:text-white"
             }`}
           >
-            <ClipboardList className={`h-4 w-4 sm:h-4.5 sm:w-4.5 ${activeStep === 2 ? "text-blue-500" : "text-slate-400"}`} />
-            <span className="text-center sm:text-left truncate">
-              <span className="hidden sm:inline">2. Attendance</span>
-              <span className="sm:hidden">2. Attend</span> ({getAPercent()}%)
-            </span>
+            {isAttendanceLocked ? (
+              <Lock className="h-4.5 w-4.5 text-amber-400" />
+            ) : (
+              <FileSpreadsheet className={`h-4.5 w-4.5 ${activeStep === 2 ? "text-indigo-300" : "text-slate-400"}`} />
+            )}
+            <div className="flex flex-col items-center sm:items-start leading-tight">
+              <span>2. Attendance</span>
+              <span className="text-[9px] opacity-70">
+                {isAttendanceLocked ? "Locked" : `(${getAPercent()}%)`}
+              </span>
+            </div>
           </button>
 
           <button
             onClick={() => setActiveStep(3)}
-            className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 px-1 sm:px-2 rounded-xl text-[10px] sm:text-xs font-bold transition-all cursor-pointer min-h-11 ${
+            className={`flex flex-col sm:flex-row items-center justify-center gap-2 py-3 px-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer min-h-12 ${
               activeStep === 3 
-                ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-100 dark:border-slate-800" 
-                : "text-slate-555 hover:text-slate-800 dark:hover:text-slate-350"
+                ? "bg-white/15 text-white shadow-sm border border-indigo-400/30" 
+                : "text-indigo-200/50 hover:text-white"
             }`}
           >
-            <FileSpreadsheet className={`h-4 w-4 sm:h-4.5 sm:w-4.5 ${activeStep === 3 ? "text-blue-500" : "text-slate-400"}`} />
-            <span className="text-center sm:text-left truncate">
-              <span className="hidden sm:inline">3. After Meeting</span>
-              <span className="sm:hidden">3. Outcome</span> ({getRPercent()}%)
-            </span>
+            {isEvaluationLocked ? (
+              <Lock className="h-4.5 w-4.5 text-amber-400" />
+            ) : (
+              <ClipboardList className={`h-4.5 w-4.5 ${activeStep === 3 ? "text-indigo-300" : "text-slate-400"}`} />
+            )}
+            <div className="flex flex-col items-center sm:items-start leading-tight">
+              <span>3. Evaluation</span>
+              <span className="text-[9px] opacity-70">
+                {isEvaluationLocked ? "Locked" : `(${getRPercent()}%)`}
+              </span>
+            </div>
           </button>
         </div>
 
-        {/* Wizard Form Panels */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-250/60 dark:border-slate-800/80 rounded-2xl p-4 sm:p-6 md:p-8 shadow-sm">
-          
-          {/* STEP 1: VERIFICATION SHEET */}
-          {activeStep === 1 && (
-            <div className="space-y-6 animate-fadeIn">
-              <h3 className="text-sm font-black text-slate-800 dark:text-white pb-3 border-b border-slate-100 dark:border-slate-800 uppercase tracking-wider">
-                Section 1: Verification Sheet (Before Meeting)
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Convener Name <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    required
-                    value={vForm.convenerName}
-                    onChange={(e) => setVForm({ ...vForm, convenerName: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                    placeholder="E.g., Pastor David"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Church / Ministry Name <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    required
-                    value={vForm.churchMinistryName}
-                    onChange={(e) => setVForm({ ...vForm, churchMinistryName: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                    placeholder="E.g., Grace Fellowship"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">State / District / City <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    required
-                    value={vForm.stateDistrictCity}
-                    onChange={(e) => setVForm({ ...vForm, stateDistrictCity: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                    placeholder="E.g., AP, Krishna, Vijayawada"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Contact Number <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    required
-                    value={vForm.contactNumber}
-                    onChange={(e) => setVForm({ ...vForm, contactNumber: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                    placeholder="E.g., +91 98765 43210"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Meeting Dates <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    required
-                    value={vForm.meetingDates}
-                    onChange={(e) => setVForm({ ...vForm, meetingDates: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                    placeholder="E.g., July 20-22, 2026"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Days <span className="text-red-500">*</span></label>
-                    <input
-                      type="number"
-                      required
-                      min={1}
-                      value={vForm.numberOfDays}
-                      onChange={(e) => setVForm({ ...vForm, numberOfDays: parseInt(e.target.value) || 1 })}
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Expected Attendance <span className="text-red-500">*</span></label>
-                    <input
-                      type="number"
-                      required
-                      min={1}
-                      value={vForm.expectedAttendance}
-                      onChange={(e) => setVForm({ ...vForm, expectedAttendance: parseInt(e.target.value) || 0 })}
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Years of Ministry</label>
-                  <input
-                    type="number"
-                    value={vForm.yearsOfMinistry}
-                    onChange={(e) => setVForm({ ...vForm, yearsOfMinistry: parseInt(e.target.value) || 0 })}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Church Members</label>
-                    <input
-                      type="number"
-                      value={vForm.churchMembers}
-                      onChange={(e) => setVForm({ ...vForm, churchMembers: parseInt(e.target.value) || 0 })}
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Workers / Leaders</label>
-                    <input
-                      type="number"
-                      value={vForm.workersLeaders}
-                      onChange={(e) => setVForm({ ...vForm, workersLeaders: parseInt(e.target.value) || 0 })}
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                    />
-                  </div>
-                </div>
+        {/* STEP 1: VERIFICATION SHEET */}
+        {activeStep === 1 && (
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 sm:p-8 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-white/10">
+              <div>
+                <h3 className="text-base font-black text-white uppercase tracking-wider flex items-center gap-2">
+                  1. Verification Form (Pre-Meeting Approval)
+                </h3>
+                <p className="text-xs text-indigo-200/60 mt-0.5">
+                  Must be submitted and approved by Admin to unlock the Attendance and Evaluation forms.
+                </p>
               </div>
-
-              {/* Questionnaire & Arrangements */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-slate-100 dark:border-slate-800">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">How did you come to know about WCM?</label>
-                  <select
-                    value={vForm.knowAboutWcm}
-                    onChange={(e) => setVForm({ ...vForm, knowAboutWcm: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm cursor-pointer"
-                  >
-                    <option value="Other Church Ministers">Other Church Ministers</option>
-                    <option value="YouTube / Social Media">YouTube / Social Media</option>
-                    <option value="WCM Books / Magazines">WCM Books / Magazines</option>
-                    <option value="Word of Mouth">Word of Mouth</option>
-                  </select>
-                </div>
-
-                <div className="flex flex-col gap-4 justify-center">
-                  <label className="flex items-center gap-3 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={vForm.readWcmBooks}
-                      onChange={(e) => setVForm({ ...vForm, readWcmBooks: e.target.checked })}
-                      className="h-5 w-5 rounded border-slate-350 text-blue-600 focus:ring-blue-500/20 dark:bg-slate-950 dark:border-slate-800 cursor-pointer"
-                    />
-                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Have you read WCM books?</span>
-                  </label>
-
-                  <label className="flex items-center gap-3 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={vForm.attendedProphetMeeting}
-                      onChange={(e) => setVForm({ ...vForm, attendedProphetMeeting: e.target.checked })}
-                      className="h-5 w-5 rounded border-slate-355 text-blue-600 focus:ring-blue-500/20 dark:bg-slate-950 dark:border-slate-800 cursor-pointer"
-                    />
-                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Have you attended Prophet Kiran Paul Garu's meeting?</span>
-                  </label>
-                </div>
-
-                <div>
-                  <h4 className="font-bold text-sm text-slate-850 dark:text-white mb-4">Arrangements Check</h4>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Meeting Hall / Stage</label>
-                      <input
-                        type="text"
-                        value={vForm.meetingHallStage}
-                        onChange={(e) => setVForm({ ...vForm, meetingHallStage: e.target.value })}
-                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Sound System</label>
-                      <input
-                        type="text"
-                        value={vForm.soundSystem}
-                        onChange={(e) => setVForm({ ...vForm, soundSystem: e.target.value })}
-                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-8">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Accommodation for Team</label>
-                      <input
-                        type="text"
-                        value={vForm.accommodationTeam}
-                        onChange={(e) => setVForm({ ...vForm, accommodationTeam: e.target.value })}
-                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-955 px-4 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Volunteer Support</label>
-                      <input
-                        type="text"
-                        value={vForm.volunteerSupport}
-                        onChange={(e) => setVForm({ ...vForm, volunteerSupport: e.target.value })}
-                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-955 px-4 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Wizard Steps Controller */}
-              <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-                <button
-                  onClick={() => setActiveStep(2)}
-                  className="inline-flex items-center gap-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 hover:bg-blue-100 transition-colors cursor-pointer border border-blue-500/10 active:scale-[0.96]"
-                >
-                  Next: Attendance Record
-                  <ArrowRight className="h-4 w-4" />
-                </button>
+              <div className="flex items-center gap-3">
+                <FormStatusBadge status={vStatus} />
               </div>
             </div>
-          )}
 
-          {/* STEP 2: ATTENDANCE RECORD */}
-          {activeStep === 2 && (
-            <div className="space-y-6 animate-fadeIn">
-              <h3 className="text-sm font-black text-slate-800 dark:text-white pb-3 border-b border-slate-100 dark:border-slate-800 uppercase tracking-wider">
-                Section 2: Attendance Record (During Meeting)
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Meeting Date <span className="text-red-500">*</span></label>
-                  <input
-                    type="date"
-                    required
-                    value={aForm.date}
-                    onChange={(e) => setAForm({ ...aForm, date: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                  />
+            {/* Rejection Notice & Comments if rejected */}
+            {vStatus === "REJECTED" && (
+              <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 space-y-2">
+                <div className="flex items-center gap-2 text-rose-400 font-bold text-xs uppercase tracking-wider">
+                  <AlertCircle className="h-4 w-4" />
+                  <span>Verification Form Returned for Corrections</span>
                 </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Meeting Location <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    required
-                    value={aForm.location}
-                    onChange={(e) => setAForm({ ...aForm, location: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-955 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                    placeholder="E.g., Hall 3, Vijayawada"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Field Executer <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    required
-                    value={aForm.fieldExecuter}
-                    onChange={(e) => setAForm({ ...aForm, fieldExecuter: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-955 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                    placeholder="E.g., Bro. Timothy"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Coordinator Name <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    required
-                    value={aForm.coordinator}
-                    onChange={(e) => setAForm({ ...aForm, coordinator: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-955 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                    placeholder="E.g., John"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Members Attended <span className="text-red-500">*</span></label>
-                    <input
-                      type="number"
-                      required
-                      min={0}
-                      value={aForm.membersAttended}
-                      onChange={(e) => setAForm({ ...aForm, membersAttended: parseInt(e.target.value) || 0 })}
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-955 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Pastors Attended <span className="text-red-500">*</span></label>
-                    <input
-                      type="number"
-                      required
-                      min={0}
-                      value={aForm.pastorsAttended}
-                      onChange={(e) => setAForm({ ...aForm, pastorsAttended: parseInt(e.target.value) || 0 })}
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-955 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Remarks / Observations <span className="text-red-500">*</span></label>
-                  <textarea
-                    required
-                    value={aForm.remarks}
-                    onChange={(e) => setAForm({ ...aForm, remarks: e.target.value })}
-                    rows={3}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-955 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm resize-none"
-                    placeholder="Enter main attendance summary and highlights..."
-                  />
-                </div>
-              </div>
-
-              {/* Wizard Steps Controller */}
-              <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex flex-wrap justify-between items-center gap-3">
-                <button
-                  onClick={() => setActiveStep(1)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-250 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-250 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer active:scale-[0.96]"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Back: Verification
-                </button>
-                <button
-                  onClick={() => setActiveStep(3)}
-                  className="inline-flex items-center gap-2 rounded-xl bg-blue-50 dark:bg-blue-955 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 hover:bg-blue-105 transition-colors cursor-pointer border border-blue-500/10 active:scale-[0.96]"
-                >
-                  Next: After Meeting Sheet
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 3: AFTER MEETING SHEET */}
-          {activeStep === 3 && (
-            <div className="space-y-6 animate-fadeIn">
-              <h3 className="text-sm font-black text-slate-800 dark:text-white pb-3 border-b border-slate-100 dark:border-slate-800 uppercase tracking-wider">
-                Section 3: After Meeting Sheet (After Meeting)
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Overall Meeting Outcome <span className="text-red-500">*</span></label>
-                  <textarea
-                    required
-                    value={rForm.overallMeetingOutcome}
-                    onChange={(e) => setRForm({ ...rForm, overallMeetingOutcome: e.target.value })}
-                    rows={3}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm resize-none"
-                    placeholder="E.g., Great response from pastors, many bought books..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Congregation Response <span className="text-red-500">*</span></label>
-                  <textarea
-                    required
-                    value={rForm.congregationResponse}
-                    onChange={(e) => setRForm({ ...rForm, congregationResponse: e.target.value })}
-                    rows={3}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm resize-none"
-                    placeholder="Describe how the congregation responded during prayers..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Strengths Observed <span className="text-red-500">*</span></label>
-                  <textarea
-                    required
-                    value={rForm.strengthsObserved}
-                    onChange={(e) => setRForm({ ...rForm, strengthsObserved: e.target.value })}
-                    rows={3}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm resize-none"
-                    placeholder="List strong points..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Challenges Observed <span className="text-red-500">*</span></label>
-                  <textarea
-                    required
-                    value={rForm.challengesObserved}
-                    onChange={(e) => setRForm({ ...rForm, challengesObserved: e.target.value })}
-                    rows={3}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm resize-none"
-                    placeholder="List challenges..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Opportunity for WCM <span className="text-red-500">*</span></label>
-                  <textarea
-                    required
-                    value={rForm.opportunityForWcm}
-                    onChange={(e) => setRForm({ ...rForm, opportunityForWcm: e.target.value })}
-                    rows={3}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm resize-none"
-                    placeholder="Describe how WCM can support further outreach..."
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Local Church Influence</label>
-                    <input
-                      type="text"
-                      value={rForm.localChurchInfluence}
-                      onChange={(e) => setRForm({ ...rForm, localChurchInfluence: e.target.value })}
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                      placeholder="Low / Medium / High"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Network of Pastors Established</label>
-                    <input
-                      type="text"
-                      value={rForm.networkOfPastors}
-                      onChange={(e) => setRForm({ ...rForm, networkOfPastors: e.target.value })}
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-4 md:col-span-2">
-                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Future Opportunities (Check all that apply)</label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {opportunitiesList.map((op) => (
-                      <button
-                        key={op}
-                        type="button"
-                        onClick={() => toggleFutureOpportunity(op)}
-                        className={`py-2.5 px-3 rounded-xl border text-xs font-bold text-center transition-all cursor-pointer ${
-                          rForm.futureOpportunities.includes(op)
-                            ? "bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-950/20 dark:border-blue-900/30 dark:text-blue-400"
-                            : "border-slate-200 dark:border-slate-800 text-slate-650 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-850"
-                        }`}
-                      >
-                        {op}
-                      </button>
+                {vComments.length > 0 && (
+                  <div className="text-xs text-rose-200/90 pl-6 space-y-1">
+                    {vComments.map((c, i) => (
+                      <p key={i}>"{c.comment}"</p>
                     ))}
                   </div>
-                </div>
+                )}
+                <p className="text-[11px] text-rose-300/70 pl-6">
+                  Please update the highlighted information and re-submit for review.
+                </p>
+              </div>
+            )}
 
-                <div className="grid grid-cols-2 gap-4">
+            {/* Verification Inputs */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  Convener Name *
+                </label>
+                <input
+                  type="text"
+                  disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
+                  value={vForm.convenerName}
+                  onChange={(e) => setVForm({ ...vForm, convenerName: e.target.value })}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                  placeholder="Convener / Host Pastor"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  Church / Ministry Name *
+                </label>
+                <input
+                  type="text"
+                  disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
+                  value={vForm.churchMinistryName}
+                  onChange={(e) => setVForm({ ...vForm, churchMinistryName: e.target.value })}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                  placeholder="Church name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  State / District / City *
+                </label>
+                <input
+                  type="text"
+                  disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
+                  value={vForm.stateDistrictCity}
+                  onChange={(e) => setVForm({ ...vForm, stateDistrictCity: e.target.value })}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                  placeholder="e.g. Hyderabad, Telangana"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  Contact Number *
+                </label>
+                <input
+                  type="text"
+                  disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
+                  value={vForm.contactNumber}
+                  onChange={(e) => setVForm({ ...vForm, contactNumber: e.target.value })}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                  placeholder="+91 XXXXXXXXXX"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  Meeting Dates *
+                </label>
+                <input
+                  type="text"
+                  disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
+                  value={vForm.meetingDates}
+                  onChange={(e) => setVForm({ ...vForm, meetingDates: e.target.value })}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                  placeholder="e.g. Nov 15-17, 2026"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    Days *
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
+                    value={vForm.numberOfDays}
+                    onChange={(e) => setVForm({ ...vForm, numberOfDays: parseInt(e.target.value) || 1 })}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    Expected Attendance *
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
+                    value={vForm.expectedAttendance}
+                    onChange={(e) => setVForm({ ...vForm, expectedAttendance: parseInt(e.target.value) || 0 })}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  Years of Ministry
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
+                  value={vForm.yearsOfMinistry}
+                  onChange={(e) => setVForm({ ...vForm, yearsOfMinistry: parseInt(e.target.value) || 0 })}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  Church Members
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
+                  value={vForm.churchMembers}
+                  onChange={(e) => setVForm({ ...vForm, churchMembers: parseInt(e.target.value) || 0 })}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  Workers & Leaders
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
+                  value={vForm.workersLeaders}
+                  onChange={(e) => setVForm({ ...vForm, workersLeaders: parseInt(e.target.value) || 0 })}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                />
+              </div>
+
+              <div className="md:col-span-2 pt-3 border-t border-white/10">
+                <span className="text-[11px] font-black uppercase tracking-wider text-indigo-300 block mb-3">
+                  WCM Connection & Background
+                </span>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Following WCM Members Count</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      How they know about WCM
+                    </label>
+                    <select
+                      disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
+                      value={vForm.knowAboutWcm}
+                      onChange={(e) => setVForm({ ...vForm, knowAboutWcm: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                    >
+                      <option value="YouTube Messages" className="bg-slate-900">YouTube Messages</option>
+                      <option value="WCM Books" className="bg-slate-900">WCM Books</option>
+                      <option value="Friends / Relatives" className="bg-slate-900">Friends / Relatives</option>
+                      <option value="Church Leaders" className="bg-slate-900">Church Leaders</option>
+                      <option value="Other Church Ministers" className="bg-slate-900">Other Church Ministers</option>
+                      <option value="Social Media" className="bg-slate-900">Social Media</option>
+                      <option value="Other" className="bg-slate-900">Other</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Read WCM Books?
+                    </label>
+                    <select
+                      disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
+                      value={vForm.readWcmBooks ? "true" : "false"}
+                      onChange={(e) => setVForm({ ...vForm, readWcmBooks: e.target.value === "true" })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                    >
+                      <option value="true" className="bg-slate-900">Yes</option>
+                      <option value="false" className="bg-slate-900">No</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Attended Prophet Kiran Meeting?
+                    </label>
+                    <select
+                      disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
+                      value={vForm.attendedProphetMeeting ? "true" : "false"}
+                      onChange={(e) => setVForm({ ...vForm, attendedProphetMeeting: e.target.value === "true" })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                    >
+                      <option value="true" className="bg-slate-900">Yes</option>
+                      <option value="false" className="bg-slate-900">No</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="md:col-span-2 pt-3 border-t border-white/10">
+                <span className="text-[11px] font-black uppercase tracking-wider text-indigo-300 block mb-3">
+                  Meeting Arrangements & Facilities
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Meeting Hall / Stage
+                    </label>
+                    <select
+                      disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
+                      value={vForm.meetingHallStage}
+                      onChange={(e) => setVForm({ ...vForm, meetingHallStage: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                    >
+                      <option value="Good" className="bg-slate-900">Good</option>
+                      <option value="Average" className="bg-slate-900">Average</option>
+                      <option value="Poor" className="bg-slate-900">Poor</option>
+                      <option value="Arranged By Host" className="bg-slate-900">Arranged By Host</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Sound System
+                    </label>
+                    <select
+                      disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
+                      value={vForm.soundSystem}
+                      onChange={(e) => setVForm({ ...vForm, soundSystem: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                    >
+                      <option value="Good" className="bg-slate-900">Good</option>
+                      <option value="Average" className="bg-slate-900">Average</option>
+                      <option value="Poor" className="bg-slate-900">Poor</option>
+                      <option value="Arranged By Host" className="bg-slate-900">Arranged By Host</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Accommodation Team
+                    </label>
+                    <select
+                      disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
+                      value={vForm.accommodationTeam}
+                      onChange={(e) => setVForm({ ...vForm, accommodationTeam: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                    >
+                      <option value="Arranged" className="bg-slate-900">Arranged</option>
+                      <option value="Good" className="bg-slate-900">Good</option>
+                      <option value="Poor" className="bg-slate-900">Poor</option>
+                      <option value="Arranged By Host" className="bg-slate-900">Arranged By Host</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Volunteer Support
+                    </label>
+                    <select
+                      disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
+                      value={vForm.volunteerSupport}
+                      onChange={(e) => setVForm({ ...vForm, volunteerSupport: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                    >
+                      <option value="Strong" className="bg-slate-900">Strong</option>
+                      <option value="Moderate" className="bg-slate-900">Moderate</option>
+                      <option value="Needs Help" className="bg-slate-900">Needs Help</option>
+                      <option value="Arranged By Host" className="bg-slate-900">Arranged By Host</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Bar for Verification */}
+            <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+              <span className="text-xs text-indigo-200/60 font-medium">
+                {vStatus === "COMPLETED" ? (
+                  <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+                    <CheckCircle2 className="h-4 w-4" /> Verification Approved. Attendance & Evaluation forms are unlocked.
+                  </span>
+                ) : vStatus === "PENDING" || vStatus === "REJECTED" ? (
+                  "Complete all required fields marked with * and submit."
+                ) : (
+                  <span className="text-amber-300 font-bold flex items-center gap-1.5">
+                    <Clock className="h-4 w-4" /> Form submitted and currently under review.
+                  </span>
+                )}
+              </span>
+
+              {(vStatus === "PENDING" || vStatus === "REJECTED") && (
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => handleSaveForm("VERIFICATION")}
+                    disabled={saving || submittingForm !== null}
+                    className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Draft"}
+                  </button>
+                  <button
+                    onClick={() => handleSubmitForm("VERIFICATION")}
+                    disabled={submittingForm !== null || !checkVComplete()}
+                    className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-md disabled:opacity-50"
+                  >
+                    {submittingForm === "VERIFICATION" ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Submit Verification Form"
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* STEP 2: ATTENDANCE RECORD */}
+        {activeStep === 2 && (
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 sm:p-8 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-white/10">
+              <div>
+                <h3 className="text-base font-black text-white uppercase tracking-wider flex items-center gap-2">
+                  2. Attendance Form (Post-Meeting)
+                </h3>
+                <p className="text-xs text-indigo-200/60 mt-0.5">
+                  Record actual meeting attendance numbers and field executers.
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <FormStatusBadge status={aStatus} isLocked={isAttendanceLocked} />
+              </div>
+            </div>
+
+            {isAttendanceLocked ? (
+              <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-8 text-center space-y-4">
+                <div className="h-16 w-16 mx-auto rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center">
+                  <Lock className="h-8 w-8" />
+                </div>
+                <div>
+                  <h4 className="text-base font-bold text-white uppercase tracking-wider">Attendance Form Locked</h4>
+                  <p className="text-xs text-indigo-200/70 mt-1 max-w-md mx-auto">
+                    This form is locked until the Verification Form completes the approval sequence (Coordinator → Zonal Leader → State Leader → Admin) and receives final Admin approval.
+                  </p>
+                </div>
+                <div className="inline-flex items-center gap-2 pt-2">
+                  <span className="text-xs text-indigo-200/50">Current Verification Status:</span>
+                  <FormStatusBadge status={vStatus} />
+                </div>
+                <div>
+                  <button
+                    onClick={() => setActiveStep(1)}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                  >
+                    <FileCheck className="h-4 w-4" /> Go to Verification Form
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {aStatus === "REJECTED" && (
+                  <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 space-y-2">
+                    <div className="flex items-center gap-2 text-rose-400 font-bold text-xs uppercase tracking-wider">
+                      <AlertCircle className="h-4 w-4" />
+                      <span>Attendance Form Returned for Corrections</span>
+                    </div>
+                    {aComments.length > 0 && (
+                      <div className="text-xs text-rose-200/90 pl-6 space-y-1">
+                        {aComments.map((c, i) => (
+                          <p key={i}>"{c.comment}"</p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Meeting Date *
+                    </label>
+                    <input
+                      type="date"
+                      disabled={aStatus === "COMPLETED" || aStatus === "SUBMITTED" || aStatus === "FORWARDED_TO_STATE" || aStatus === "FORWARDED_TO_ADMIN"}
+                      value={aForm.date}
+                      onChange={(e) => setAForm({ ...aForm, date: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Location / Venue *
+                    </label>
+                    <input
+                      type="text"
+                      disabled={aStatus === "COMPLETED" || aStatus === "SUBMITTED" || aStatus === "FORWARDED_TO_STATE" || aStatus === "FORWARDED_TO_ADMIN"}
+                      value={aForm.location}
+                      onChange={(e) => setAForm({ ...aForm, location: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      placeholder="Meeting hall name and location"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Field Executer *
+                    </label>
+                    <input
+                      type="text"
+                      disabled={aStatus === "COMPLETED" || aStatus === "SUBMITTED" || aStatus === "FORWARDED_TO_STATE" || aStatus === "FORWARDED_TO_ADMIN"}
+                      value={aForm.fieldExecuter}
+                      onChange={(e) => setAForm({ ...aForm, fieldExecuter: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      placeholder="Name of person executing on field"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Coordinator Name *
+                    </label>
+                    <input
+                      type="text"
+                      disabled={aStatus === "COMPLETED" || aStatus === "SUBMITTED" || aStatus === "FORWARDED_TO_STATE" || aStatus === "FORWARDED_TO_ADMIN"}
+                      value={aForm.coordinator}
+                      onChange={(e) => setAForm({ ...aForm, coordinator: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      placeholder="Your coordinator name"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Members Attended
+                    </label>
                     <input
                       type="number"
                       min={0}
-                      value={rForm.followingWcmMembersCount}
-                      onChange={(e) => setRForm({ ...rForm, followingWcmMembersCount: parseInt(e.target.value) || 0 })}
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-955 px-4 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
+                      disabled={aStatus === "COMPLETED" || aStatus === "SUBMITTED" || aStatus === "FORWARDED_TO_STATE" || aStatus === "FORWARDED_TO_ADMIN"}
+                      value={aForm.membersAttended}
+                      onChange={(e) => setAForm({ ...aForm, membersAttended: parseInt(e.target.value) || 0 })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
                     />
                   </div>
-                  <div className="flex items-center pt-5">
-                    <label className="flex items-center gap-3 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={rForm.continueFellowship}
-                        onChange={(e) => setRForm({ ...rForm, continueFellowship: e.target.checked })}
-                        className="h-5 w-5 rounded border-slate-350 text-blue-600 focus:ring-blue-500/20 dark:bg-slate-955 dark:border-slate-800 cursor-pointer"
-                      />
-                      <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Continue Fellowship?</span>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Pastors Attended
                     </label>
+                    <input
+                      type="number"
+                      min={0}
+                      disabled={aStatus === "COMPLETED" || aStatus === "SUBMITTED" || aStatus === "FORWARDED_TO_STATE" || aStatus === "FORWARDED_TO_ADMIN"}
+                      value={aForm.pastorsAttended}
+                      onChange={(e) => setAForm({ ...aForm, pastorsAttended: parseInt(e.target.value) || 0 })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Total Headcount
+                    </label>
+                    <div className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-emerald-400 text-sm font-black flex items-center h-10.5">
+                      {(Number(aForm.membersAttended) || 0) + (Number(aForm.pastorsAttended) || 0)} Total Attendees
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Remarks / Notes *
+                    </label>
+                    <textarea
+                      rows={3}
+                      disabled={aStatus === "COMPLETED" || aStatus === "SUBMITTED" || aStatus === "FORWARDED_TO_STATE" || aStatus === "FORWARDED_TO_ADMIN"}
+                      value={aForm.remarks}
+                      onChange={(e) => setAForm({ ...aForm, remarks: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      placeholder="Special observations or notes about meeting attendance..."
+                    />
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Coordinator Name <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    required
-                    value={rForm.coordinatorName}
-                    onChange={(e) => setRForm({ ...rForm, coordinatorName: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                    placeholder="Your Name"
-                  />
-                </div>
+                <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-xs text-indigo-200/60 font-medium">
+                    {aStatus === "COMPLETED" ? (
+                      <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+                        <CheckCircle2 className="h-4 w-4" /> Attendance Form Approved & Completed.
+                      </span>
+                    ) : aStatus === "PENDING" || aStatus === "REJECTED" ? (
+                      "Complete attendance details and submit independently or with Evaluation."
+                    ) : (
+                      <span className="text-amber-300 font-bold flex items-center gap-1.5">
+                        <Clock className="h-4 w-4" /> Attendance under review.
+                      </span>
+                    )}
+                  </span>
 
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Designation <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    required
-                    value={rForm.designation}
-                    onChange={(e) => setRForm({ ...rForm, designation: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                    placeholder="E.g., Coordinator"
-                  />
+                  {(aStatus === "PENDING" || aStatus === "REJECTED") && (
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => handleSaveForm("ATTENDANCE")}
+                        disabled={saving || submittingForm !== null}
+                        className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Draft"}
+                      </button>
+                      <button
+                        onClick={() => handleSubmitForm("ATTENDANCE")}
+                        disabled={submittingForm !== null || !checkAComplete()}
+                        className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-md disabled:opacity-50"
+                      >
+                        {submittingForm === "ATTENDANCE" ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "Submit Attendance Form"
+                        )}
+                      </button>
+                    </div>
+                  )}
                 </div>
+              </>
+            )}
+          </div>
+        )}
 
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Signature / Consent <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    required
-                    value={rForm.signature}
-                    onChange={(e) => setRForm({ ...rForm, signature: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm font-serif"
-                    placeholder="Type name as signature..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Submission Date</label>
-                  <input
-                    type="date"
-                    value={rForm.submissionDate}
-                    onChange={(e) => setRForm({ ...rForm, submissionDate: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-955 px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold text-sm"
-                  />
-                </div>
+        {/* STEP 3: AFTER-MEETING EVALUATION */}
+        {activeStep === 3 && (
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 sm:p-8 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-white/10">
+              <div>
+                <h3 className="text-base font-black text-white uppercase tracking-wider flex items-center gap-2">
+                  3. After-Meeting Evaluation Form
+                </h3>
+                <p className="text-xs text-indigo-200/60 mt-0.5">
+                  Record qualitative outcomes, ministry responses, and opportunities for WCM.
+                </p>
               </div>
-
-              {/* Wizard Steps Controller */}
-              <div className="pt-6 border-t border-slate-100 dark:border-slate-805 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                <button
-                  onClick={() => setActiveStep(2)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-250 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-250 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer active:scale-[0.96]"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Back: Attendance
-                </button>
-
-                {!canSubmit && (
-                  <div className="text-[10px] font-black uppercase tracking-wider text-red-500 dark:text-red-405 flex items-center gap-1.5 max-w-xs text-left sm:text-right animate-pulse">
-                    <AlertCircle className="h-4.5 w-4.5 shrink-0" />
-                    Please complete all required fields marked with * in all steps to enable submission.
-                  </div>
-                )}
+              <div className="flex items-center gap-3">
+                <FormStatusBadge status={rStatus} isLocked={isEvaluationLocked} />
               </div>
             </div>
-          )}
 
-        </div>
+            {isEvaluationLocked ? (
+              <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-8 text-center space-y-4">
+                <div className="h-16 w-16 mx-auto rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center">
+                  <Lock className="h-8 w-8" />
+                </div>
+                <div>
+                  <h4 className="text-base font-bold text-white uppercase tracking-wider">Evaluation Form Locked</h4>
+                  <p className="text-xs text-indigo-200/70 mt-1 max-w-md mx-auto">
+                    This form is locked until the Verification Form completes the approval sequence (Coordinator → Zonal Leader → State Leader → Admin) and receives final Admin approval.
+                  </p>
+                </div>
+                <div className="inline-flex items-center gap-2 pt-2">
+                  <span className="text-xs text-indigo-200/50">Current Verification Status:</span>
+                  <FormStatusBadge status={vStatus} />
+                </div>
+                <div>
+                  <button
+                    onClick={() => setActiveStep(1)}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                  >
+                    <FileCheck className="h-4 w-4" /> Go to Verification Form
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {rStatus === "REJECTED" && (
+                  <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 space-y-2">
+                    <div className="flex items-center gap-2 text-rose-400 font-bold text-xs uppercase tracking-wider">
+                      <AlertCircle className="h-4 w-4" />
+                      <span>After-Meeting Evaluation Returned for Corrections</span>
+                    </div>
+                    {rComments.length > 0 && (
+                      <div className="text-xs text-rose-200/90 pl-6 space-y-1">
+                        {rComments.map((c, i) => (
+                          <p key={i}>"{c.comment}"</p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Overall Meeting Outcome *
+                    </label>
+                    <select
+                      disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
+                      value={rForm.overallMeetingOutcome}
+                      onChange={(e) => setRForm({ ...rForm, overallMeetingOutcome: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                    >
+                      <option value="" className="bg-slate-900">Select outcome</option>
+                      <option value="Exceptional" className="bg-slate-900">Exceptional</option>
+                      <option value="Very Good" className="bg-slate-900">Very Good</option>
+                      <option value="Good" className="bg-slate-900">Good</option>
+                      <option value="Satisfactory" className="bg-slate-900">Satisfactory</option>
+                      <option value="Challenging" className="bg-slate-900">Challenging</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Congregation Response *
+                    </label>
+                    <select
+                      disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
+                      value={rForm.congregationResponse}
+                      onChange={(e) => setRForm({ ...rForm, congregationResponse: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                    >
+                      <option value="" className="bg-slate-900">Select response</option>
+                      <option value="Highly Receptive" className="bg-slate-900">Highly Receptive</option>
+                      <option value="Positive & Engaged" className="bg-slate-900">Positive & Engaged</option>
+                      <option value="Moderate" className="bg-slate-900">Moderate</option>
+                      <option value="Reserved" className="bg-slate-900">Reserved</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Desire to Continue Fellowship *
+                    </label>
+                    <select
+                      disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
+                      value={rForm.continueFellowship ? "true" : "false"}
+                      onChange={(e) => setRForm({ ...rForm, continueFellowship: e.target.value === "true" })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                    >
+                      <option value="true" className="bg-slate-900">Yes, Highly Interested</option>
+                      <option value="false" className="bg-slate-900">No / Undecided</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Following WCM Members Count
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
+                      value={rForm.followingWcmMembersCount}
+                      onChange={(e) => setRForm({ ...rForm, followingWcmMembersCount: parseInt(e.target.value) || 0 })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Local Church Influence
+                    </label>
+                    <select
+                      disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
+                      value={rForm.localChurchInfluence}
+                      onChange={(e) => setRForm({ ...rForm, localChurchInfluence: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                    >
+                      <option value="High" className="bg-slate-900">High</option>
+                      <option value="Medium" className="bg-slate-900">Medium</option>
+                      <option value="Low" className="bg-slate-900">Low</option>
+                      <option value="Growing" className="bg-slate-900">Growing</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Network of Pastors
+                    </label>
+                    <select
+                      disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
+                      value={rForm.networkOfPastors}
+                      onChange={(e) => setRForm({ ...rForm, networkOfPastors: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                    >
+                      <option value="Extensive" className="bg-slate-900">Extensive</option>
+                      <option value="Moderate" className="bg-slate-900">Moderate</option>
+                      <option value="Limited" className="bg-slate-900">Limited</option>
+                    </select>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                      Future Opportunities for WCM
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {opportunitiesList.map((op) => {
+                        const isSelected = rForm.futureOpportunities?.includes(op);
+                        return (
+                          <button
+                            key={op}
+                            type="button"
+                            disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
+                            onClick={() => toggleFutureOpportunity(op)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                              isSelected
+                                ? "bg-indigo-600 text-white border border-indigo-400 shadow-sm"
+                                : "bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10"
+                            } disabled:opacity-50`}
+                          >
+                            {isSelected ? "✓ " : "+ "}{op}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Strengths Observed *
+                    </label>
+                    <textarea
+                      rows={3}
+                      disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
+                      value={rForm.strengthsObserved}
+                      onChange={(e) => setRForm({ ...rForm, strengthsObserved: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      placeholder="Strengths observed during the meeting..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Challenges Observed *
+                    </label>
+                    <textarea
+                      rows={3}
+                      disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
+                      value={rForm.challengesObserved}
+                      onChange={(e) => setRForm({ ...rForm, challengesObserved: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      placeholder="Challenges or areas for improvement..."
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Opportunity for WCM *
+                    </label>
+                    <textarea
+                      rows={2}
+                      disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
+                      value={rForm.opportunityForWcm}
+                      onChange={(e) => setRForm({ ...rForm, opportunityForWcm: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      placeholder="How can WCM follow up or partner with this church..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Coordinator Name *
+                    </label>
+                    <input
+                      type="text"
+                      disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
+                      value={rForm.coordinatorName}
+                      onChange={(e) => setRForm({ ...rForm, coordinatorName: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      placeholder="Your name"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Designation *
+                    </label>
+                    <input
+                      type="text"
+                      disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
+                      value={rForm.designation}
+                      onChange={(e) => setRForm({ ...rForm, designation: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      placeholder="e.g. Outreach Coordinator"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Signature / Consent *
+                    </label>
+                    <input
+                      type="text"
+                      disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
+                      value={rForm.signature}
+                      onChange={(e) => setRForm({ ...rForm, signature: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60 font-serif"
+                      placeholder="Type name as digital signature"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                      Submission Date
+                    </label>
+                    <input
+                      type="date"
+                      disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
+                      value={rForm.submissionDate}
+                      onChange={(e) => setRForm({ ...rForm, submissionDate: e.target.value })}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-xs text-indigo-200/60 font-medium">
+                    {rStatus === "COMPLETED" ? (
+                      <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+                        <CheckCircle2 className="h-4 w-4" /> Evaluation Form Approved & Completed.
+                      </span>
+                    ) : rStatus === "PENDING" || rStatus === "REJECTED" ? (
+                      "Complete evaluation details and submit independently or with Attendance."
+                    ) : (
+                      <span className="text-amber-300 font-bold flex items-center gap-1.5">
+                        <Clock className="h-4 w-4" /> Evaluation under review.
+                      </span>
+                    )}
+                  </span>
+
+                  {(rStatus === "PENDING" || rStatus === "REJECTED") && (
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => handleSaveForm("EVALUATION")}
+                        disabled={saving || submittingForm !== null}
+                        className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Draft"}
+                      </button>
+                      <button
+                        onClick={() => handleSubmitForm("EVALUATION")}
+                        disabled={submittingForm !== null || !checkRComplete()}
+                        className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-md disabled:opacity-50"
+                      >
+                        {submittingForm === "EVALUATION" ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "Submit Evaluation Form"
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Quick Session Submitter: If both Attendance & Evaluation are unlocked and pending */}
+        {!isAttendanceLocked && !isEvaluationLocked && 
+         (aStatus === "PENDING" || aStatus === "REJECTED") && 
+         (rStatus === "PENDING" || rStatus === "REJECTED") && (
+          <div className="rounded-2xl border border-indigo-500/30 bg-indigo-500/10 p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold text-white uppercase tracking-wider">
+                Same-Session Submission
+              </p>
+              <p className="text-xs text-indigo-200/70 mt-0.5">
+                Both Attendance and Evaluation forms are unlocked. You can complete both and submit together.
+              </p>
+            </div>
+            <button
+              onClick={handleSubmitBoth}
+              disabled={submittingForm !== null || !checkAComplete() || !checkRComplete()}
+              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-md disabled:opacity-50 cursor-pointer"
+            >
+              {submittingForm === "BOTH" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Submit Both Forms Together"
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

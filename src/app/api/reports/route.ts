@@ -20,36 +20,42 @@ export async function GET(request: Request) {
     let whereClause: any = {};
 
     if (role === "COORDINATOR" || role === "LEADER") {
-      // Coordinator can see all of their own reports (Drafts, Submitted, etc.)
+      // Coordinator can see all of their own meetings (Drafts, Submitted, etc.)
       whereClause = { leaderId: userId };
     } else if (role === "ZONE_LEADER") {
       if (!zone) {
         return NextResponse.json([]);
       }
-      // Zone Leader can see all submitted/reviewed reports in their zone, but NEVER drafts.
       whereClause = {
         leader: { zone: zone },
-        status: {
-          not: "DRAFT",
-        },
+        OR: [
+          { status: { not: "DRAFT" } },
+          { verificationSheet: { status: { not: "PENDING" } } },
+          { attendanceRecord: { status: { not: "PENDING" } } },
+          { afterMeetingReport: { status: { not: "PENDING" } } },
+        ],
       };
     } else if (role === "STATE_LEADER") {
       if (!state) {
         return NextResponse.json([]);
       }
-      // State Leader can see all submitted/forwarded/reviewed reports from their state
       whereClause = {
         leader: { state: state },
-        status: {
-          not: "DRAFT",
-        },
+        OR: [
+          { status: { not: "DRAFT" } },
+          { verificationSheet: { status: { not: "PENDING" } } },
+          { attendanceRecord: { status: { not: "PENDING" } } },
+          { afterMeetingReport: { status: { not: "PENDING" } } },
+        ],
       };
     } else if (role === "ADMIN") {
-      // Admin can see ALL submitted/forwarded/reviewed reports across all zones & states in the system
       whereClause = {
-        status: {
-          not: "DRAFT",
-        },
+        OR: [
+          { status: { not: "DRAFT" } },
+          { verificationSheet: { status: { not: "PENDING" } } },
+          { attendanceRecord: { status: { not: "PENDING" } } },
+          { afterMeetingReport: { status: { not: "PENDING" } } },
+        ],
       };
     } else {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -61,6 +67,7 @@ export async function GET(request: Request) {
         leader: {
           select: {
             username: true,
+            name: true,
             role: true,
             state: true,
             part: true,
@@ -69,21 +76,34 @@ export async function GET(request: Request) {
         },
         verificationSheet: {
           select: {
+            status: true,
             convenerName: true,
             churchMinistryName: true,
+            stateDistrictCity: true,
             meetingDates: true,
+            submittedAt: true,
+            approvedAt: true,
+            rejectedAt: true,
           },
         },
         attendanceRecord: {
           select: {
+            status: true,
             location: true,
             date: true,
+            submittedAt: true,
+            approvedAt: true,
+            rejectedAt: true,
           },
         },
         afterMeetingReport: {
           select: {
+            status: true,
             coordinatorName: true,
             submissionDate: true,
+            submittedAt: true,
+            approvedAt: true,
+            rejectedAt: true,
           },
         },
         auditLogs: {
@@ -106,37 +126,14 @@ export async function GET(request: Request) {
       },
     });
 
-    // Format for consumption by dashboards
+    // Format for consumption by meeting-wise dashboards
     const reports = dbReports.map((r) => {
-      let displayStatus = "";
-      switch (r.status) {
-        case "DRAFT":
-          displayStatus = "Draft";
-          break;
-        case "SUBMITTED":
-          displayStatus = "Submitted (Pending Review)";
-          break;
-        case "ZONE_LEADER_REVIEW":
-          displayStatus = "Under Zone Leader Review";
-          break;
-        case "STATE_LEADER_REVIEW":
-          displayStatus = "Under State Leader Review";
-          break;
-        case "ADMIN_REVIEW":
-          displayStatus = "Under Admin Review";
-          break;
-        case "STATE_AND_ADMIN_REVIEW":
-          displayStatus = "Under State & Admin Review";
-          break;
-        case "APPROVED":
-          displayStatus = "Approved";
-          break;
-        case "REQUEST_CHANGES":
-          displayStatus = "Request Changes (Returned)";
-          break;
-        default:
-          displayStatus = r.status;
-      }
+      const vStatus = r.verificationSheet?.status || "PENDING";
+      const aStatus = r.attendanceRecord?.status || "PENDING";
+      const rStatus = r.afterMeetingReport?.status || "PENDING";
+
+      const isAttendanceLocked = vStatus !== "COMPLETED";
+      const isEvaluationLocked = vStatus !== "COMPLETED";
 
       const lastAudit = r.auditLogs?.[0];
       const forwardedByText = lastAudit
@@ -146,14 +143,20 @@ export async function GET(request: Request) {
       return {
         id: r.id,
         reportId: r.reportId,
+        title: r.title || `Outreach Meeting ${r.reportId}`,
         submissionDate: r.submittedAt || r.createdAt,
-        coordinatorName: r.verificationSheet?.convenerName || r.leader.username,
-        status: displayStatus,
+        coordinatorName: r.verificationSheet?.convenerName || r.leader.name || r.leader.username,
+        status: r.status,
         rawStatus: r.status,
         version: r.version,
         leader: r.leader,
+        verificationStatus: vStatus,
+        attendanceStatus: aStatus,
+        evaluationStatus: rStatus,
+        isAttendanceLocked,
+        isEvaluationLocked,
         meetingDates: r.verificationSheet?.meetingDates || "N/A",
-        location: r.attendanceRecord?.location || "N/A",
+        location: r.attendanceRecord?.location || r.verificationSheet?.stateDistrictCity || "N/A",
         forwardedBy: forwardedByText,
         lastAuditDetails: lastAudit?.details || null,
         auditLogs: r.auditLogs,

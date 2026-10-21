@@ -4,17 +4,20 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { 
-  FileText, CalendarCheck, Plus, Bell, Eye, Pencil, X, Loader2, Trash2
+  FileText, CalendarCheck, Plus, Bell, Eye, Pencil, X, Loader2, Trash2, BarChart3
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useUIStore } from "@/store/ui-store";
 import { translate } from "@/lib/translations";
 import { toast } from "sonner";
+import { FormStatusBadge } from "@/components/form-status-badge";
+import { MonthlySummary } from "@/components/monthly-summary";
 
 export default function CoordinatorDashboardPage() {
-  const { language } = useUIStore();
+  const { user, language } = useUIStore();
   const router = useRouter();
   const [username, setUsername] = useState("Coordinator");
+  const [dashboardTab, setDashboardTab] = useState<"reports" | "analytics">("reports");
   
   // Announcements
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -213,7 +216,7 @@ export default function CoordinatorDashboardPage() {
               <span className="text-xs font-bold uppercase tracking-wider">Loading announcements...</span>
             </div>
           ) : notifications.length === 0 ? (
-            <div className="py-6 text-center text-xs text-slate-450 dark:text-slate-500 font-bold uppercase tracking-wider italic">
+            <div className="py-6 text-center text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider italic">
               No recent announcements.
             </div>
           ) : (
@@ -232,7 +235,7 @@ export default function CoordinatorDashboardPage() {
                       {!n.read && <span className="h-2 w-2 rounded-full bg-blue-500 inline-block animate-pulse"></span>}
                       {n.title}
                     </h4>
-                    <p className="text-xs text-slate-650 dark:text-slate-350 font-medium leading-relaxed">{n.message}</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 font-medium leading-relaxed">{n.message}</p>
                     <span className="text-[9px] text-slate-400 dark:text-slate-500 block font-mono">
                       {new Date(n.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
                     </span>
@@ -240,7 +243,7 @@ export default function CoordinatorDashboardPage() {
                   {!n.read && (
                     <button
                       onClick={() => handleMarkAsRead(n.id)}
-                      className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-450 hover:text-blue-700 dark:hover:text-blue-300 cursor-pointer"
+                      className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 cursor-pointer"
                     >
                       Mark read
                     </button>
@@ -251,12 +254,41 @@ export default function CoordinatorDashboardPage() {
           )}
         </div>
 
-        {/* Meeting Reports Table */}
-        <div className="glass-card rounded-2xl text-left p-4 sm:p-6">
-          <h3 className="text-xs font-black uppercase tracking-widest text-foreground flex items-center gap-2 border-b border-border/30 pb-3 mb-4">
-            <FileText className="h-4.5 w-4.5 text-primary" />
+        {/* Section View Switcher */}
+        <div className="flex border border-slate-200/80 dark:border-slate-800 bg-slate-100 dark:bg-slate-900/90 p-1.5 rounded-2xl gap-2 w-fit shadow-xs">
+          <button
+            type="button"
+            onClick={() => setDashboardTab("reports")}
+            className={`flex items-center gap-2 px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
+              dashboardTab === "reports"
+                ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-xs font-black border border-slate-200 dark:border-indigo-500"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <FileText className="h-4 w-4" />
             My Meeting Reports
-          </h3>
+          </button>
+          <button
+            type="button"
+            onClick={() => setDashboardTab("analytics")}
+            className={`flex items-center gap-2 px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
+              dashboardTab === "analytics"
+                ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-xs font-black border border-slate-200 dark:border-indigo-500"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <BarChart3 className="h-4 w-4" />
+            Monthly Summary & Charts
+          </button>
+        </div>
+
+        {/* Tab 1: Meeting Reports Table */}
+        {dashboardTab === "reports" && (
+          <div className="glass-card rounded-2xl text-left p-4 sm:p-6 animate-fadeIn">
+            <h3 className="text-xs font-black uppercase tracking-widest text-foreground flex items-center gap-2 border-b border-border/30 pb-3 mb-4">
+              <FileText className="h-4.5 w-4.5 text-primary" />
+              My Meeting Reports
+            </h3>
 
           {reportsLoading ? (
             <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
@@ -264,7 +296,7 @@ export default function CoordinatorDashboardPage() {
               <span className="text-xs font-bold uppercase tracking-wider">Loading reports...</span>
             </div>
           ) : reports.length === 0 ? (
-            <div className="py-12 text-center text-xs text-slate-450 dark:text-slate-500 font-bold uppercase tracking-wider italic">
+            <div className="py-12 text-center text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider italic">
               No reports created yet. Click "Create New Report" to start a draft.
             </div>
           ) : (
@@ -274,33 +306,38 @@ export default function CoordinatorDashboardPage() {
                 {reports.map((r: any) => (
                   <div
                     key={r.id}
-                    className="p-4 rounded-2xl bg-accent/30 dark:bg-accent/20 border border-border/30 space-y-3"
+                    className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h4 className="text-sm font-black text-slate-800 dark:text-white">
-                          {r.reportId}
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-black text-indigo-300">
+                            {r.reportId}
+                          </span>
+                        </div>
+                        <h4 className="text-sm font-bold text-white mt-0.5">
+                          {r.title || `Outreach Meeting ${r.reportId}`}
                         </h4>
-                        <span className="text-[10px] font-mono text-slate-400 font-bold">
-                          Version: v{r.version}
-                        </span>
                       </div>
-                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider border ${
-                        r.rawStatus === "APPROVED"
-                          ? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-900/30"
-                          : r.rawStatus === "REJECTED"
-                          ? "bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border-red-200/50 dark:border-red-900/30"
-                          : r.rawStatus === "DRAFT"
-                          ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700"
-                          : r.rawStatus === "REQUEST_CHANGES"
-                          ? "bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-450 border-amber-200/50 dark:border-amber-900/30"
-                          : "bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-450 border-blue-200/50 dark:border-blue-900/30"
-                      }`}>
-                        {r.status}
-                      </span>
                     </div>
 
-                    <div className="text-xs space-y-1 text-slate-600 dark:text-slate-300 border-y border-slate-200/60 dark:border-slate-800/60 py-2">
+                    {/* 3 Form Statuses */}
+                    <div className="grid grid-cols-3 gap-2 py-2 border-y border-white/5">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Verification</span>
+                        <FormStatusBadge status={r.verificationStatus} size="sm" />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Attendance</span>
+                        <FormStatusBadge status={r.attendanceStatus} isLocked={r.isAttendanceLocked} size="sm" />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Evaluation</span>
+                        <FormStatusBadge status={r.evaluationStatus} isLocked={r.isEvaluationLocked} size="sm" />
+                      </div>
+                    </div>
+
+                    <div className="text-xs space-y-1 text-indigo-200/70">
                       <div className="flex justify-between">
                         <span className="text-slate-400 font-semibold">Dates:</span>
                         <span className="font-bold">{r.meetingDates || "N/A"}</span>
@@ -312,34 +349,22 @@ export default function CoordinatorDashboardPage() {
                     </div>
 
                     <div className="flex items-center justify-end gap-2 pt-1">
-                      {["DRAFT", "REQUEST_CHANGES"].includes(r.rawStatus) ? (
-                        <>
-                          {r.rawStatus === "DRAFT" && (
-                            <button
-                              onClick={() => handleDeleteReport(r.id)}
-                              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-red-50 dark:bg-red-950/30 px-3.5 py-2 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-100 transition-colors border border-red-500/10 cursor-pointer min-h-10 active:scale-[0.96]"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              Delete
-                            </button>
-                          )}
-                          <button
-                            onClick={() => router.push(`/coordinator/report/${r.id}`)}
-                            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 text-white px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-blue-700 transition-colors cursor-pointer min-h-10 shadow-xs active:scale-[0.96]"
-                          >
-                            <Pencil className="h-4 w-4" />
-                            Edit Report
-                          </button>
-                        </>
-                      ) : (
+                      {r.rawStatus === "DRAFT" && (
                         <button
-                          onClick={() => handleOpenReport(r.id)}
-                          className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-750 transition-colors border border-slate-200 dark:border-slate-700 cursor-pointer min-h-10 active:scale-[0.96]"
+                          onClick={() => handleDeleteReport(r.id)}
+                          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-red-500/10 px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/20 transition-colors border border-red-500/20 cursor-pointer"
                         >
-                          <Eye className="h-4 w-4" />
-                          View Details
+                          <Trash2 className="h-4 w-4" />
+                          Delete
                         </button>
                       )}
+                      <button
+                        onClick={() => router.push(`/coordinator/report/${r.id}`)}
+                        className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 text-white px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-indigo-500 transition-colors cursor-pointer shadow-sm"
+                      >
+                        <Pencil className="h-4 w-4" />
+                        Manage Forms
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -349,71 +374,54 @@ export default function CoordinatorDashboardPage() {
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-border/30 bg-accent/30 dark:bg-accent/20 text-[10px] font-bold text-foreground/40 uppercase tracking-widest text-left">
-                      <th className="px-6 py-4">Report ID</th>
-                      <th className="px-6 py-4">Dates / Location</th>
-                      <th className="px-6 py-4 text-center">Version</th>
-                      <th className="px-6 py-4 text-center">Status</th>
-                      <th className="px-6 py-4 text-right">Actions</th>
+                    <tr className="border-b border-white/15 bg-white/10 text-[11px] font-black text-slate-200 uppercase tracking-wider text-left">
+                      <th className="px-5 py-3.5">Meeting Details</th>
+                      <th className="px-5 py-3.5">Dates & Venue</th>
+                      <th className="px-4 py-3.5 text-center">1. Verification</th>
+                      <th className="px-4 py-3.5 text-center">2. Attendance</th>
+                      <th className="px-4 py-3.5 text-center">3. Evaluation</th>
+                      <th className="px-5 py-3.5 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                  <tbody className="divide-y divide-white/5">
                     {reports.map((r: any) => (
-                      <tr key={r.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-800/5 transition-colors">
-                        <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-200">
-                          {r.reportId}
+                      <tr key={r.id} className="hover:bg-white/5 transition-colors">
+                        <td className="px-5 py-4">
+                          <div className="font-mono text-xs font-black text-indigo-300">{r.reportId}</div>
+                          <div className="text-xs font-bold text-white mt-0.5">{r.title || `Outreach Meeting ${r.reportId}`}</div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-xs font-bold text-slate-800 dark:text-slate-300">{r.meetingDates || "N/A"}</div>
-                          <div className="text-[11px] text-slate-450 mt-0.5">{r.location || "N/A"}</div>
+                        <td className="px-5 py-4">
+                          <div className="text-xs font-bold text-white">{r.meetingDates || "N/A"}</div>
+                          <div className="text-[11px] text-indigo-200/50 mt-0.5 truncate max-w-48">{r.location || "N/A"}</div>
                         </td>
-                        <td className="px-6 py-4 text-center font-mono font-bold text-slate-550 dark:text-slate-450">
-                          v{r.version}
+                        <td className="px-4 py-4 text-center">
+                          <FormStatusBadge status={r.verificationStatus} size="sm" />
                         </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider border ${
-                            r.rawStatus === "APPROVED"
-                              ? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-900/30"
-                              : r.rawStatus === "REJECTED"
-                              ? "bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border-red-200/50 dark:border-red-900/30"
-                              : r.rawStatus === "DRAFT"
-                              ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700"
-                              : r.rawStatus === "REQUEST_CHANGES"
-                              ? "bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-450 border-amber-200/50 dark:border-amber-900/30"
-                              : "bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-450 border-blue-200/50 dark:border-blue-900/30"
-                          }`}>
-                            {r.status}
-                          </span>
+                        <td className="px-4 py-4 text-center">
+                          <FormStatusBadge status={r.attendanceStatus} isLocked={r.isAttendanceLocked} size="sm" />
                         </td>
-                        <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
-                          {["DRAFT", "REQUEST_CHANGES"].includes(r.rawStatus) ? (
-                            <>
+                        <td className="px-4 py-4 text-center">
+                          <FormStatusBadge status={r.evaluationStatus} isLocked={r.isEvaluationLocked} size="sm" />
+                        </td>
+                        <td className="px-5 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {r.rawStatus === "DRAFT" && (
                               <button
-                                onClick={() => router.push(`/coordinator/report/${r.id}`)}
-                                className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/30 px-3 py-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-100 transition-colors border border-blue-500/10 cursor-pointer active:scale-[0.96]"
+                                onClick={() => handleDeleteReport(r.id)}
+                                className="inline-flex items-center gap-1 rounded-xl bg-red-500/10 px-2.5 py-1.5 text-xs font-bold text-red-400 hover:bg-red-500/20 transition-colors border border-red-500/20 cursor-pointer"
+                                title="Delete Meeting"
                               >
-                                <Pencil className="h-3.5 w-3.5" />
-                                Edit
+                                <Trash2 className="h-3.5 w-3.5" />
                               </button>
-                              {r.rawStatus === "DRAFT" && (
-                                <button
-                                  onClick={() => handleDeleteReport(r.id)}
-                                  className="inline-flex items-center gap-1.5 rounded-xl bg-red-50 dark:bg-red-950/30 px-3 py-1.5 text-xs font-bold text-red-655 dark:text-red-400 hover:bg-red-100 transition-colors border border-red-500/10 cursor-pointer active:scale-[0.96]"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                  Delete
-                                </button>
-                              )}
-                            </>
-                          ) : (
+                            )}
                             <button
-                              onClick={() => handleOpenReport(r.id)}
-                              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-750 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700 cursor-pointer active:scale-[0.96]"
+                              onClick={() => router.push(`/coordinator/report/${r.id}`)}
+                              className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white transition-colors cursor-pointer shadow-sm"
                             >
-                              <Eye className="h-3.5 w-3.5" />
-                              View
+                              <Pencil className="h-3.5 w-3.5" />
+                              Manage Forms
                             </button>
-                          )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -423,6 +431,14 @@ export default function CoordinatorDashboardPage() {
             </>
           )}
         </div>
+      )}
+
+        {/* Tab 2: Monthly Summary & Charts */}
+        {dashboardTab === "analytics" && (
+          <div className="glass-card rounded-2xl text-left p-4 sm:p-6 animate-fadeIn">
+            <MonthlySummary role="COORDINATOR" user={user} language={language} />
+          </div>
+        )}
       </div>
 
       {/* Modal: View Details */}
@@ -431,7 +447,7 @@ export default function CoordinatorDashboardPage() {
           <div className="relative w-full max-w-4xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[90vh] flex flex-col text-left animate-modal my-auto">
             <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
               <div>
-                <h3 className="text-base font-black text-slate-850 dark:text-white uppercase tracking-wider">
+                <h3 className="text-base font-black text-slate-800 dark:text-white uppercase tracking-wider">
                   Meeting Report Details ({reportDetail?.reportId})
                 </h3>
                 <span className="inline-flex rounded-full bg-blue-50 dark:bg-blue-950/40 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 mt-1.5 border border-blue-500/10">
@@ -455,19 +471,63 @@ export default function CoordinatorDashboardPage() {
                   <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
                   <span className="text-xs font-bold uppercase tracking-wider">Loading details...</span>
                 </div>
-              ) : reportDetail ? (
+              ) : reportDetail ? (() => {
+                const v = reportDetail.verificationSheet || reportDetail.verification;
+                const a = reportDetail.attendanceRecord || reportDetail.attendance;
+                const r = reportDetail.afterMeetingReport || reportDetail.report;
+
+                return (
                 <div className="space-y-8">
                   {/* Verification */}
                   <div className="space-y-3">
-                    <h4 className="font-black text-xs text-blue-600 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2">1. Verification Sheet</h4>
-                    {reportDetail.verificationSheet ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs bg-slate-50/50 dark:bg-slate-950/20 rounded-xl p-4 font-semibold border border-slate-200/50 dark:border-slate-800/40">
-                        <div><span className="text-slate-450 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Convener Name</span>{reportDetail.verificationSheet.convenerName}</div>
-                        <div><span className="text-slate-450 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Church Ministry</span>{reportDetail.verificationSheet.churchMinistryName}</div>
-                        <div><span className="text-slate-450 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Location</span>{reportDetail.verificationSheet.stateDistrictCity}</div>
-                        <div><span className="text-slate-450 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Contact</span>{reportDetail.verificationSheet.contactNumber}</div>
-                        <div><span className="text-slate-450 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Dates / Days</span>{reportDetail.verificationSheet.meetingDates} ({reportDetail.verificationSheet.numberOfDays} days)</div>
-                        <div><span className="text-slate-450 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Expected Attendance</span>{reportDetail.verificationSheet.expectedAttendance}</div>
+                    <h4 className="font-black text-xs text-blue-600 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2">
+                      1. Verification Sheet — All Details
+                    </h4>
+                    {v ? (
+                      <div className="space-y-3 bg-slate-50/50 dark:bg-slate-950/20 rounded-xl p-4 font-semibold border border-slate-200/50 dark:border-slate-800/40 text-xs">
+                        {/* Basic & Meeting */}
+                        <div>
+                          <span className="text-[10px] font-black uppercase tracking-wider text-indigo-500 dark:text-indigo-400 block mb-2 border-b border-slate-200 dark:border-slate-800 pb-1">Basic & Meeting Details</span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Convener Name</span><span className="text-slate-800 dark:text-white font-bold">{v.convenerName || "N/A"}</span></div>
+                            <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Church Ministry</span><span className="text-slate-800 dark:text-white font-bold">{v.churchMinistryName || "N/A"}</span></div>
+                            <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Location</span><span className="text-slate-700 dark:text-slate-300">{v.stateDistrictCity || "N/A"}</span></div>
+                            <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Contact</span><span className="text-slate-700 dark:text-slate-300">{v.contactNumber || "N/A"}</span></div>
+                            <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Dates / Days</span><span className="text-slate-700 dark:text-slate-300">{v.meetingDates || "N/A"} ({v.numberOfDays || 0} days)</span></div>
+                            <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Expected Attendance</span><span className="text-emerald-600 dark:text-emerald-400 font-bold">{v.expectedAttendance || 0} people</span></div>
+                          </div>
+                        </div>
+
+                        {/* Ministry Background */}
+                        <div>
+                          <span className="text-[10px] font-black uppercase tracking-wider text-indigo-500 dark:text-indigo-400 block mb-2 border-b border-slate-200 dark:border-slate-800 pb-1">Ministry Background</span>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Years of Ministry</span><span className="text-slate-800 dark:text-white font-bold">{v.yearsOfMinistry || 0} Years</span></div>
+                            <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Church Members</span><span className="text-slate-800 dark:text-white font-bold">{v.churchMembers || 0}</span></div>
+                            <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Workers & Leaders</span><span className="text-slate-800 dark:text-white font-bold">{v.workersLeaders || 0}</span></div>
+                          </div>
+                        </div>
+
+                        {/* WCM Connection */}
+                        <div>
+                          <span className="text-[10px] font-black uppercase tracking-wider text-indigo-500 dark:text-indigo-400 block mb-2 border-b border-slate-200 dark:border-slate-800 pb-1">WCM Connection</span>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Know About WCM</span><span className="text-slate-700 dark:text-slate-300">{v.knowAboutWcm || "N/A"}</span></div>
+                            <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Read WCM Books?</span><span className="font-bold text-slate-800 dark:text-white">{v.readWcmBooks ? "Yes" : "No"}</span></div>
+                            <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Attended Prophet Kiran Meeting?</span><span className="font-bold text-slate-800 dark:text-white">{v.attendedProphetMeeting ? "Yes" : "No"}</span></div>
+                          </div>
+                        </div>
+
+                        {/* Arrangements */}
+                        <div>
+                          <span className="text-[10px] font-black uppercase tracking-wider text-indigo-500 dark:text-indigo-400 block mb-2 border-b border-slate-200 dark:border-slate-800 pb-1">Arrangements</span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                            <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Hall & Stage</span><span className="text-slate-700 dark:text-slate-300">{v.meetingHallStage || "N/A"}</span></div>
+                            <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Sound System</span><span className="text-slate-700 dark:text-slate-300">{v.soundSystem || "N/A"}</span></div>
+                            <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Accommodation</span><span className="text-slate-700 dark:text-slate-300">{v.accommodationTeam || "N/A"}</span></div>
+                            <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Volunteer Support</span><span className="text-slate-700 dark:text-slate-300">{v.volunteerSupport || "N/A"}</span></div>
+                          </div>
+                        </div>
                       </div>
                     ) : (
                       <p className="text-xs text-slate-400 italic">No verification sheet entered.</p>
@@ -476,15 +536,19 @@ export default function CoordinatorDashboardPage() {
 
                   {/* Attendance */}
                   <div className="space-y-3">
-                    <h4 className="font-black text-xs text-blue-600 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2">2. Attendance Record</h4>
-                    {reportDetail.attendanceRecord ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs bg-slate-50/50 dark:bg-slate-950/20 rounded-xl p-4 font-semibold border border-slate-200/50 dark:border-slate-800/40">
-                        <div><span className="text-slate-450 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Meeting Date</span>{new Date(reportDetail.attendanceRecord.date).toLocaleDateString()}</div>
-                        <div><span className="text-slate-450 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Location</span>{reportDetail.attendanceRecord.location}</div>
-                        <div><span className="text-slate-450 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Field Executer</span>{reportDetail.attendanceRecord.fieldExecuter}</div>
-                        <div><span className="text-slate-450 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Members Attended</span>{reportDetail.attendanceRecord.membersAttended}</div>
-                        <div><span className="text-slate-450 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Pastors Attended</span>{reportDetail.attendanceRecord.pastorsAttended}</div>
-                        <div className="sm:col-span-2"><span className="text-slate-450 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Remarks</span>{reportDetail.attendanceRecord.remarks}</div>
+                    <h4 className="font-black text-xs text-blue-600 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2">
+                      2. Attendance Record — All Details
+                    </h4>
+                    {a ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs bg-slate-50/50 dark:bg-slate-950/20 rounded-xl p-4 font-semibold border border-slate-200/50 dark:border-slate-800/40">
+                        <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Meeting Date</span><span className="text-slate-800 dark:text-white font-bold">{new Date(a.date).toLocaleDateString()}</span></div>
+                        <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Location</span><span className="text-slate-800 dark:text-white font-bold">{a.location || "N/A"}</span></div>
+                        <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Field Executer</span><span className="text-slate-700 dark:text-slate-300">{a.fieldExecuter || "N/A"}</span></div>
+                        <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Coordinator</span><span className="text-slate-700 dark:text-slate-300">{a.coordinator || "N/A"}</span></div>
+                        <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Members Attended</span><span className="text-emerald-600 dark:text-emerald-400 font-bold">{a.membersAttended || 0}</span></div>
+                        <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Pastors Attended</span><span className="text-indigo-600 dark:text-indigo-400 font-bold">{a.pastorsAttended || 0}</span></div>
+                        <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Total Attended</span><span className="text-slate-900 dark:text-white font-black text-sm">{(a.membersAttended || 0) + (a.pastorsAttended || 0)}</span></div>
+                        <div className="sm:col-span-2 lg:col-span-3"><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Remarks</span><p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{a.remarks || "None"}</p></div>
                       </div>
                     ) : (
                       <p className="text-xs text-slate-400 italic">No attendance record entered.</p>
@@ -493,28 +557,34 @@ export default function CoordinatorDashboardPage() {
 
                   {/* After Meeting */}
                   <div className="space-y-3">
-                    <h4 className="font-black text-xs text-blue-600 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2">3. After Meeting Report</h4>
-                    {reportDetail.afterMeetingReport ? (
+                    <h4 className="font-black text-xs text-blue-600 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2">
+                      3. After-Meeting Evaluation — All Details
+                    </h4>
+                    {r ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs bg-slate-50/50 dark:bg-slate-950/20 rounded-xl p-4 font-semibold border border-slate-200/50 dark:border-slate-800/40">
-                        <div className="sm:col-span-2"><span className="text-slate-450 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Outcome</span>{reportDetail.afterMeetingReport.overallMeetingOutcome}</div>
-                        <div className="sm:col-span-2"><span className="text-slate-450 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Congregation Response</span>{reportDetail.afterMeetingReport.congregationResponse}</div>
-                        <div><span className="text-slate-450 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Strengths</span>{reportDetail.afterMeetingReport.strengthsObserved}</div>
-                        <div><span className="text-slate-450 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Challenges</span>{reportDetail.afterMeetingReport.challengesObserved}</div>
-                        <div><span className="text-slate-450 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Future Opportunities</span>{reportDetail.afterMeetingReport.futureOpportunities?.join(", ") || "None"}</div>
-                        <div><span className="text-slate-450 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">WCM Followers Count</span>{reportDetail.afterMeetingReport.followingWcmMembersCount}</div>
-                        <div><span className="text-slate-450 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Signature</span>{reportDetail.afterMeetingReport.signature} ({reportDetail.afterMeetingReport.designation})</div>
+                        <div className="sm:col-span-2"><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Overall Outcome</span><p className="text-slate-800 dark:text-white font-bold">{r.overallMeetingOutcome || "N/A"}</p></div>
+                        <div className="sm:col-span-2"><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Congregation Response</span><p className="text-slate-700 dark:text-slate-300">{r.congregationResponse || "N/A"}</p></div>
+                        <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Continue Fellowship?</span><span className="font-bold text-slate-800 dark:text-white">{r.continueFellowship ? "Yes" : "No"}</span></div>
+                        <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Following WCM Members</span><span className="font-bold text-indigo-600 dark:text-indigo-400">{r.followingWcmMembersCount || 0}</span></div>
+                        <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Local Church Influence</span><span className="text-slate-700 dark:text-slate-300">{r.localChurchInfluence || "N/A"}</span></div>
+                        <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Network of Pastors</span><span className="text-slate-700 dark:text-slate-300">{r.networkOfPastors || "N/A"}</span></div>
+                        <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Strengths</span><p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{r.strengthsObserved || "None"}</p></div>
+                        <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Challenges</span><p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{r.challengesObserved || "None"}</p></div>
+                        <div className="sm:col-span-2"><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Opportunity for WCM</span><p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{r.opportunityForWcm || "None"}</p></div>
+                        <div className="sm:col-span-2"><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Future Opportunities</span><p className="text-slate-700 dark:text-slate-300">{r.futureOpportunities?.join(", ") || "None"}</p></div>
+                        <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Coordinator</span><span className="text-slate-800 dark:text-white font-bold">{r.coordinatorName || "N/A"} ({r.designation || "N/A"})</span></div>
+                        <div><span className="text-slate-400 dark:text-slate-500 uppercase block font-black text-[9px] tracking-wider mb-0.5">Signature</span><span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">{r.signature || "N/A"}</span></div>
                       </div>
                     ) : (
                       <p className="text-xs text-slate-400 italic">No after meeting report entered.</p>
                     )}
                   </div>
-
                   {/* Audit Trails */}
                   <div className="space-y-3">
                     <h4 className="font-black text-xs text-slate-600 dark:text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2">Activity Log</h4>
                     <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
                       {reportDetail.auditLogs?.map((log: any) => (
-                        <div key={log.id} className="text-xs font-semibold text-slate-500 flex justify-between gap-4 p-2.5 rounded-xl bg-slate-50/50 dark:bg-slate-950/30 border border-slate-150 dark:border-slate-800/40">
+                        <div key={log.id} className="text-xs font-semibold text-slate-500 flex justify-between gap-4 p-2.5 rounded-xl bg-slate-50/50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/40">
                           <span>
                             <strong>{log.action}</strong>: {log.details}
                           </span>
@@ -527,15 +597,16 @@ export default function CoordinatorDashboardPage() {
                   </div>
 
                 </div>
-              ) : null}
+                );
+              })() : null}
             </div>
-            <div className="flex justify-end px-6 py-4 border-t border-slate-100 dark:border-slate-808 shrink-0">
+            <div className="flex justify-end px-6 py-4 border-t border-slate-100 dark:border-slate-800 shrink-0">
               <button
                 onClick={() => {
                   setSelectedReportId(null);
                   setReportDetail(null);
                 }}
-                className="rounded-xl border border-slate-250 dark:border-slate-800 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-350 hover:bg-slate-50 transition-colors cursor-pointer"
+                className="rounded-xl border border-slate-200 dark:border-slate-800 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 Close
               </button>

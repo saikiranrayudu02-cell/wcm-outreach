@@ -18,185 +18,236 @@ export async function POST(
 
     const { id: reportId } = await props.params;
     const body = await request.json();
-    const { action, comment, forwardTo } = body;
+    const { formType = "VERIFICATION", action, comment } = body;
 
-    if (!action || !["APPROVE", "REQUEST_CHANGES", "REJECT"].includes(action)) {
-      return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+    const normalizedFormType = (formType as string).toUpperCase();
+    if (!["VERIFICATION", "ATTENDANCE", "EVALUATION", "AFTER_MEETING"].includes(normalizedFormType)) {
+      return NextResponse.json({ error: "Invalid formType. Must be VERIFICATION, ATTENDANCE, or EVALUATION" }, { status: 400 });
+    }
+    const targetFormKey = normalizedFormType === "AFTER_MEETING" ? "EVALUATION" : normalizedFormType;
+
+    const normalizedAction = (action as string)?.toUpperCase();
+    if (!normalizedAction || !["APPROVE", "FORWARD", "REJECT", "REQUEST_CHANGES"].includes(normalizedAction)) {
+      return NextResponse.json({ error: "Invalid action. Must be FORWARD, APPROVE, or REJECT" }, { status: 400 });
     }
 
-    if (["REQUEST_CHANGES", "REJECT"].includes(action) && (!comment || !comment.trim())) {
-      return NextResponse.json({ error: "Reviewer comment is required for rejection or requesting changes" }, { status: 400 });
+    if (["REJECT", "REQUEST_CHANGES"].includes(normalizedAction) && (!comment || !comment.trim())) {
+      return NextResponse.json({ error: "Reviewer comment is required for rejection." }, { status: 400 });
     }
 
     const report = await prisma.meetingReport.findUnique({
       where: { id: reportId },
       include: {
         leader: true,
+        verificationSheet: true,
+        attendanceRecord: true,
+        afterMeetingReport: true,
       },
     });
 
     if (!report) {
-      return NextResponse.json({ error: "Report not found" }, { status: 404 });
-    }
-
-    if (report.status === "APPROVED" || report.status === "REJECTED") {
-      return NextResponse.json({ error: "Cannot review a report that has already been finalized (Approved or Rejected)" }, { status: 400 });
-    }
-
-    if (report.status === "DRAFT") {
-      return NextResponse.json({ error: "Draft reports cannot be reviewed until submitted by the coordinator" }, { status: 400 });
+      return NextResponse.json({ error: "Meeting not found" }, { status: 404 });
     }
 
     const { role } = session.user;
-    let allowed = false;
 
-    // Validate if user has permissions for this report's current stage
-    if (role === "ZONE_LEADER") {
-      const isSameZone = Boolean(session.user.zone && report.leader.zone === session.user.zone);
-      const isZoneStage = ["SUBMITTED", "ZONE_LEADER_REVIEW"].includes(report.status);
-      allowed = isSameZone && isZoneStage;
-    } else if (role === "STATE_LEADER") {
-      const isSameState = Boolean(session.user.state && report.leader.state === session.user.state);
-      const isStateStage = ["STATE_LEADER_REVIEW", "STATE_AND_ADMIN_REVIEW"].includes(report.status);
-      allowed = isSameState && isStateStage;
-    } else if (role === "ADMIN") {
-      allowed = ["ADMIN_REVIEW", "STATE_AND_ADMIN_REVIEW", "STATE_LEADER_REVIEW", "ZONE_LEADER_REVIEW", "SUBMITTED"].includes(report.status);
+    // Get the current form record and status
+    let currentFormRecord: any = null;
+    if (targetFormKey === "VERIFICATION") {
+      currentFormRecord = report.verificationSheet;
+    } else if (targetFormKey === "ATTENDANCE") {
+      currentFormRecord = report.attendanceRecord;
+    } else if (targetFormKey === "EVALUATION") {
+      currentFormRecord = report.afterMeetingReport;
     }
 
-    if (!allowed) {
-      return NextResponse.json({ error: "Forbidden: You cannot review this report at its current stage" }, { status: 403 });
+    if (!currentFormRecord) {
+      return NextResponse.json({ error: `${targetFormKey} form record not found for this meeting.` }, { status: 404 });
     }
 
-    // Determine new status and audit log details
-    let nextStatus: any = report.status;
-    let reviewerTag = "";
+    const currentFormStatus = currentFormRecord.status;
+
+    if (currentFormStatus === "COMPLETED") {
+      return NextResponse.json({ error: "Cannot review a form that has already been approved and completed." }, { status: 400 });
+    }
+
+    if (currentFormStatus === "PENDING") {
+      return NextResponse.json({ error: "Cannot review a form that has not been submitted yet." }, { status: 400 });
+    }
+
+    // Role-based validation and stage progression
+    let nextFormStatus: any = currentFormStatus;
     let auditAction = "";
     let auditDetails = "";
 
-    if (action === "APPROVE") {
-      if (role === "ZONE_LEADER") {
-        if (forwardTo === "ADMIN") {
-          nextStatus = "ADMIN_REVIEW";
-          auditAction = "ZONE_LEADER_APPROVED";
-          auditDetails = `Zone Leader ${session.user.username} approved the report and manually forwarded it directly to Admin Review.`;
-        } else if (forwardTo === "BOTH") {
-          nextStatus = "STATE_AND_ADMIN_REVIEW";
-          auditAction = "ZONE_LEADER_APPROVED";
-          auditDetails = `Zone Leader ${session.user.username} approved the report and manually forwarded it to both State Leader and Admin Review.`;
-        } else {
-          nextStatus = "STATE_LEADER_REVIEW";
-          auditAction = "ZONE_LEADER_APPROVED";
-          auditDetails = `Zone Leader ${session.user.username} approved the report and manually forwarded it to State Leader Review.`;
-        }
-      } else if (role === "STATE_LEADER") {
-        nextStatus = "ADMIN_REVIEW";
-        auditAction = "STATE_LEADER_APPROVED";
-        auditDetails = `State Leader ${session.user.username} approved the report and forwarded it to Admin Review.`;
-      } else if (role === "ADMIN") {
-        nextStatus = "APPROVED";
-        auditAction = "ADMIN_APPROVED";
-        auditDetails = `Admin approved the report. Status set to Approved.`;
+    if (role === "ZONE_LEADER") {
+      const isSameZone = Boolean(session.user.zone && report.leader.zone === session.user.zone);
+      if (!isSameZone) {
+        return NextResponse.json({ error: "Forbidden: You can only review meetings within your zone." }, { status: 403 });
       }
-    } else if (action === "REQUEST_CHANGES") {
-      nextStatus = "REQUEST_CHANGES";
-      reviewerTag = role === "ZONE_LEADER" ? "ZONE" : role === "STATE_LEADER" ? "STATE" : "ADMIN";
-      auditAction = "CHANGES_REQUESTED";
-      auditDetails = `Reviewer (${role}) requested changes: "${comment}"`;
-    } else if (action === "REJECT") {
-      nextStatus = "REJECTED";
-      auditAction = "REPORT_REJECTED";
-      auditDetails = `Reviewer (${role}) rejected the report: "${comment}"`;
+
+      if (currentFormStatus !== "SUBMITTED") {
+        return NextResponse.json({
+          error: `Forbidden: As Zonal Leader, you can only review forms with status SUBMITTED. Current status is ${currentFormStatus}.`,
+        }, { status: 403 });
+      }
+
+      if (normalizedAction === "FORWARD" || normalizedAction === "APPROVE") {
+        nextFormStatus = "FORWARDED_TO_STATE";
+        auditAction = `${targetFormKey}_FORWARDED_TO_STATE`;
+        auditDetails = `Zonal Leader ${session.user.username} reviewed and forwarded ${targetFormKey} Form to State Leader.`;
+      } else {
+        nextFormStatus = "REJECTED";
+        auditAction = `${targetFormKey}_REJECTED`;
+        auditDetails = `Zonal Leader ${session.user.username} rejected ${targetFormKey} Form: "${comment}"`;
+      }
+    } else if (role === "STATE_LEADER") {
+      const isSameState = Boolean(session.user.state && report.leader.state === session.user.state);
+      if (!isSameState) {
+        return NextResponse.json({ error: "Forbidden: You can only review meetings within your state." }, { status: 403 });
+      }
+
+      if (currentFormStatus !== "FORWARDED_TO_STATE") {
+        return NextResponse.json({
+          error: `Forbidden: As State Leader, you can only review forms that are FORWARDED_TO_STATE. Current status is ${currentFormStatus}.`,
+        }, { status: 403 });
+      }
+
+      if (normalizedAction === "FORWARD" || normalizedAction === "APPROVE") {
+        nextFormStatus = "FORWARDED_TO_ADMIN";
+        auditAction = `${targetFormKey}_FORWARDED_TO_ADMIN`;
+        auditDetails = `State Leader ${session.user.username} reviewed and forwarded ${targetFormKey} Form to Admin.`;
+      } else {
+        nextFormStatus = "REJECTED";
+        auditAction = `${targetFormKey}_REJECTED`;
+        auditDetails = `State Leader ${session.user.username} rejected ${targetFormKey} Form: "${comment}"`;
+      }
+    } else if (role === "ADMIN") {
+      // Admin can review forms waiting for admin, or directly if needed
+      if (normalizedAction === "APPROVE" || normalizedAction === "FORWARD") {
+        nextFormStatus = "COMPLETED";
+        auditAction = `${targetFormKey}_COMPLETED`;
+        auditDetails = `Admin ${session.user.username} gave final approval to ${targetFormKey} Form. Marked COMPLETED.`;
+      } else {
+        nextFormStatus = "REJECTED";
+        auditAction = `${targetFormKey}_REJECTED`;
+        auditDetails = `Admin ${session.user.username} rejected ${targetFormKey} Form: "${comment}"`;
+      }
+    } else {
+      return NextResponse.json({ error: "Forbidden: You do not have permission to review forms." }, { status: 403 });
     }
 
-    const updated = await prisma.$transaction(async (tx) => {
-      // 1. Update report status and version
-      const updatedReport = await tx.meetingReport.update({
-        where: { id: reportId },
-        data: {
-          status: nextStatus,
-          requestedChangesBy: action === "REQUEST_CHANGES" ? reviewerTag : null,
-          version: report.version + 1, // Every major review action increments the version
-        },
-      });
+    const now = new Date();
 
-      // 2. Save reviewer comment if present
+    await prisma.$transaction(async (tx) => {
+      // 1. Update the individual form's status and timestamps
+      if (targetFormKey === "VERIFICATION") {
+        await tx.verificationSheet.update({
+          where: { meetingReportId: reportId },
+          data: {
+            status: nextFormStatus,
+            approvedAt: nextFormStatus === "COMPLETED" ? now : undefined,
+            rejectedAt: nextFormStatus === "REJECTED" ? now : undefined,
+          },
+        });
+      } else if (targetFormKey === "ATTENDANCE") {
+        await tx.attendanceRecord.update({
+          where: { meetingReportId: reportId },
+          data: {
+            status: nextFormStatus,
+            approvedAt: nextFormStatus === "COMPLETED" ? now : undefined,
+            rejectedAt: nextFormStatus === "REJECTED" ? now : undefined,
+          },
+        });
+      } else if (targetFormKey === "EVALUATION") {
+        await tx.afterMeetingReport.update({
+          where: { meetingReportId: reportId },
+          data: {
+            status: nextFormStatus,
+            approvedAt: nextFormStatus === "COMPLETED" ? now : undefined,
+            rejectedAt: nextFormStatus === "REJECTED" ? now : undefined,
+          },
+        });
+      }
+
+      // 2. Save reviewer comment with formType
       if (comment && comment.trim()) {
         await tx.reviewerComment.create({
           data: {
             meetingReportId: reportId,
             reviewerId: session.user.id,
+            formType: targetFormKey,
             comment: comment.trim(),
           },
         });
       }
 
-      // 3. Log audit action
+      // 3. Log audit entry with formType
       await tx.reportAuditLog.create({
         data: {
           meetingReportId: reportId,
           actorId: session.user.id,
           action: auditAction,
           details: auditDetails,
+          formType: targetFormKey,
         },
       });
 
-      // 4. Send notifications based on action and destination
-      if (action === "APPROVE" && role === "ZONE_LEADER") {
-        const title = `Report Forwarded: ${report.reportId}`;
-        const targetDesc = forwardTo === "BOTH" ? "State Leader and Admin" : forwardTo === "ADMIN" ? "Admin" : "State Leader";
-        
-        // Notify Author / Coordinator
-        await tx.notification.create({
-          data: {
-            recipientId: report.leaderId,
-            senderId: session.user.id,
-            title: "Report Approved by Zone Leader",
-            message: `Your report ${report.reportId} was approved by Zone Leader and manually forwarded to ${targetDesc}.`,
-          },
+      // 4. Update meeting report version and parent status if applicable
+      await tx.meetingReport.update({
+        where: { id: reportId },
+        data: {
+          version: report.version + 1,
+        },
+      });
+
+      // 5. Send notifications
+      const notifTitle = `${targetFormKey} Form: ${nextFormStatus.replace(/_/g, " ")}`;
+      await tx.notification.create({
+        data: {
+          recipientId: report.leaderId,
+          senderId: session.user.id,
+          title: notifTitle,
+          message: `${auditDetails}${comment ? ` Comment: "${comment}"` : ""}`,
+        },
+      });
+
+      // Forwarding notifications
+      if (nextFormStatus === "FORWARDED_TO_STATE") {
+        const stateLeaders = await tx.user.findMany({
+          where: { role: "STATE_LEADER", state: report.leader.state },
         });
-
-        // Notify State Leaders if destination is STATE_LEADER or BOTH
-        if (forwardTo === "STATE_LEADER" || forwardTo === "BOTH") {
-          const stateLeaders = await tx.user.findMany({
-            where: { role: "STATE_LEADER", state: report.leader.state },
+        for (const sl of stateLeaders) {
+          await tx.notification.create({
+            data: {
+              recipientId: sl.id,
+              senderId: session.user.id,
+              title: `Pending Review: ${targetFormKey} Form (${report.reportId})`,
+              message: `${report.reportId} ${targetFormKey} Form was forwarded to you for State review by ${session.user.username}.`,
+            },
           });
-          for (const sl of stateLeaders) {
-            await tx.notification.create({
-              data: {
-                recipientId: sl.id,
-                senderId: session.user.id,
-                title,
-                message: `Meeting Report ${report.reportId} has been forwarded to you for State Leader review by Zone Leader ${session.user.username}.`,
-              },
-            });
-          }
         }
-
-        // Notify Admins if destination is ADMIN or BOTH
-        if (forwardTo === "ADMIN" || forwardTo === "BOTH") {
-          const admins = await tx.user.findMany({
-            where: { role: "ADMIN" },
+      } else if (nextFormStatus === "FORWARDED_TO_ADMIN") {
+        const admins = await tx.user.findMany({
+          where: { role: "ADMIN" },
+        });
+        for (const adminUser of admins) {
+          await tx.notification.create({
+            data: {
+              recipientId: adminUser.id,
+              senderId: session.user.id,
+              title: `Pending Admin Approval: ${targetFormKey} Form (${report.reportId})`,
+              message: `${report.reportId} ${targetFormKey} Form was forwarded to Admin review by ${session.user.username}.`,
+            },
           });
-          for (const adminUser of admins) {
-            await tx.notification.create({
-              data: {
-                recipientId: adminUser.id,
-                senderId: session.user.id,
-                title,
-                message: `Meeting Report ${report.reportId} has been forwarded to Admin review by Zone Leader ${session.user.username}.`,
-              },
-            });
-          }
         }
       }
-
-      return updatedReport;
     }, { maxWait: 20000, timeout: 30000 });
 
     return NextResponse.json({
-      message: `Report ${action.toLowerCase()}d successfully`,
-      status: updated.status,
-      version: updated.version,
+      message: `${targetFormKey} Form status updated to ${nextFormStatus}`,
+      formType: targetFormKey,
+      status: nextFormStatus,
     });
   } catch (err) {
     console.error("POST /api/reports/[id]/review error:", err);

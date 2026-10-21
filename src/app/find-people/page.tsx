@@ -447,7 +447,7 @@ export default function FindPeoplePage() {
                           e.stopPropagation();
                           handleOpenProfile(candidate.id);
                         }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-blue-50 hover:text-blue-600 dark:bg-slate-800 dark:hover:bg-slate-750 text-xs font-bold text-slate-700 dark:text-slate-200 transition-colors cursor-pointer active:scale-[0.96]"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-blue-50 hover:text-blue-600 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 transition-colors cursor-pointer active:scale-[0.96]"
                       >
                         View Profile
                       </button>
@@ -773,7 +773,7 @@ export default function FindPeoplePage() {
                   </button>
                   <button
                     onClick={() => setViewingImage(null)}
-                    className="px-4 py-2.5 rounded-xl border border-slate-800 hover:bg-slate-850 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white transition-colors cursor-pointer"
+                    className="px-4 py-2.5 rounded-xl border border-slate-800 hover:bg-slate-800 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white transition-colors cursor-pointer"
                   >
                     Close
                   </button>

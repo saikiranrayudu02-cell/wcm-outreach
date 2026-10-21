@@ -5,16 +5,19 @@ import { DashboardLayout } from "@/components/dashboard-layout";
 import { 
   Users, FileSpreadsheet, Eye, UserPlus, Pencil, Trash2, 
   X, Save, FileText, ClipboardList, RefreshCw,
-  Mail, Send, MessageSquare, CalendarCheck, Phone
+  Mail, Send, MessageSquare, CalendarCheck, Phone, BarChart3
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useUIStore } from "@/store/ui-store";
 import { translate } from "@/lib/translations";
+import { FormStatusBadge } from "@/components/form-status-badge";
+import { MeetingReviewModal } from "@/components/meeting-review-modal";
+import { MonthlySummary } from "@/components/monthly-summary";
 
 export default function AdminDashboardPage() {
-  const { language } = useUIStore();
-  const [activeTab, setActiveTab] = useState<"users" | "reports" | "messages" | "confirmations">("users");
+  const { user, language } = useUIStore();
+  const [activeTab, setActiveTab] = useState<"users" | "reports" | "analytics" | "messages" | "confirmations">("users");
   
   // Users state
   const [usersList, setUsersList] = useState<any[]>([]);
@@ -381,7 +384,7 @@ export default function AdminDashboardPage() {
                 fetchConfirmations();
                 toast.success("Dashboard data refreshed");
               }}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-808 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-bold uppercase tracking-wider text-slate-655 dark:text-slate-305 hover:bg-slate-50 transition-all cursor-pointer active:scale-[0.96]"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 hover:bg-slate-50 transition-all cursor-pointer active:scale-[0.96]"
             >
               <RefreshCw className="h-4 w-4" />
               Refresh
@@ -393,7 +396,7 @@ export default function AdminDashboardPage() {
                   resetForm();
                   setShowCreateModal(true);
                 }}
-                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-blue-755 transition-all shadow-sm cursor-pointer active:scale-[0.96]"
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-blue-700 transition-all shadow-sm cursor-pointer active:scale-[0.96]"
               >
                 <UserPlus className="h-4 w-4" />
                 Create User
@@ -404,13 +407,13 @@ export default function AdminDashboardPage() {
 
         {/* Tab switcher */}
         <div className="overflow-x-auto pb-1 max-w-full no-scrollbar">
-          <div className="flex border border-slate-200 dark:border-slate-805 bg-slate-105/50 dark:bg-slate-950 p-1 rounded-2xl gap-1 w-max sm:w-fit">
+          <div className="flex border border-slate-200 dark:border-slate-700/80 bg-slate-100 dark:bg-slate-900/90 p-1.5 rounded-2xl gap-1.5 w-max sm:w-fit shadow-xs">
             <button
               onClick={() => setActiveTab("users")}
               className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === "users"
-                  ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-100 dark:border-slate-800"
-                  : "text-slate-555 hover:text-slate-800 dark:hover:text-slate-355"
+                  ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-sm border border-slate-200 dark:border-indigo-500 font-black"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800/60"
               }`}
             >
               <Users className="h-4 w-4" />
@@ -420,19 +423,30 @@ export default function AdminDashboardPage() {
               onClick={() => setActiveTab("reports")}
               className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === "reports"
-                  ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-100 dark:border-slate-800"
-                  : "text-slate-555 hover:text-slate-800 dark:hover:text-slate-350"
+                  ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-sm border border-slate-200 dark:border-indigo-500 font-black"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800/60"
               }`}
             >
               <FileSpreadsheet className="h-4 w-4" />
               Submitted Reports
             </button>
             <button
+              onClick={() => setActiveTab("analytics")}
+              className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+                activeTab === "analytics"
+                  ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-sm border border-slate-200 dark:border-indigo-500 font-black"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800/60"
+              }`}
+            >
+              <BarChart3 className="h-4 w-4" />
+              Monthly Summary
+            </button>
+            <button
               onClick={() => setActiveTab("messages")}
               className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === "messages"
-                  ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-100 dark:border-slate-800"
-                  : "text-slate-555 hover:text-slate-800 dark:hover:text-slate-350"
+                  ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-sm border border-slate-200 dark:border-indigo-500 font-black"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800/60"
               }`}
             >
               <Mail className="h-4 w-4" />
@@ -442,8 +456,8 @@ export default function AdminDashboardPage() {
               onClick={() => setActiveTab("confirmations")}
               className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === "confirmations"
-                  ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-100 dark:border-slate-800"
-                  : "text-slate-555 hover:text-slate-800 dark:hover:text-slate-350"
+                  ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-sm border border-slate-200 dark:border-indigo-500 font-black"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800/60"
               }`}
             >
               <CalendarCheck className="h-4 w-4" />
@@ -454,14 +468,14 @@ export default function AdminDashboardPage() {
 
         {/* Tab Contents: Users */}
         {activeTab === "users" && (
-          <div className="bg-white dark:bg-slate-900 border border-slate-250/60 dark:border-slate-808/80 rounded-2xl shadow-sm overflow-hidden animate-fadeIn text-left">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-2xl shadow-sm overflow-hidden animate-fadeIn text-left">
             {usersLoading ? (
               <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
                 <span className="text-xs font-bold uppercase tracking-wider">Loading users...</span>
               </div>
             ) : usersList.length === 0 ? (
-              <div className="py-12 text-center text-xs text-slate-450 dark:text-slate-505 font-bold uppercase tracking-wider italic">No Users Found</div>
+              <div className="py-12 text-center text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider italic">No Users Found</div>
             ) : (
             <>
               {/* Mobile Cards (Phone View: < md) */}
@@ -527,19 +541,19 @@ export default function AdminDashboardPage() {
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr className="bg-slate-50/50 dark:bg-slate-805/10 border-b border-slate-150 dark:border-slate-800 text-slate-455 font-bold uppercase tracking-widest text-[10px]">
+                    <tr className="bg-slate-100/90 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-black uppercase tracking-wider text-[11px]">
                       <th className="px-6 py-4">Username</th>
                       <th className="px-6 py-4">Role</th>
                       <th className="px-6 py-4">Hierarchy Assignment</th>
                       <th className="px-6 py-4 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-slate-700 dark:text-slate-200">
                     {usersList.map((u) => (
-                      <tr key={u.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-805/5 transition-colors">
+                      <tr key={u.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/60 transition-colors">
                         <td className="px-6 py-4">
-                          <span className="font-bold text-slate-800 dark:text-white block">{u.name || u.username}</span>
-                          <span className="text-[11px] text-slate-400 block font-medium">@{u.username}</span>
+                          <span className="font-bold text-slate-900 dark:text-white block">{u.name || u.username}</span>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-300 block font-medium">@{u.username}</span>
                           {u.phoneNumber && (
                             <span className="text-[11px] text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1 mt-0.5">
                               <Phone className="h-3 w-3" />
@@ -548,7 +562,7 @@ export default function AdminDashboardPage() {
                           )}
                         </td>
                         <td className="px-6 py-4">
-                          <span className="inline-flex rounded-full bg-slate-105 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/60 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider">
+                          <span className="inline-flex rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/60 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider">
                             {u.role.replace(/_/g, " ")}
                           </span>
                         </td>
@@ -564,13 +578,13 @@ export default function AdminDashboardPage() {
                         <td className="px-6 py-4 text-right flex justify-end gap-1">
                           <button
                             onClick={() => handleEditUserClick(u)}
-                            className="rounded-xl p-2 text-slate-505 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-808 hover:text-slate-700 cursor-pointer transition-colors active:scale-[0.95]"
+                            className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 hover:text-slate-700 cursor-pointer transition-colors active:scale-[0.95]"
                           >
                             <Pencil className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteUser(u.id)}
-                            className="rounded-xl p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-955/20 cursor-pointer transition-colors active:scale-[0.95]"
+                            className="rounded-xl p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer transition-colors active:scale-[0.95]"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -587,14 +601,14 @@ export default function AdminDashboardPage() {
 
       {/* Tab Contents: Reports */}
       {activeTab === "reports" && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-255/60 dark:border-slate-808/80 rounded-2xl shadow-sm overflow-hidden animate-fadeIn text-left">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-sm overflow-hidden animate-fadeIn text-left">
           {reportsLoading ? (
             <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
               <span className="text-xs font-bold uppercase tracking-wider">Loading reports...</span>
             </div>
           ) : reportsList.length === 0 ? (
-            <div className="py-12 text-center text-xs text-slate-450 dark:text-slate-555 font-bold uppercase tracking-wider italic">No Reports Found</div>
+            <div className="py-12 text-center text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider italic">No Reports Found</div>
           ) : (
             <>
               {/* Mobile Cards (Phone View: < md) */}
@@ -602,52 +616,60 @@ export default function AdminDashboardPage() {
                 {reportsList.map((r) => (
                   <div
                     key={r.id}
-                    className="p-4 rounded-2xl bg-slate-50/60 dark:bg-slate-950/40 border border-slate-200/80 dark:border-slate-800 space-y-3 shadow-xs"
+                    className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h4 className="text-sm font-black text-slate-800 dark:text-white">
+                        <div className="font-mono text-xs font-black text-indigo-600 dark:text-indigo-400">
                           {r.reportId}
+                        </div>
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                          {r.title || `Outreach Meeting ${r.reportId}`}
                         </h4>
-                        <span className="text-[10px] text-slate-400 font-mono font-bold">
-                          Version: v{r.version} • {r.leader?.username || "Leader"}
+                        <span className="text-[10px] text-slate-500 dark:text-slate-300 font-semibold block">
+                          Coordinator: {r.coordinatorName || r.leader?.username || "Leader"}
                         </span>
                       </div>
-                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider border ${
-                        r.rawStatus === "APPROVED"
-                          ? "bg-emerald-50 dark:bg-emerald-955/20 text-emerald-805 dark:text-emerald-400 border-emerald-250/30"
-                          : r.rawStatus === "REJECTED"
-                          ? "bg-red-50 dark:bg-red-955/20 text-red-750 dark:text-red-405 border-red-250/30"
-                          : r.rawStatus === "REQUEST_CHANGES"
-                          ? "bg-amber-50 dark:bg-amber-955/20 text-amber-700 dark:text-amber-450 border-amber-250/30"
-                          : "bg-blue-50 dark:bg-blue-955/20 text-blue-700 dark:text-blue-400 border-blue-250/30"
-                      }`}>
-                        {r.status}
-                      </span>
                     </div>
 
-                    <div className="text-xs space-y-1 text-slate-600 dark:text-slate-300 border-y border-slate-200/60 dark:border-slate-800/60 py-2">
+                    {/* 3 Form Status Badges */}
+                    <div className="grid grid-cols-3 gap-1.5 py-2 border-y border-slate-200 dark:border-slate-800 text-center">
+                      <div>
+                        <span className="text-[9px] uppercase font-bold text-slate-500 dark:text-slate-400 block mb-1">1. Verify</span>
+                        <FormStatusBadge status={r.verificationStatus} size="sm" />
+                      </div>
+                      <div>
+                        <span className="text-[9px] uppercase font-bold text-slate-500 dark:text-slate-400 block mb-1">2. Attend</span>
+                        <FormStatusBadge status={r.attendanceStatus} isLocked={r.isAttendanceLocked} size="sm" />
+                      </div>
+                      <div>
+                        <span className="text-[9px] uppercase font-bold text-slate-500 dark:text-slate-400 block mb-1">3. Eval</span>
+                        <FormStatusBadge status={r.evaluationStatus} isLocked={r.isEvaluationLocked} size="sm" />
+                      </div>
+                    </div>
+
+                    <div className="text-xs space-y-1 text-slate-700 dark:text-slate-300">
                       <div className="flex justify-between">
-                        <span className="text-slate-400 font-semibold">Dates:</span>
+                        <span className="text-slate-500 dark:text-slate-400 font-semibold">Dates:</span>
                         <span className="font-bold">{r.meetingDates || "N/A"}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-400 font-semibold">Location:</span>
+                        <span className="text-slate-500 dark:text-slate-400 font-semibold">Location:</span>
                         <span className="font-bold truncate max-w-50 text-right">{r.location || "N/A"}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-400 font-semibold">Leader:</span>
-                        <span className="font-bold">{r.leader?.state || "N/A"} ({r.leader?.zone || "N/A"})</span>
+                        <span className="text-slate-500 dark:text-slate-400 font-semibold">Zone:</span>
+                        <span className="font-bold">{r.leader?.zone || "N/A"}</span>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-end gap-2 pt-1">
                       <button
-                        onClick={() => handleOpenReport(r.id)}
-                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 text-white px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-blue-700 transition-colors cursor-pointer min-h-10 shadow-xs active:scale-[0.96]"
+                        onClick={() => setSelectedReportId(r.id)}
+                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 text-white px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-indigo-500 transition-colors shadow-sm cursor-pointer"
                       >
                         <Eye className="h-4 w-4" />
-                        View / Review Report
+                        Open Forms & Review
                       </button>
                     </div>
                   </div>
@@ -658,55 +680,43 @@ export default function AdminDashboardPage() {
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr className="bg-slate-50/50 dark:bg-slate-805/10 border-b border-slate-150 dark:border-slate-808 text-slate-455 font-bold uppercase tracking-widest text-[10px]">
-                      <th className="px-6 py-4">Report ID</th>
-                      <th className="px-6 py-4">Leader Info</th>
-                      <th className="px-6 py-4">Dates / Location</th>
-                      <th className="px-6 py-4 text-center">Version</th>
-                      <th className="px-6 py-4 text-center">Status</th>
-                      <th className="px-6 py-4 text-right">Action</th>
+                    <tr className="bg-slate-100/90 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-black uppercase tracking-wider text-[11px]">
+                      <th className="px-5 py-4">Meeting Details</th>
+                      <th className="px-5 py-4">Coordinator</th>
+                      <th className="px-4 py-4 text-center">1. Verification</th>
+                      <th className="px-4 py-4 text-center">2. Attendance</th>
+                      <th className="px-4 py-4 text-center">3. Evaluation</th>
+                      <th className="px-5 py-4 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-355">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-slate-700 dark:text-slate-200">
                     {reportsList.map((r) => (
-                      <tr key={r.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-808/5 transition-colors">
-                        <td className="px-6 py-4 font-bold text-slate-805 dark:text-white">{r.reportId}</td>
-                        <td className="px-6 py-4">
-                          <span className="font-bold block text-xs">{r.leader?.username}</span>
-                          <span className="text-[10px] text-slate-400 block font-semibold">State: {r.leader?.state || "N/A"} | Zone: {r.leader?.zone || "N/A"}</span>
-                          {r.forwardedBy && (
-                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 block font-bold mt-0.5">
-                              Last Action: {r.forwardedBy}
-                            </span>
-                          )}
+                      <tr key={r.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/60 transition-colors">
+                        <td className="px-5 py-4">
+                          <div className="font-mono text-xs font-black text-indigo-600 dark:text-indigo-400">{r.reportId}</div>
+                          <div className="font-bold text-xs text-slate-900 dark:text-white mt-0.5">{r.title || `Outreach Meeting ${r.reportId}`}</div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-300 font-medium mt-0.5">{r.meetingDates || "N/A"} • {r.location || "N/A"}</div>
                         </td>
-                        <td className="px-6 py-4 text-slate-655 dark:text-slate-400">
-                          <div className="text-xs font-bold text-slate-808 dark:text-slate-300">{r.meetingDates || "N/A"}</div>
-                          <div className="text-[11px] text-slate-400 mt-0.5">{r.location || "N/A"}</div>
+                        <td className="px-5 py-4">
+                          <span className="font-bold block text-xs text-slate-900 dark:text-white">{r.coordinatorName || r.leader?.username}</span>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-300 block font-medium">State: {r.leader?.state || "N/A"} • Zone: {r.leader?.zone || "N/A"}</span>
                         </td>
-                        <td className="px-6 py-4 text-center font-mono font-bold text-slate-500">
-                          v{r.version}
+                        <td className="px-4 py-4 text-center">
+                          <FormStatusBadge status={r.verificationStatus} size="sm" />
                         </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider border ${
-                            r.rawStatus === "APPROVED"
-                              ? "bg-emerald-50 dark:bg-emerald-955/20 text-emerald-805 dark:text-emerald-400 border-emerald-250/30"
-                              : r.rawStatus === "REJECTED"
-                              ? "bg-red-50 dark:bg-red-955/20 text-red-750 dark:text-red-405 border-red-250/30"
-                              : r.rawStatus === "REQUEST_CHANGES"
-                              ? "bg-amber-50 dark:bg-amber-955/20 text-amber-700 dark:text-amber-450 border-amber-250/30"
-                              : "bg-blue-50 dark:bg-blue-955/20 text-blue-700 dark:text-blue-400 border-blue-250/30"
-                          }`}>
-                            {r.status}
-                          </span>
+                        <td className="px-4 py-4 text-center">
+                          <FormStatusBadge status={r.attendanceStatus} isLocked={r.isAttendanceLocked} size="sm" />
                         </td>
-                        <td className="px-6 py-4 text-right">
+                        <td className="px-4 py-4 text-center">
+                          <FormStatusBadge status={r.evaluationStatus} size="sm" isLocked={r.isEvaluationLocked} />
+                        </td>
+                        <td className="px-5 py-4 text-right">
                           <button
-                            onClick={() => handleOpenReport(r.id)}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/30 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 hover:bg-blue-105 transition-colors border border-blue-500/10 cursor-pointer active:scale-[0.96]"
+                            onClick={() => setSelectedReportId(r.id)}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider shadow-sm transition-all cursor-pointer active:scale-[0.96]"
                           >
-                            <Eye className="h-4 w-4" />
-                            {translate("View", language)}
+                            <Eye className="h-3.5 w-3.5" />
+                            Review Forms
                           </button>
                         </td>
                       </tr>
@@ -719,12 +729,19 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
+        {/* Tab Contents: Analytics / Monthly Summary */}
+        {activeTab === "analytics" && (
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-2xl shadow-sm p-4 sm:p-6 animate-fadeIn text-left">
+            <MonthlySummary role="ADMIN" user={user} language={language} />
+          </div>
+        )}
+
         {/* Tab Contents: Messages */}
         {activeTab === "messages" && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn text-left">
             {/* Compose Card */}
-            <div className="lg:col-span-1 bg-white dark:bg-slate-900 border border-slate-250/60 dark:border-slate-808/80 rounded-2xl shadow-sm p-6 space-y-4 h-fit">
-              <h3 className="text-xs font-black uppercase tracking-widest text-slate-805 dark:text-white flex items-center gap-2">
+            <div className="lg:col-span-1 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-2xl shadow-sm p-6 space-y-4 h-fit">
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-800 dark:text-white flex items-center gap-2">
                 <Send className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 Compose Message
               </h3>
@@ -734,14 +751,14 @@ export default function AdminDashboardPage() {
 
               <form onSubmit={handleSendNotification} className="space-y-4">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-455 dark:text-slate-405 mb-1.5">
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">
                     Select Recipient Coordinator *
                   </label>
                   <select
                     required
                     value={msgRecipientId}
                     onChange={(e) => setMsgRecipientId(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-950 px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold"
                   >
                     <option value="">-- Choose Coordinator --</option>
                     {usersList
@@ -755,7 +772,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-455 dark:text-slate-405 mb-1.5">
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">
                     Subject / Title *
                   </label>
                   <input
@@ -764,12 +781,12 @@ export default function AdminDashboardPage() {
                     value={msgTitle}
                     onChange={(e) => setMsgTitle(e.target.value)}
                     placeholder="e.g. System Announcement"
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-805 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-909 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-555 transition-all font-semibold"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-600 transition-all font-semibold"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-455 dark:text-slate-405 mb-1.5">
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">
                     Message Content *
                   </label>
                   <textarea
@@ -778,7 +795,7 @@ export default function AdminDashboardPage() {
                     value={msgMessage}
                     onChange={(e) => setMsgMessage(e.target.value)}
                     placeholder="Type your message details here..."
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-808 bg-slate-50/50 dark:bg-slate-955 px-4 py-2.5 text-sm text-slate-905 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-555 transition-all font-semibold"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-600 transition-all font-semibold"
                   />
                 </div>
 
@@ -794,9 +811,9 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Sent Messages History List */}
-            <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-250/60 dark:border-slate-808/80 rounded-2xl shadow-sm overflow-hidden flex flex-col">
-              <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-955/20">
-                <h3 className="text-xs font-black uppercase tracking-widest text-slate-850 dark:text-white flex items-center gap-2">
+            <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+              <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20">
+                <h3 className="text-xs font-black uppercase tracking-widest text-slate-800 dark:text-white flex items-center gap-2">
                   <MessageSquare className="h-4.5 w-4.5 text-blue-600 dark:text-blue-400" />
                   Sent Messages History
                 </h3>
@@ -808,38 +825,38 @@ export default function AdminDashboardPage() {
                   <span className="text-xs font-bold uppercase tracking-wider">Loading sent history...</span>
                 </div>
               ) : notificationsList.length === 0 ? (
-                <div className="py-12 text-center text-xs text-slate-450 dark:text-slate-505 font-bold uppercase tracking-wider italic">No Messages Sent Yet</div>
+                <div className="py-12 text-center text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider italic">No Messages Sent Yet</div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse text-sm">
                     <thead>
-                      <tr className="bg-slate-50/50 dark:bg-slate-805/10 border-b border-slate-150 dark:border-slate-800 text-slate-455 font-bold uppercase tracking-widest text-[10px]">
+                      <tr className="bg-slate-50/50 dark:bg-slate-800/10 border-b border-slate-200 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-widest text-[10px]">
                         <th className="px-6 py-4">Recipient</th>
                         <th className="px-6 py-4">Title & Message</th>
                         <th className="px-6 py-4">Date Sent</th>
                         <th className="px-6 py-4 text-center">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-808 text-slate-700 dark:text-slate-350">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                       {notificationsList.map((n) => (
-                        <tr key={n.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-808/5 transition-colors">
+                        <tr key={n.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-800/5 transition-colors">
                           <td className="px-6 py-4 font-bold text-slate-800 dark:text-white">
                             {n.recipient?.username}
                           </td>
                           <td className="px-6 py-4 max-w-xs sm:max-w-sm lg:max-w-md">
-                            <span className="font-bold block text-slate-850 dark:text-white text-xs">{n.title}</span>
+                            <span className="font-bold block text-slate-800 dark:text-white text-xs">{n.title}</span>
                             <span className="text-xs text-slate-500 dark:text-slate-400 block truncate mt-0.5 font-medium">{n.message}</span>
                           </td>
-                          <td className="px-6 py-4 text-xs font-mono font-bold text-slate-450">
+                          <td className="px-6 py-4 text-xs font-mono font-bold text-slate-400">
                             {new Date(n.createdAt).toLocaleDateString()} {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </td>
                           <td className="px-6 py-4 text-center">
                             {n.read ? (
-                              <span className="inline-flex rounded-full bg-emerald-50 dark:bg-emerald-955/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-805 dark:text-emerald-450 border border-emerald-250/20">
+                              <span className="inline-flex rounded-full bg-emerald-50 dark:bg-emerald-950/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-400 border border-emerald-200/20">
                                 Read
                               </span>
                             ) : (
-                              <span className="inline-flex rounded-full bg-slate-105 dark:bg-slate-800 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-650 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                              <span className="inline-flex rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                                 Unread
                               </span>
                             )}
@@ -856,9 +873,9 @@ export default function AdminDashboardPage() {
 
         {/* Tab Contents: Confirmations */}
         {activeTab === "confirmations" && (
-          <div className="bg-white dark:bg-slate-900 border border-slate-255/60 dark:border-slate-808/80 rounded-2xl shadow-sm overflow-hidden animate-fadeIn text-left">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-2xl shadow-sm overflow-hidden animate-fadeIn text-left">
             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20">
-              <h3 className="text-xs font-black uppercase tracking-widest text-slate-850 dark:text-white flex items-center gap-2">
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-800 dark:text-white flex items-center gap-2">
                 <CalendarCheck className="h-4.5 w-4.5 text-blue-600 dark:text-blue-400" />
                 Coordinators' Proposals
               </h3>
@@ -870,12 +887,12 @@ export default function AdminDashboardPage() {
                 <span className="text-xs font-bold uppercase tracking-wider">Loading proposals...</span>
               </div>
             ) : confirmationsList.length === 0 ? (
-              <div className="py-12 text-center text-xs text-slate-455 dark:text-slate-505 font-bold uppercase tracking-wider italic">No Proposals Found</div>
+              <div className="py-12 text-center text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider italic">No Proposals Found</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr className="bg-slate-50/50 dark:bg-slate-805/10 border-b border-slate-150 dark:border-slate-805 text-slate-455 font-bold uppercase tracking-widest text-[10px]">
+                    <tr className="bg-slate-50/50 dark:bg-slate-800/10 border-b border-slate-200 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-widest text-[10px]">
                       <th className="px-6 py-4">Coordinator</th>
                       <th className="px-6 py-4">Details</th>
                       <th className="px-6 py-4">Message</th>
@@ -883,7 +900,7 @@ export default function AdminDashboardPage() {
                       <th className="px-6 py-4 text-right">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-808 text-slate-700 dark:text-slate-355">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                     {confirmationsList.map((c) => (
                       <tr key={c.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-800/5 transition-colors">
                         <td className="px-6 py-4 font-bold text-slate-800 dark:text-white">
@@ -891,25 +908,25 @@ export default function AdminDashboardPage() {
                           <span className="text-[9px] text-slate-400 block font-semibold uppercase mt-0.5">State: {c.leader?.state || "N/A"} | Zone: {c.leader?.zone || "N/A"}</span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="font-bold block text-slate-855 dark:text-white text-xs">{c.location}</span>
-                          <span className="text-[11px] text-slate-505 dark:text-slate-400 block font-semibold mt-0.5">Dates: {c.meetingDates}</span>
+                          <span className="font-bold block text-slate-800 dark:text-white text-xs">{c.location}</span>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-semibold mt-0.5">Dates: {c.meetingDates}</span>
                           <span className="text-[10px] text-slate-400 block mt-0.5">Exp. Attendance: {c.expectedAttendance}</span>
                         </td>
-                        <td className="px-6 py-4 max-w-xs whitespace-pre-wrap text-slate-655 dark:text-slate-355 text-xs font-semibold leading-relaxed">
+                        <td className="px-6 py-4 max-w-xs whitespace-pre-wrap text-slate-600 dark:text-slate-300 text-xs font-semibold leading-relaxed">
                           {c.message}
                         </td>
                         <td className="px-6 py-4">
                           <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider border ${
                             c.status === "PENDING"
-                              ? "bg-amber-50 dark:bg-amber-955/20 text-amber-700 dark:text-amber-400 border-amber-250/30"
+                              ? "bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border-amber-200/30"
                               : c.status === "APPROVED"
-                              ? "bg-emerald-50 dark:bg-emerald-955/20 text-emerald-800 dark:text-emerald-400 border-emerald-250/30"
-                              : "bg-red-50 dark:bg-red-955/20 text-red-750 dark:text-red-400 border-red-250/30"
+                              ? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-400 border-emerald-200/30"
+                              : "bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border-red-200/30"
                           }`}>
                             {c.status}
                           </span>
                           {c.adminFeedback && (
-                            <p className="text-[10px] text-slate-555 dark:text-slate-400 italic mt-1 max-w-xs truncate">
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 italic mt-1 max-w-xs truncate">
                               Feedback: "{c.adminFeedback}"
                             </p>
                           )}
@@ -943,69 +960,69 @@ export default function AdminDashboardPage() {
       {/* Modal: Create User */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto animate-fadeIn">
-          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-4 sm:p-6 border border-slate-205 dark:border-slate-800 text-left max-h-[90vh] overflow-y-auto animate-modal my-auto">
-            <div className="flex items-center justify-between border-b border-slate-105 pb-3 mb-4">
-              <h3 className="text-sm font-black text-slate-805 dark:text-white uppercase tracking-wider">
+          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 text-left max-h-[90vh] overflow-y-auto animate-modal my-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+              <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">
                 Create Coordinator User
               </h3>
-              <button onClick={() => setShowCreateModal(false)} className="text-slate-405 hover:text-slate-600 cursor-pointer">
+              <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <form onSubmit={handleCreateUser} className="space-y-4">
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-455 dark:text-slate-405 mb-1.5">Full Name</label>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Full Name</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Pastor Samuel"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-808 bg-slate-50/50 dark:bg-slate-955 px-4 py-2.5 text-sm text-slate-909 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-455 dark:text-slate-405 mb-1.5">Phone Number</label>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Phone Number</label>
                 <input
                   type="text"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   placeholder="e.g. +91 98480 12345"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-808 bg-slate-50/50 dark:bg-slate-955 px-4 py-2.5 text-sm text-slate-909 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-455 dark:text-slate-405 mb-1.5">Username *</label>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Username *</label>
                 <input
                   type="text"
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="e.g. pastor_sam"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-808 bg-slate-50/50 dark:bg-slate-955 px-4 py-2.5 text-sm text-slate-909 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-455 dark:text-slate-405 mb-1.5">Password *</label>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Password *</label>
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Minimum 6 characters"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-808 bg-slate-50/50 dark:bg-slate-955 px-4 py-2.5 text-sm text-slate-909 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-505/10 focus:border-blue-555 transition-all font-semibold"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-600 transition-all font-semibold"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-455 dark:text-slate-405 mb-1.5">Role *</label>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Role *</label>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-808 bg-slate-50/50 dark:bg-slate-955 px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold cursor-pointer"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold cursor-pointer"
                 >
                   <option value="COORDINATOR">Coordinator</option>
                   <option value="ZONE_LEADER">Zone Leader</option>
@@ -1016,43 +1033,43 @@ export default function AdminDashboardPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-455 dark:text-slate-405 mb-1.5">State</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">State</label>
                   <input
                     type="text"
                     value={state}
                     onChange={(e) => setState(e.target.value)}
                     placeholder="e.g. AP"
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-808 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-455 dark:text-slate-405 mb-1.5">Part</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Part</label>
                   <input
                     type="text"
                     value={part}
                     onChange={(e) => setPart(e.target.value)}
                     placeholder="e.g. Part-1"
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-808 bg-slate-50/50 dark:bg-slate-955 px-4 py-2.5 text-sm text-slate-909 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-555 transition-all font-semibold"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-600 transition-all font-semibold"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-455 dark:text-slate-405 mb-1.5">Zone</label>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Zone</label>
                 <input
                   type="text"
                   value={zone}
                   onChange={(e) => setZone(e.target.value)}
                   placeholder="e.g. Zone-1"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-808 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-808">
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="rounded-xl border border-slate-255 dark:border-slate-808 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-808 transition-colors cursor-pointer"
+                  className="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -1073,55 +1090,55 @@ export default function AdminDashboardPage() {
       {showEditModal && selectedUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto animate-fadeIn">
           <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 text-left max-h-[90vh] overflow-y-auto animate-modal my-auto">
-            <div className="flex items-center justify-between border-b border-slate-105 dark:border-slate-855 pb-3 mb-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
               <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">
                 Edit User Settings: {selectedUser.username}
               </h3>
-              <button onClick={() => setShowEditModal(false)} className="text-slate-405 hover:text-slate-655 cursor-pointer">
+              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <form onSubmit={handleUpdateUser} className="space-y-4">
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-450 dark:text-slate-405 mb-1.5">Full Name</label>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Full Name</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Pastor Samuel"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-808 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-450 dark:text-slate-405 mb-1.5">Phone Number</label>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Phone Number</label>
                 <input
                   type="text"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   placeholder="e.g. +91 98480 12345"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-808 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-450 dark:text-slate-405 mb-1.5">New Password (leave blank to keep current)</label>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">New Password (leave blank to keep current)</label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter new password"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-808 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-455 dark:text-slate-405 mb-1.5">Role *</label>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Role *</label>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-808 bg-slate-50/50 dark:bg-slate-950 px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold cursor-pointer"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold cursor-pointer"
                 >
                   <option value="COORDINATOR">Coordinator</option>
                   <option value="ZONE_LEADER">Zone Leader</option>
@@ -1132,43 +1149,43 @@ export default function AdminDashboardPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-450 dark:text-slate-405 mb-1.5">State</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">State</label>
                   <input
                     type="text"
                     value={state}
                     onChange={(e) => setState(e.target.value)}
                     placeholder="e.g. AP"
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-808 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-455 dark:text-slate-405 mb-1.5">Part</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Part</label>
                   <input
                     type="text"
                     value={part}
                     onChange={(e) => setPart(e.target.value)}
                     placeholder="e.g. Part-1"
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-855 bg-slate-50/50 dark:bg-slate-955 px-4 py-2.5 text-sm text-slate-909 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-505/10 focus:border-blue-555 transition-all font-semibold"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-600 transition-all font-semibold"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-455 dark:text-slate-405 mb-1.5">Zone</label>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Zone</label>
                 <input
                   type="text"
                   value={zone}
                   onChange={(e) => setZone(e.target.value)}
                   placeholder="e.g. Zone-1"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-808 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-555 transition-all font-semibold"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-600 transition-all font-semibold"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-4 border-t border-slate-105 dark:border-slate-808">
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
-                  className="rounded-xl border border-slate-255 dark:border-slate-888 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-605 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-808 transition-colors cursor-pointer"
+                  className="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -1185,286 +1202,25 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Modal: View Report */}
-      {selectedReportId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto animate-fadeIn">
-          <div className="relative w-full max-w-4xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-808 max-h-[90vh] flex flex-col text-left animate-modal">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-105 dark:border-slate-800 shrink-0">
-              <div>
-                <h3 className="text-base font-black text-slate-850 dark:text-white uppercase tracking-wider">
-                  Meeting Report Details ({reportDetail?.reportId})
-                </h3>
-                <span className="inline-flex rounded-full bg-blue-50 dark:bg-blue-955/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 mt-1 border border-blue-200/50">
-                  Status: {reportDetail?.status?.replace(/_/g, " ")} (v{reportDetail?.version})
-                </span>
-              </div>
-              <button
-                onClick={() => {
-                  setSelectedReportId(null);
-                  setReportDetail(null);
-                  setReviewFeedback("");
-                }}
-                className="rounded-xl p-2 text-slate-405 hover:bg-slate-105 dark:hover:bg-slate-808 hover:text-slate-655 dark:hover:text-slate-205 cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-6 space-y-8">
-              {detailLoading ? (
-                <div className="py-24 flex flex-col items-center justify-center gap-2 text-slate-400">
-                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-                  <span className="text-xs font-bold uppercase tracking-wider">Loading report details...</span>
-                </div>
-              ) : reportDetail ? (
-                <>
-                  {/* Verification Sheet Section */}
-                  <div className="space-y-3">
-                    <h4 className="flex items-center gap-2 text-xs font-black text-blue-600 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2">
-                      <FileText className="h-4.5 w-4.5" />
-                      1. Verification Sheet
-                    </h4>
-                    {reportDetail.verification ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 dark:bg-slate-955/20 border border-slate-200/50 dark:border-slate-805/40 rounded-xl p-5 text-xs font-semibold animate-fadeIn">
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-505 uppercase tracking-wider mb-0.5">Convener Name</p>
-                          <p className="font-bold text-slate-800 dark:text-white">{reportDetail.verification.convenerName || "N/A"}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-505 uppercase tracking-wider mb-0.5">Church / Ministry Name</p>
-                          <p className="font-bold text-slate-808 dark:text-white">{reportDetail.verification.churchMinistryName || "N/A"}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-505 uppercase tracking-wider mb-0.5">State / District / City</p>
-                          <p className="font-bold text-slate-800 dark:text-white">{reportDetail.verification.stateDistrictCity || "N/A"}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-555 uppercase tracking-wider mb-0.5">Contact Number</p>
-                          <p className="font-bold text-slate-800 dark:text-white">{reportDetail.verification.contactNumber || "N/A"}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-505 uppercase tracking-wider mb-0.5">Meeting Dates</p>
-                          <p className="font-bold text-slate-800 dark:text-white">{reportDetail.verification.meetingDates || "N/A"} ({reportDetail.verification.numberOfDays || 0} Days)</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-505 uppercase tracking-wider mb-0.5">Expected Attendance</p>
-                          <p className="font-bold text-slate-800 dark:text-white">{reportDetail.verification.expectedAttendance || 0}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-505 uppercase tracking-wider mb-0.5">Ministry Background</p>
-                          <p className="font-bold text-slate-800 dark:text-white">
-                            Years: {reportDetail.verification.yearsOfMinistry || 0} | Members: {reportDetail.verification.churchMembers || 0} | Leaders: {reportDetail.verification.workersLeaders || 0}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-505 uppercase tracking-wider mb-0.5">Arrangements & Volunteers</p>
-                          <p className="font-bold text-slate-808 dark:text-white mt-1 text-xs">
-                            Hall: {reportDetail.verification.meetingHallStage || "N/A"} | Sound: {reportDetail.verification.soundSystem || "N/A"} | Accomm: {reportDetail.verification.accommodationTeam || "N/A"} | Volunteers: {reportDetail.verification.volunteerSupport || "N/A"}
-                          </p>
-                        </div>
-                        <div className="col-span-1 md:col-span-2">
-                          <p className="text-[10px] font-bold text-slate-405 dark:text-slate-505 uppercase tracking-wider mb-0.5">WCM Connection & Background</p>
-                          <p className="font-bold text-slate-850 dark:text-white">
-                            Known via: {reportDetail.verification.knowAboutWcm || "N/A"} | Read WCM Books: {reportDetail.verification.readWcmBooks ? "Yes" : "No"} | Attended Prophet's Meeting: {reportDetail.verification.attendedProphetMeeting ? "Yes" : "No"}
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-slate-400 italic">No verification details recorded.</p>
-                    )}
-                  </div>
-
-                  {/* Attendance Section */}
-                  <div className="space-y-3">
-                    <h4 className="flex items-center gap-2 text-xs font-black text-emerald-600 uppercase tracking-wider border-b border-slate-100 dark:border-slate-888 pb-2">
-                      <ClipboardList className="h-4.5 w-4.5" />
-                      2. Attendance Details
-                    </h4>
-                    {reportDetail.attendance ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 dark:bg-slate-950/20 border border-slate-200/50 dark:border-slate-808/40 rounded-xl p-5 text-xs font-semibold animate-fadeIn">
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-505 uppercase tracking-wider mb-0.5">Date</p>
-                          <p className="font-bold text-slate-800 dark:text-white">{new Date(reportDetail.attendance.date).toLocaleDateString()}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-405 dark:text-slate-555 uppercase tracking-wider mb-0.5">Location</p>
-                          <p className="font-bold text-slate-808 dark:text-white">{reportDetail.attendance.location}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-405 dark:text-slate-555 uppercase tracking-wider mb-0.5">Field Executer / Coordinator</p>
-                          <p className="font-bold text-slate-800 dark:text-white">
-                            Executer: {reportDetail.attendance.fieldExecuter} | Coordinator: {reportDetail.attendance.coordinator}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-405 dark:text-slate-505 uppercase tracking-wider mb-0.5">Attendance statistics</p>
-                          <p className="font-bold text-slate-800 dark:text-white">
-                            Members: {reportDetail.attendance.membersAttended} | Pastors: {reportDetail.attendance.pastorsAttended}
-                          </p>
-                        </div>
-                        <div className="col-span-1 md:col-span-2">
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-505 uppercase tracking-wider mb-0.5">Remarks</p>
-                          <p className="font-bold text-slate-800 dark:text-white whitespace-pre-wrap leading-relaxed">{reportDetail.attendance.remarks}</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-slate-400 italic">No attendance record matches.</p>
-                    )}
-                  </div>
-
-                  {/* After Meeting Section */}
-                  <div className="space-y-3">
-                    <h4 className="flex items-center gap-2 text-xs font-black text-purple-650 dark:text-purple-400 border-b border-slate-105 dark:border-slate-800 pb-2">
-                      <FileSpreadsheet className="h-4.5 w-4.5" />
-                      3. After Meeting Review
-                    </h4>
-                    {reportDetail.report ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 dark:bg-slate-950/20 border border-slate-200/50 dark:border-slate-808/40 rounded-xl p-5 text-xs font-semibold animate-fadeIn">
-                        <div className="col-span-1 md:col-span-2">
-                          <p className="text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider mb-0.5">Remarks / Outcome</p>
-                          <p className="font-bold text-slate-800 dark:text-white">{reportDetail.report.overallMeetingOutcome}</p>
-                        </div>
-                        <div className="col-span-1 md:col-span-2">
-                          <p className="text-[10px] font-bold text-slate-450 dark:text-slate-505 uppercase tracking-wider mb-0.5">Congregation Response</p>
-                          <p className="font-bold text-slate-808 dark:text-white">{reportDetail.report.congregationResponse}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-455 dark:text-slate-505 uppercase tracking-wider mb-0.5">Fellowship / Opportunities</p>
-                          <p className="font-bold text-slate-800 dark:text-white">
-                            Fellowship: {reportDetail.report.continueFellowship ? "Yes" : "No"} | Ops: {reportDetail.report.futureOpportunities?.join(", ") || "None"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-455 dark:text-slate-505 uppercase tracking-wider mb-0.5">Coordinator Name & Designation</p>
-                          <p className="font-bold text-slate-800 dark:text-white">
-                            {reportDetail.report.coordinatorName} ({reportDetail.report.designation})
-                          </p>
-                        </div>
-                        <div className="col-span-1 md:col-span-2">
-                          <p className="text-[10px] font-bold text-slate-455 dark:text-slate-500 uppercase tracking-wider mb-0.5">Strengths Observed</p>
-                          <p className="font-bold text-slate-808 dark:text-white whitespace-pre-wrap leading-relaxed">{reportDetail.report.strengthsObserved}</p>
-                        </div>
-                        <div className="col-span-1 md:col-span-2">
-                          <p className="text-[10px] font-bold text-slate-455 dark:text-slate-500 uppercase tracking-wider mb-0.5">Challenges Observed</p>
-                          <p className="font-bold text-slate-808 dark:text-white whitespace-pre-wrap leading-relaxed">{reportDetail.report.challengesObserved}</p>
-                        </div>
-                        <div className="col-span-1 md:col-span-2">
-                          <p className="text-[10px] font-bold text-slate-455 dark:text-slate-505 uppercase tracking-wider mb-0.5">Opportunity for WCM</p>
-                          <p className="font-bold text-slate-800 dark:text-white whitespace-pre-wrap leading-relaxed">{reportDetail.report.opportunityForWcm}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-455 dark:text-slate-505 uppercase tracking-wider mb-0.5">WCM Followers Count</p>
-                          <p className="font-bold text-slate-800 dark:text-white">{reportDetail.report.followingWcmMembersCount || 0}</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-slate-400 italic">No after meeting report submitted yet.</p>
-                    )}
-                  </div>
-
-                  {/* Audit Trails */}
-                  <div className="space-y-3">
-                    <h4 className="font-black text-xs text-slate-605 dark:text-slate-405 uppercase tracking-wider border-b border-slate-105 dark:border-slate-808 pb-2">Activity Log / Audit Trail</h4>
-                    <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                      {reportDetail.auditLogs?.map((log: any) => (
-                        <div key={log.id} className="text-xs font-semibold text-slate-505 flex justify-between gap-4 p-2.5 rounded-xl bg-slate-55/50 dark:bg-slate-950/30 border border-slate-150 dark:border-slate-808/40">
-                          <span>
-                            <strong>{log.action}</strong>: {log.details}
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-mono self-center">
-                            {new Date(log.createdAt).toLocaleDateString()} {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Review Comments History Log */}
-                  {reportDetail.reviewerComments && reportDetail.reviewerComments.length > 0 && (
-                    <div className="space-y-3">
-                      <h4 className="font-black text-xs text-slate-655 dark:text-slate-405 uppercase tracking-wider border-b border-slate-100 dark:border-slate-808 pb-2">Previous Review Feedback History</h4>
-                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                        {reportDetail.reviewerComments.map((com: any) => (
-                          <div key={com.id} className="p-3 bg-amber-50/20 dark:bg-amber-955/5 border border-amber-250/20 rounded-xl space-y-1.5 text-xs text-slate-700 dark:text-slate-355 text-left">
-                            <p className="italic font-medium leading-relaxed">"{com.comment}"</p>
-                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-505 uppercase tracking-wider">
-                              Feedback from {com.reviewer?.name || com.reviewer?.username} ({com.reviewer?.role?.replace(/_/g, " ")}) on {new Date(com.createdAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Review Actions Panel for ADMIN */}
-                  {reportDetail.rawStatus !== "DRAFT" && reportDetail.rawStatus !== "APPROVED" && (
-                    <div className="border-t border-slate-105 dark:border-slate-850 pt-6 space-y-4">
-                      <h4 className="font-black text-xs uppercase tracking-wider text-slate-800 dark:text-white">Admin Review Decisions Panel</h4>
-                      
-                      <div className="space-y-2.5">
-                        <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-455 dark:text-slate-405 mb-1">
-                          Review Comments / Feedback (Required for Request Changes or Reject)
-                        </label>
-                        <textarea
-                          rows={3}
-                          value={reviewFeedback}
-                          onChange={(e) => setReviewFeedback(e.target.value)}
-                          placeholder="Provide details about what needs to be changed..."
-                          className="w-full rounded-xl border border-slate-200 dark:border-slate-808 bg-slate-50/50 dark:bg-slate-955 px-4 py-2.5 text-sm text-slate-905 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold"
-                        />
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row justify-end gap-2.5 pt-2">
-                        <button
-                          onClick={() => handleReviewReport("REJECT")}
-                          disabled={reviewSubmitting}
-                          className="px-5 py-2.5 rounded-xl border border-red-205 hover:bg-red-50 dark:border-red-909/35 dark:hover:bg-red-955/20 text-xs font-bold uppercase tracking-wider text-red-500 transition-all disabled:opacity-50 cursor-pointer active:scale-[0.98] text-center"
-                        >
-                          Reject Report
-                        </button>
-                        <button
-                          onClick={() => handleReviewReport("REQUEST_CHANGES")}
-                          disabled={reviewSubmitting}
-                          className="px-5 py-2.5 rounded-xl border border-amber-200 hover:bg-amber-50 dark:border-amber-909/35 dark:hover:bg-amber-955/10 text-xs font-bold uppercase tracking-wider text-amber-605 dark:text-amber-450 transition-all disabled:opacity-50 cursor-pointer active:scale-[0.98] text-center"
-                        >
-                          Request Changes
-                        </button>
-                        <button
-                          onClick={() => handleReviewReport("APPROVE")}
-                          disabled={reviewSubmitting}
-                          className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer shadow-md active:scale-[0.98] text-center"
-                        >
-                          Approve & Finalize
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </>
-              ) : null}
-            </div>
-
-            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-808 flex justify-end items-center gap-2 shrink-0">
-              <button
-                onClick={() => {
-                  setSelectedReportId(null);
-                  setReportDetail(null);
-                  setReviewFeedback("");
-                }}
-                className="rounded-xl border border-slate-250 dark:border-slate-805 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-705 dark:text-slate-355 hover:bg-slate-50 transition-colors cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Meeting-wise 3-Forms Review Modal */}
+      <MeetingReviewModal
+        isOpen={!!selectedReportId}
+        onClose={() => {
+          setSelectedReportId(null);
+          setReportDetail(null);
+        }}
+        reportId={selectedReportId}
+        role="ADMIN"
+        username="Admin"
+        onUpdated={fetchReports}
+      />
 
       {/* Modal: Review Confirmation Request */}
       {showConfirmModal && selectedConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto animate-fadeIn">
-          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-4 sm:p-6 border border-slate-205 dark:border-slate-800 text-left max-h-[90vh] overflow-y-auto animate-modal my-auto">
-            <div className="flex items-center justify-between border-b border-slate-105 dark:border-slate-808 pb-3 mb-4">
-              <h3 className="text-sm font-black text-slate-805 dark:text-white uppercase tracking-wider flex items-center gap-2">
+          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 text-left max-h-[90vh] overflow-y-auto animate-modal my-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
+              <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
                 <CalendarCheck className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 Review Meeting Proposal
               </h3>
@@ -1474,42 +1230,42 @@ export default function AdminDashboardPage() {
                   setSelectedConfirm(null);
                   setAdminFeedback("");
                 }} 
-                className="rounded-xl p-1 text-slate-400 hover:bg-slate-105 dark:hover:bg-slate-850 hover:text-slate-655 dark:hover:text-slate-205 cursor-pointer"
+                className="rounded-xl p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <div className="space-y-4">
-              <div className="bg-slate-50 dark:bg-slate-950/20 border border-slate-200/50 dark:border-slate-805/40 rounded-xl p-4 text-xs space-y-2.5 font-semibold">
+              <div className="bg-slate-50 dark:bg-slate-950/20 border border-slate-200/50 dark:border-slate-800/40 rounded-xl p-4 text-xs space-y-2.5 font-semibold">
                 <div>
-                  <span className="text-[10px] text-slate-405 font-bold block uppercase tracking-wider">Submitted By</span>
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Submitted By</span>
                   <span className="font-bold text-slate-800 dark:text-white">{selectedConfirm.leader?.username}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-slate-405 font-bold block uppercase tracking-wider">Location</span>
-                  <span className="font-bold text-slate-808 dark:text-white">{selectedConfirm.location}</span>
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Location</span>
+                  <span className="font-bold text-slate-800 dark:text-white">{selectedConfirm.location}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <span className="text-[10px] text-slate-450 font-bold block uppercase tracking-wider">Proposed Dates</span>
-                    <span className="font-bold text-slate-805 dark:text-white">{selectedConfirm.meetingDates}</span>
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Proposed Dates</span>
+                    <span className="font-bold text-slate-800 dark:text-white">{selectedConfirm.meetingDates}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-450 font-bold block uppercase tracking-wider">Expected Attendance</span>
-                    <span className="font-bold text-slate-805 dark:text-white">{selectedConfirm.expectedAttendance}</span>
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Expected Attendance</span>
+                    <span className="font-bold text-slate-800 dark:text-white">{selectedConfirm.expectedAttendance}</span>
                   </div>
                 </div>
                 <div>
-                  <span className="text-[10px] text-slate-455 font-bold block uppercase tracking-wider">Leader's Custom Message</span>
-                  <p className="mt-1 bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-808 p-2.5 rounded-xl text-slate-600 dark:text-slate-355 italic font-semibold leading-relaxed">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Leader's Custom Message</span>
+                  <p className="mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2.5 rounded-xl text-slate-600 dark:text-slate-300 italic font-semibold leading-relaxed">
                     "{selectedConfirm.message}"
                   </p>
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-455 dark:text-slate-405 mb-1.5">
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">
                   Feedback / Comments for the Leader
                 </label>
                 <textarea
@@ -1517,11 +1273,11 @@ export default function AdminDashboardPage() {
                   value={adminFeedback}
                   onChange={(e) => setAdminFeedback(e.target.value)}
                   placeholder="e.g. Approved. Please ensure sound system arrangements are complete."
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-808 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-905 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-555 transition-all font-semibold"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-600 transition-all font-semibold"
                 />
               </div>
 
-              <div className="flex justify-between items-center gap-2 pt-4 border-t border-slate-105 dark:border-slate-808">
+              <div className="flex justify-between items-center gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => {
@@ -1529,7 +1285,7 @@ export default function AdminDashboardPage() {
                     setSelectedConfirm(null);
                     setAdminFeedback("");
                   }}
-                  className="rounded-xl border border-slate-250 dark:border-slate-808 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-605 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-808 transition-colors cursor-pointer"
+                  className="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -1537,14 +1293,14 @@ export default function AdminDashboardPage() {
                   <button
                     onClick={() => handleReviewConfirmation("REJECTED")}
                     disabled={reviewSubmitting}
-                    className="rounded-xl border border-red-205 hover:bg-red-50 dark:border-red-909/35 dark:hover:bg-red-955/20 text-xs font-bold uppercase tracking-wider text-red-500 px-4 py-2.5 disabled:opacity-50 cursor-pointer active:scale-[0.98] transition-all"
+                    className="rounded-xl border border-red-200 hover:bg-red-50 dark:border-red-900/35 dark:hover:bg-red-950/20 text-xs font-bold uppercase tracking-wider text-red-500 px-4 py-2.5 disabled:opacity-50 cursor-pointer active:scale-[0.98] transition-all"
                   >
                     Reject
                   </button>
                   <button
                     onClick={() => handleReviewConfirmation("APPROVED")}
                     disabled={reviewSubmitting}
-                    className="rounded-xl bg-blue-600 hover:bg-blue-755 text-white px-4 py-2.5 text-xs font-bold uppercase tracking-wider disabled:opacity-50 cursor-pointer shadow-md active:scale-[0.98] transition-all"
+                    className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 text-xs font-bold uppercase tracking-wider disabled:opacity-50 cursor-pointer shadow-md active:scale-[0.98] transition-all"
                   >
                     Approve
                   </button>

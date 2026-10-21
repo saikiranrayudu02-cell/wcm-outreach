@@ -74,51 +74,51 @@ export async function GET(
     const { role } = session.user;
     let allowed = false;
 
-    if (role === "ADMIN") {
-      allowed = report.status !== "DRAFT";
-    } else if (role === "STATE_LEADER") {
-      allowed = Boolean(session.user.state && report.leader.state === session.user.state) && report.status !== "DRAFT";
-    } else if (role === "ZONE_LEADER") {
-      allowed = Boolean(session.user.zone && report.leader.zone === session.user.zone) && report.status !== "DRAFT";
-    } else if (session.user.id === report.leaderId) {
+    const hasSubmittedForms =
+      Boolean(report.verificationSheet && report.verificationSheet.status !== "PENDING") ||
+      Boolean(report.attendanceRecord && report.attendanceRecord.status !== "PENDING") ||
+      Boolean(report.afterMeetingReport && report.afterMeetingReport.status !== "PENDING");
+
+    if (session.user.id === report.leaderId) {
       allowed = true;
+    } else if (role === "ADMIN") {
+      allowed = hasSubmittedForms || report.status !== "DRAFT";
+    } else if (role === "STATE_LEADER") {
+      allowed = Boolean(session.user.state && report.leader.state === session.user.state) && (hasSubmittedForms || report.status !== "DRAFT");
+    } else if (role === "ZONE_LEADER") {
+      allowed = Boolean(session.user.zone && report.leader.zone === session.user.zone) && (hasSubmittedForms || report.status !== "DRAFT");
     }
 
     if (!allowed) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Transition status to ZONE_LEADER_REVIEW if viewed by the respective Zone Leader first time
-    if (role === "ZONE_LEADER" && report.status === "SUBMITTED") {
-      await prisma.$transaction(async (tx) => {
-        await tx.meetingReport.update({
-          where: { id: reportId },
-          data: { status: "ZONE_LEADER_REVIEW" },
-        });
+    const vStatus = report.verificationSheet?.status || "PENDING";
+    const aStatus = report.attendanceRecord?.status || "PENDING";
+    const rStatus = report.afterMeetingReport?.status || "PENDING";
 
-        await tx.reportAuditLog.create({
-          data: {
-            meetingReportId: reportId,
-            actorId: session.user.id,
-            action: "REVIEW_STARTED",
-            details: `Zone Leader ${session.user.username} started review`,
-          },
-        });
-      }, { maxWait: 20000, timeout: 30000 });
-
-      report.status = "ZONE_LEADER_REVIEW";
-    }
+    const isAttendanceLocked = vStatus !== "COMPLETED";
+    const isEvaluationLocked = vStatus !== "COMPLETED";
 
     return NextResponse.json({
       id: report.id,
       reportId: report.reportId,
+      title: report.title || `Outreach Meeting ${report.reportId}`,
       status: report.status,
       version: report.version,
       submittedAt: report.submittedAt,
       leader: report.leader,
       verification: report.verificationSheet,
+      verificationSheet: report.verificationSheet,
       attendance: report.attendanceRecord,
+      attendanceRecord: report.attendanceRecord,
       report: report.afterMeetingReport,
+      afterMeetingReport: report.afterMeetingReport,
+      verificationStatus: vStatus,
+      attendanceStatus: aStatus,
+      evaluationStatus: rStatus,
+      isAttendanceLocked,
+      isEvaluationLocked,
       auditLogs: report.auditLogs,
       reviewerComments: report.reviewerComments,
     });
@@ -147,6 +147,9 @@ export async function PUT(
       where: { id: reportId },
       include: {
         leader: true,
+        verificationSheet: true,
+        attendanceRecord: true,
+        afterMeetingReport: true,
       },
     });
 
@@ -163,26 +166,52 @@ export async function PUT(
       return NextResponse.json({ error: "Forbidden: You do not have permission to edit this report" }, { status: 403 });
     }
 
+    const body = await request.json();
+    const { title, verification: vData, attendance: aData, report: rData } = body;
+
+    // Strict Lock Enforcement: Attendance and Evaluation cannot be edited/saved until Verification is COMPLETED
+    const vStatus = report.verificationSheet?.status || "PENDING";
+    if (aData && vStatus !== "COMPLETED") {
+      return NextResponse.json({
+        error: "Attendance Form is locked until Verification Form receives final Admin approval.",
+      }, { status: 400 });
+    }
+
+    if (rData && vStatus !== "COMPLETED") {
+      return NextResponse.json({
+        error: "After-Meeting Evaluation Form is locked until Verification Form receives final Admin approval.",
+      }, { status: 400 });
+    }
+
+    // Check if forms can be edited based on their individual status
     if (isOwner && !isZoneLeader && !isAdmin) {
-      if (report.status !== "DRAFT" && report.status !== "REQUEST_CHANGES") {
-        return NextResponse.json({ error: "Cannot edit reports that are submitted or approved" }, { status: 400 });
+      if (vData && report.verificationSheet && ["SUBMITTED", "FORWARDED_TO_STATE", "FORWARDED_TO_ADMIN", "COMPLETED"].includes(report.verificationSheet.status)) {
+        return NextResponse.json({ error: "Verification Form is currently under review or completed and cannot be edited." }, { status: 400 });
       }
-    } else if (isZoneLeader && !isAdmin) {
-      if (!["SUBMITTED", "ZONE_LEADER_REVIEW", "REQUEST_CHANGES", "DRAFT"].includes(report.status)) {
-        return NextResponse.json({ error: "Cannot edit reports that are already forwarded or approved" }, { status: 400 });
+      if (aData && report.attendanceRecord && ["SUBMITTED", "FORWARDED_TO_STATE", "FORWARDED_TO_ADMIN", "COMPLETED"].includes(report.attendanceRecord.status)) {
+        return NextResponse.json({ error: "Attendance Form is currently under review or completed and cannot be edited." }, { status: 400 });
+      }
+      if (rData && report.afterMeetingReport && ["SUBMITTED", "FORWARDED_TO_STATE", "FORWARDED_TO_ADMIN", "COMPLETED"].includes(report.afterMeetingReport.status)) {
+        return NextResponse.json({ error: "Evaluation Form is currently under review or completed and cannot be edited." }, { status: 400 });
       }
     }
 
-    const body = await request.json();
-    const { verification: vData, attendance: aData, report: rData } = body;
-
     await prisma.$transaction(async (tx) => {
+      // 0. Update title if provided
+      if (title && typeof title === "string" && title.trim()) {
+        await tx.meetingReport.update({
+          where: { id: reportId },
+          data: { title: title.trim() },
+        });
+      }
+
       // 1. Update/Create VerificationSheet
       if (vData) {
         await tx.verificationSheet.upsert({
           where: { meetingReportId: reportId },
           create: {
             meetingReportId: reportId,
+            status: "PENDING",
             convenerName: vData.convenerName || "",
             churchMinistryName: vData.churchMinistryName || "",
             stateDistrictCity: vData.stateDistrictCity || "",
@@ -229,6 +258,7 @@ export async function PUT(
           where: { meetingReportId: reportId },
           create: {
             meetingReportId: reportId,
+            status: "PENDING",
             date: aData.date ? new Date(aData.date) : new Date(),
             location: aData.location || "",
             fieldExecuter: aData.fieldExecuter || "",
@@ -255,6 +285,7 @@ export async function PUT(
           where: { meetingReportId: reportId },
           create: {
             meetingReportId: reportId,
+            status: "PENDING",
             overallMeetingOutcome: rData.overallMeetingOutcome || "",
             congregationResponse: rData.congregationResponse || "",
             continueFellowship: rData.continueFellowship === true || rData.continueFellowship === "true",
@@ -290,10 +321,11 @@ export async function PUT(
       }
 
       // Log the update action
+      const targetForm = vData ? "VERIFICATION" : aData ? "ATTENDANCE" : rData ? "EVALUATION" : "MEETING";
       const auditAction = isZoneLeader ? "ZONE_LEADER_EDITED" : "DRAFT_SAVED";
       const auditDetails = isZoneLeader
-        ? `Zone Leader ${user.username} edited and corrected the report details.`
-        : `Draft fields updated by coordinator.`;
+        ? `Zone Leader ${user.username} edited details for ${targetForm}.`
+        : `Draft form details saved by coordinator.`;
 
       await tx.reportAuditLog.create({
         data: {
@@ -301,11 +333,12 @@ export async function PUT(
           actorId: user.id,
           action: auditAction,
           details: auditDetails,
+          formType: targetForm,
         },
       });
     }, { maxWait: 20000, timeout: 30000 });
 
-    return NextResponse.json({ message: "Report draft updated successfully" });
+    return NextResponse.json({ message: "Form saved successfully" });
   } catch (err) {
     console.error("PUT /api/reports/[id] error:", err);
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
@@ -329,6 +362,11 @@ export async function DELETE(
 
     const report = await prisma.meetingReport.findUnique({
       where: { id: reportId },
+      include: {
+        verificationSheet: true,
+        attendanceRecord: true,
+        afterMeetingReport: true,
+      },
     });
 
     if (!report) {
@@ -336,19 +374,24 @@ export async function DELETE(
     }
 
     const user = session.user as any;
-    if (report.leaderId !== user.id) {
-      return NextResponse.json({ error: "Forbidden: You do not own this report" }, { status: 403 });
+    if (report.leaderId !== user.id && user.role !== "ADMIN") {
+      return NextResponse.json({ error: "Forbidden: You do not have permission to delete this meeting" }, { status: 403 });
     }
 
-    if (report.status !== "DRAFT") {
-      return NextResponse.json({ error: "Only draft reports can be deleted" }, { status: 400 });
+    const hasSubmitted = 
+      (report.verificationSheet && report.verificationSheet.status !== "PENDING") ||
+      (report.attendanceRecord && report.attendanceRecord.status !== "PENDING") ||
+      (report.afterMeetingReport && report.afterMeetingReport.status !== "PENDING");
+
+    if (hasSubmitted && user.role !== "ADMIN") {
+      return NextResponse.json({ error: "Cannot delete meetings with submitted forms" }, { status: 400 });
     }
 
     await prisma.meetingReport.delete({
       where: { id: reportId },
     });
 
-    return NextResponse.json({ message: "Report deleted successfully" });
+    return NextResponse.json({ message: "Meeting deleted successfully" });
   } catch (err) {
     console.error("DELETE /api/reports/[id] error:", err);
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });

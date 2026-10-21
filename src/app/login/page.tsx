@@ -213,9 +213,9 @@ export default function LoginPage() {
           <div className="grid grid-cols-2 gap-2">
             {[
               { label: "Admin", uname: "admin" },
-              { label: "Coordinator", uname: "leader_john" },
-              { label: "State Leader", uname: "state_ap" },
-              { label: "Zone Leader", uname: "zone_1" },
+              { label: "Coordinator", uname: "coordinator" },
+              { label: "State Leader", uname: "stateleader" },
+              { label: "Zone Leader", uname: "zoneleader" },
             ].map((acct) => (
               <button
                 key={acct.uname}

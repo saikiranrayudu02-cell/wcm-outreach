@@ -8,7 +8,7 @@ import { translate } from "@/lib/translations";
 import { 
   Menu, X, LogOut, LayoutDashboard, FileCheck, Users, 
   FileSpreadsheet, ClipboardList, Sun, Moon, ShieldAlert,
-  Bell, CheckCheck, CalendarCheck, User as UserIcon, Sparkles, ChevronRight
+  Bell, CheckCheck, CalendarCheck, User as UserIcon, Sparkles, ChevronRight, ChevronDown
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
@@ -22,6 +22,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
+  const [afterMeetingOpen, setAfterMeetingOpen] = useState(
+    pathname.includes("/coordinator/attendance") || pathname.includes("/coordinator/after-meeting")
+  );
 
   const fetchNotifications = async () => {
     try {
@@ -137,6 +140,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     } else if (role === "COORDINATOR" || role === "LEADER") {
       return [
         { name: "Dashboard", href: "/coordinator/dashboard", icon: LayoutDashboard },
+        { name: "Verification", href: "/coordinator/verification", icon: FileCheck },
+        { 
+          name: "After Meeting", 
+          href: "/coordinator/attendance", 
+          icon: ClipboardList,
+          subItems: [
+            { name: "Attendance Form", href: "/coordinator/attendance", icon: FileSpreadsheet },
+            { name: "After-Meeting Evaluation Form", href: "/coordinator/after-meeting", icon: ClipboardList },
+          ]
+        },
         { name: "Confirmations", href: "/coordinator/confirmations", icon: CalendarCheck },
         { name: "My Profile", href: "/profile", icon: UserIcon },
       ];
@@ -171,10 +184,62 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </div>
 
             {/* Navigation Links */}
-            <nav className="space-y-1 px-3 py-6">
-              {links.map((link) => {
-                const active = pathname === link.href;
+            <nav className="space-y-1.5 px-3 py-6">
+              {links.map((link: any) => {
                 const Icon = link.icon;
+                if (link.subItems) {
+                  const isSubActive = link.subItems.some((s: any) => pathname === s.href);
+                  return (
+                    <div key={link.name} className="space-y-1">
+                      <button
+                        onClick={() => setAfterMeetingOpen((prev) => !prev)}
+                        className={`relative flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3.5 text-[11px] font-bold uppercase tracking-wider transition-all duration-200 group cursor-pointer ${
+                          isSubActive 
+                            ? "bg-white/10 text-white shadow-sm backdrop-blur-sm" 
+                            : "text-indigo-200/50 hover:bg-white/5 hover:text-white"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon className={`h-4.5 w-4.5 transition-all ${isSubActive ? "text-indigo-300" : "text-indigo-300/40 group-hover:text-indigo-300/70"}`} />
+                          <span>{translate(link.name, language)}</span>
+                        </div>
+                        {afterMeetingOpen ? (
+                          <ChevronDown className="h-3.5 w-3.5 text-indigo-300/70" />
+                        ) : (
+                          <ChevronRight className="h-3.5 w-3.5 text-indigo-300/50" />
+                        )}
+                      </button>
+                      {afterMeetingOpen && (
+                        <div className="pl-4 space-y-1 pt-0.5 border-l border-white/10 ml-5">
+                          {link.subItems.map((sub: any) => {
+                            const subActive = pathname === sub.href;
+                            const SubIcon = sub.icon;
+                            return (
+                              <a
+                                key={sub.name}
+                                href={sub.href}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  router.push(sub.href);
+                                }}
+                                className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-[10px] font-bold uppercase tracking-wider transition-all ${
+                                  subActive
+                                    ? "bg-indigo-500/25 text-white shadow-[0_0_12px_rgba(99,102,241,0.2)] font-black"
+                                    : "text-indigo-200/50 hover:text-white hover:bg-white/5"
+                                }`}
+                              >
+                                <SubIcon className={`h-3.5 w-3.5 ${subActive ? "text-indigo-300" : "text-indigo-300/40"}`} />
+                                <span className="truncate">{translate(sub.name, language)}</span>
+                              </a>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                const active = pathname === link.href;
                 return (
                   <a
                     key={link.name}
@@ -256,10 +321,61 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <nav className="space-y-1">
-              {links.map((link) => {
-                const active = pathname === link.href;
+            <nav className="space-y-1.5">
+              {links.map((link: any) => {
                 const Icon = link.icon;
+                if (link.subItems) {
+                  const isSubActive = link.subItems.some((s: any) => pathname === s.href);
+                  return (
+                    <div key={link.name} className="space-y-1">
+                      <button
+                        onClick={() => setAfterMeetingOpen((prev) => !prev)}
+                        className={`flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
+                          isSubActive ? "bg-white/10 text-white" : "text-indigo-200/50 hover:bg-white/5 hover:text-white"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon className={`h-4.5 w-4.5 ${isSubActive ? "text-indigo-300" : "text-indigo-300/40"}`} />
+                          <span>{translate(link.name, language)}</span>
+                        </div>
+                        {afterMeetingOpen ? (
+                          <ChevronDown className="h-3.5 w-3.5 text-indigo-300/70" />
+                        ) : (
+                          <ChevronRight className="h-3.5 w-3.5 text-indigo-300/50" />
+                        )}
+                      </button>
+                      {afterMeetingOpen && (
+                        <div className="pl-4 space-y-1 pt-0.5 border-l border-white/10 ml-5">
+                          {link.subItems.map((sub: any) => {
+                            const subActive = pathname === sub.href;
+                            const SubIcon = sub.icon;
+                            return (
+                              <a
+                                key={sub.name}
+                                href={sub.href}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setMobileOpen(false);
+                                  router.push(sub.href);
+                                }}
+                                className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-[10px] font-bold uppercase tracking-wider transition-all ${
+                                  subActive
+                                    ? "bg-indigo-500/25 text-white font-black"
+                                    : "text-indigo-200/50 hover:text-white hover:bg-white/5"
+                                }`}
+                              >
+                                <SubIcon className={`h-3.5 w-3.5 ${subActive ? "text-indigo-300" : "text-indigo-300/40"}`} />
+                                <span className="truncate">{translate(sub.name, language)}</span>
+                              </a>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                const active = pathname === link.href;
                 return (
                   <a
                     key={link.name}

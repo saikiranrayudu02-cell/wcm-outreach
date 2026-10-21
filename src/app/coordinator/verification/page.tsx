@@ -88,8 +88,14 @@ export default function VerificationPage() {
     setStep((s) => Math.max(1, s - 1));
   };
 
-  const onSubmit = async (data: VerificationFormInput) => {
-    setSaving(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  const saveVerification = async (data: VerificationFormInput, shouldSubmit: boolean) => {
+    if (shouldSubmit) {
+      setSubmitting(true);
+    } else {
+      setSaving(true);
+    }
     try {
       const payload = {
         ...data,
@@ -100,6 +106,7 @@ export default function VerificationPage() {
         workersLeaders: Number(data.workersLeaders),
         readWcmBooks: data.readWcmBooks === "true",
         attendedProphetMeeting: data.attendedProphetMeeting === "true",
+        submit: shouldSubmit,
       };
 
       const res = await fetch("/api/reports/verification", {
@@ -112,13 +119,14 @@ export default function VerificationPage() {
       if (!res.ok) {
         toast.error(result.error || "Failed to save verification sheet");
       } else {
-        toast.success("Verification Saved Successfully");
+        toast.success(shouldSubmit ? "Verification Form Submitted & Forwarded to Zonal Leader" : "Verification Draft Saved Successfully");
         router.push("/coordinator/dashboard");
       }
     } catch (err) {
       toast.error("An unexpected error occurred");
     } finally {
       setSaving(false);
+      setSubmitting(false);
     }
   };
 
@@ -174,7 +182,7 @@ export default function VerificationPage() {
         </div>
 
         {/* Form Container */}
-        <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleKeyDown} className="space-y-6">
+        <form onSubmit={(e) => e.preventDefault()} onKeyDown={handleKeyDown} className="space-y-6">
           {/* Step 1: Basic Details */}
           {step === 1 && (
             <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-4 sm:p-6 shadow-sm space-y-6">
@@ -545,26 +553,37 @@ export default function VerificationPage() {
               {translate("Previous Step", language)}
             </button>
 
-            <button
-              type="button"
-              onClick={step < 4 ? nextStep : handleSubmit(onSubmit)}
-              disabled={saving}
-              className={`inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold text-white transition-colors ${
-                step < 4 ? "bg-sky-600 hover:bg-sky-700" : "bg-emerald-600 hover:bg-emerald-700"
-              } disabled:opacity-50`}
-            >
-              {step < 4 ? (
-                <>
-                  {translate("Next Step", language)}
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              ) : (
-                <>
+            {step < 4 ? (
+              <button
+                type="button"
+                onClick={nextStep}
+                className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition-all shadow-md active:scale-[0.97] cursor-pointer"
+              >
+                {translate("Next Step", language)}
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSubmit((d) => saveVerification(d, false))}
+                  disabled={saving || submitting}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
+                >
                   <Save className="h-4 w-4" />
-                  {saving ? "Submitting..." : translate("Save Form", language)}
-                </>
-              )}
-            </button>
+                  {saving ? "Saving..." : "Save Draft"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmit((d) => saveVerification(d, true))}
+                  disabled={saving || submitting}
+                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition-all shadow-md active:scale-[0.97] disabled:opacity-50 cursor-pointer"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  {submitting ? "Submitting..." : "Submit & Forward to Zonal Leader"}
+                </button>
+              </div>
+            )}
           </div>
         </form>
       </div>

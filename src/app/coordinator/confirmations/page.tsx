@@ -109,7 +109,7 @@ export default function CoordinatorConfirmationsPage() {
         </div>
 
         {/* Requests List */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-250/60 dark:border-slate-800/80 rounded-2xl shadow-sm overflow-hidden text-left">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-2xl shadow-sm overflow-hidden text-left">
           <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20">
             <h3 className="text-xs font-black text-slate-800 dark:text-white flex items-center gap-2 uppercase tracking-widest">
               <ClipboardCheck className="h-4.5 w-4.5 text-blue-600 dark:text-blue-400" />
@@ -123,7 +123,7 @@ export default function CoordinatorConfirmationsPage() {
               <span className="text-xs font-bold uppercase tracking-wider">Loading proposals...</span>
             </div>
           ) : confirmationsList.length === 0 ? (
-            <div className="py-12 text-center text-xs text-slate-450 dark:text-slate-505 font-bold uppercase tracking-wider italic">
+            <div className="py-12 text-center text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider italic">
               No meeting confirmation requests found. Submit a proposal to start.
             </div>
           ) : (
@@ -146,17 +146,17 @@ export default function CoordinatorConfirmationsPage() {
                       </div>
                       <div>
                         {c.status === "PENDING" && (
-                          <span className="inline-flex rounded-full bg-amber-50 dark:bg-amber-955/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 border border-amber-250/30 dark:border-amber-900/30">
+                          <span className="inline-flex rounded-full bg-amber-50 dark:bg-amber-950/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 border border-amber-200/30 dark:border-amber-900/30">
                             Pending
                           </span>
                         )}
                         {c.status === "APPROVED" && (
-                          <span className="inline-flex rounded-full bg-emerald-50 dark:bg-emerald-955/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-805 dark:text-emerald-400 border border-emerald-250/30 dark:border-emerald-900/30">
+                          <span className="inline-flex rounded-full bg-emerald-50 dark:bg-emerald-950/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-400 border border-emerald-200/30 dark:border-emerald-900/30">
                             Approved
                           </span>
                         )}
                         {c.status === "REJECTED" && (
-                          <span className="inline-flex rounded-full bg-red-50 dark:bg-red-955/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-red-750 dark:text-red-400 border border-red-250/30 dark:border-red-900/30">
+                          <span className="inline-flex rounded-full bg-red-50 dark:bg-red-950/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-red-700 dark:text-red-400 border border-red-200/30 dark:border-red-900/30">
                             Rejected
                           </span>
                         )}
@@ -192,44 +192,44 @@ export default function CoordinatorConfirmationsPage() {
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr className="bg-slate-50/50 dark:bg-slate-800/10 border-b border-slate-150 dark:border-slate-800 text-slate-450 font-bold uppercase tracking-widest text-[10px]">
+                    <tr className="bg-slate-50/50 dark:bg-slate-800/10 border-b border-slate-200 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-widest text-[10px]">
                       <th className="px-6 py-4">{translate("Meeting Details", language)}</th>
                       <th className="px-6 py-4">{translate("Proposal Description", language)}</th>
                       <th className="px-6 py-4">{translate("Status", language)}</th>
                       <th className="px-6 py-4">{translate("Remarks", language)}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-805/60 text-slate-700 dark:text-slate-300">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
                     {confirmationsList.map((c) => (
                       <tr key={c.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-800/5 transition-colors">
                         <td className="px-6 py-4">
-                          <span className="font-bold block text-slate-805 dark:text-white text-xs">{c.location}</span>
+                          <span className="font-bold block text-slate-800 dark:text-white text-xs">{c.location}</span>
                           <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-semibold mt-0.5">Dates: {c.meetingDates}</span>
                           <span className="text-[10px] text-slate-400 block mt-0.5">Exp. Attendance: {c.expectedAttendance}</span>
                         </td>
-                        <td className="px-6 py-4 max-w-xs whitespace-pre-wrap text-slate-600 dark:text-slate-350 leading-relaxed text-xs font-semibold">
+                        <td className="px-6 py-4 max-w-xs whitespace-pre-wrap text-slate-600 dark:text-slate-300 leading-relaxed text-xs font-semibold">
                           {c.message}
                         </td>
                         <td className="px-6 py-4">
                           {c.status === "PENDING" && (
-                            <span className="inline-flex rounded-full bg-amber-50 dark:bg-amber-955/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 border border-amber-250/30 dark:border-amber-900/30">
+                            <span className="inline-flex rounded-full bg-amber-50 dark:bg-amber-950/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 border border-amber-200/30 dark:border-amber-900/30">
                               Pending
                             </span>
                           )}
                           {c.status === "APPROVED" && (
-                            <span className="inline-flex rounded-full bg-emerald-50 dark:bg-emerald-955/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-805 dark:text-emerald-400 border border-emerald-250/30 dark:border-emerald-900/30">
+                            <span className="inline-flex rounded-full bg-emerald-50 dark:bg-emerald-950/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-400 border border-emerald-200/30 dark:border-emerald-900/30">
                               Approved
                             </span>
                           )}
                           {c.status === "REJECTED" && (
-                            <span className="inline-flex rounded-full bg-red-50 dark:bg-red-955/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-red-750 dark:text-red-400 border border-red-250/30 dark:border-red-900/30">
+                            <span className="inline-flex rounded-full bg-red-50 dark:bg-red-950/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-red-700 dark:text-red-400 border border-red-200/30 dark:border-red-900/30">
                               Rejected
                             </span>
                           )}
                         </td>
                         <td className="px-6 py-4 max-w-xs">
                           {c.adminFeedback ? (
-                            <p className="text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-805 font-medium italic leading-relaxed">
+                            <p className="text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 font-medium italic leading-relaxed">
                               "{c.adminFeedback}"
                             </p>
                           ) : (
@@ -250,14 +250,14 @@ export default function CoordinatorConfirmationsPage() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto animate-fadeIn">
           <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 text-left max-h-[90vh] overflow-y-auto animate-modal my-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-805 pb-3 mb-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
               <h3 className="text-sm font-black text-slate-800 dark:text-white flex items-center gap-2 uppercase tracking-wider">
                 <CalendarCheck className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 {translate("Upcoming Meeting Proposal", language)}
               </h3>
               <button 
                 onClick={() => setShowModal(false)} 
-                className="rounded-xl p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-655 dark:hover:text-slate-205 cursor-pointer"
+                className="rounded-xl p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -265,7 +265,7 @@ export default function CoordinatorConfirmationsPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4 text-left">
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-450 dark:text-slate-405 mb-1.5">
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">
                   {translate("Location", language)} *
                 </label>
                 <input
@@ -273,13 +273,13 @@ export default function CoordinatorConfirmationsPage() {
                   required
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-550 transition-all font-semibold"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold"
                   placeholder="e.g. Grace Tabernacle, Hyderabad"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-450 dark:text-slate-405 mb-1.5">
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">
                   {translate("Meeting Dates", language)} *
                 </label>
                 <input
@@ -287,13 +287,13 @@ export default function CoordinatorConfirmationsPage() {
                   required
                   value={meetingDates}
                   onChange={(e) => setMeetingDates(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-955 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-555 transition-all font-semibold"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-600 transition-all font-semibold"
                   placeholder="e.g. Aug 12th - Aug 15th, 2026"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-450 dark:text-slate-405 mb-1.5">
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">
                   {translate("Expected Attendance", language)} *
                 </label>
                 <input
@@ -301,13 +301,13 @@ export default function CoordinatorConfirmationsPage() {
                   required
                   value={expectedAttendance}
                   onChange={(e) => setExpectedAttendance(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-955 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-555 transition-all font-semibold"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-600 transition-all font-semibold"
                   placeholder="e.g. 150"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-450 dark:text-slate-405 mb-1.5">
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">
                   {translate("Proposal Description", language)} *
                 </label>
                 <textarea
@@ -315,7 +315,7 @@ export default function CoordinatorConfirmationsPage() {
                   rows={4}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-955 px-4 py-2.5 text-sm text-slate-905 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-555 transition-all font-semibold"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-600 transition-all font-semibold"
                   placeholder="Describe your meeting objectives, ministry arrangement plans, convener details, etc."
                 />
               </div>
@@ -324,7 +324,7 @@ export default function CoordinatorConfirmationsPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="rounded-xl border border-slate-250 dark:border-slate-800 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  className="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   {translate("Cancel", language)}
                 </button>

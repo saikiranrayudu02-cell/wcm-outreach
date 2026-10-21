@@ -1,26 +1,23 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { ArrowLeft, ArrowRight, Save, CheckCircle } from "lucide-react";
+import { ArrowLeft, Save, Lock, CheckCircle2, Loader2, ClipboardList, PlusCircle } from "lucide-react";
 import { useUIStore } from "@/store/ui-store";
 import { translate } from "@/lib/translations";
 import { toast } from "sonner";
+import { FormStatusBadge } from "@/components/form-status-badge";
 
 interface AfterMeetingFormInput {
-  // Section 5
   overallMeetingOutcome: string;
   congregationResponse: string;
-  // Section 6
-  continueFellowship: string; // "true" | "false" in form, boolean in DB
+  continueFellowship: string;
   futureOpportunities: string[];
-  // Section 7
   localChurchInfluence: string;
   networkOfPastors: string;
   followingWcmMembersCount: number;
-  // Section 8
   strengthsObserved: string;
   challengesObserved: string;
   opportunityForWcm: string;
@@ -30,23 +27,30 @@ interface AfterMeetingFormInput {
   submissionDate: string;
 }
 
-export default function AfterMeetingPage() {
+function AfterMeetingFormContent() {
   const { language } = useUIStore();
   const router = useRouter();
-  const [step, setStep] = useState(5); // Step matches sections: Section 5 to 8
+  const searchParams = useSearchParams();
+  const initialMeetingId = searchParams.get("meetingId") || "";
+
+  const [meetings, setMeetings] = useState<any[]>([]);
+  const [selectedMeetingId, setSelectedMeetingId] = useState<string>(initialMeetingId);
+  const [selectedMeeting, setSelectedMeeting] = useState<any | null>(null);
+  const [loadingMeetings, setLoadingMeetings] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const {
     register,
     handleSubmit,
     setValue,
     watch,
+    reset,
     formState: { errors },
-    trigger,
   } = useForm<AfterMeetingFormInput>({
     defaultValues: {
-      overallMeetingOutcome: "Excellent",
-      congregationResponse: "Highly Encouraged",
+      overallMeetingOutcome: "Good",
+      congregationResponse: "Positive & Engaged",
       continueFellowship: "true",
       futureOpportunities: [],
       localChurchInfluence: "Medium",
@@ -58,40 +62,116 @@ export default function AfterMeetingPage() {
 
   const selectedOps = watch("futureOpportunities") || [];
 
-  const handleOpportunityChange = (val: string, checked: boolean) => {
-    if (checked) {
-      setValue("futureOpportunities", [...selectedOps, val]);
-    } else {
-      setValue("futureOpportunities", selectedOps.filter((x) => x !== val));
+  // Fetch coordinator meetings
+  useEffect(() => {
+    const fetchMeetings = async () => {
+      try {
+        const res = await fetch("/api/reports");
+        if (res.ok) {
+          const data = await res.json();
+          setMeetings(data);
+          
+          if (initialMeetingId) {
+            const found = data.find((m: any) => m.id === initialMeetingId || m.reportId === initialMeetingId);
+            if (found) {
+              setSelectedMeetingId(found.id);
+            }
+          } else if (data.length > 0) {
+            const completedMtg = data.find((m: any) => m.verificationStatus === "COMPLETED");
+            if (completedMtg) {
+              setSelectedMeetingId(completedMtg.id);
+            } else {
+              setSelectedMeetingId(data[0].id);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load meetings", err);
+      } finally {
+        setLoadingMeetings(false);
+      }
+    };
+
+    fetchMeetings();
+  }, [initialMeetingId]);
+
+  // Load meeting details when selectedMeetingId changes
+  useEffect(() => {
+    if (!selectedMeetingId) {
+      setSelectedMeeting(null);
+      return;
     }
-  };
 
-  const nextStep = async () => {
-    let fieldsToValidate: any[] = [];
-    if (step === 5) {
-      fieldsToValidate = ["overallMeetingOutcome", "congregationResponse"];
-    } else if (step === 6) {
-      fieldsToValidate = ["continueFellowship", "futureOpportunities"];
-    } else if (step === 7) {
-      fieldsToValidate = ["localChurchInfluence", "networkOfPastors", "followingWcmMembersCount"];
+    const loadMeeting = async () => {
+      try {
+        const res = await fetch(`/api/reports/${selectedMeetingId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSelectedMeeting(data);
+
+          if (data.report) {
+            reset({
+              overallMeetingOutcome: data.report.overallMeetingOutcome || "Good",
+              congregationResponse: data.report.congregationResponse || "Positive & Engaged",
+              continueFellowship: String(data.report.continueFellowship ?? true),
+              futureOpportunities: data.report.futureOpportunities || [],
+              localChurchInfluence: data.report.localChurchInfluence || "Medium",
+              networkOfPastors: data.report.networkOfPastors || "Medium",
+              followingWcmMembersCount: data.report.followingWcmMembersCount || 0,
+              strengthsObserved: data.report.strengthsObserved || "",
+              challengesObserved: data.report.challengesObserved || "",
+              opportunityForWcm: data.report.opportunityForWcm || "",
+              coordinatorName: data.report.coordinatorName || data.leader?.username || "",
+              designation: data.report.designation || "Coordinator",
+              signature: data.report.signature || "",
+              submissionDate: data.report.submissionDate
+                ? new Date(data.report.submissionDate).toISOString().split("T")[0]
+                : new Date().toISOString().split("T")[0],
+            });
+          } else {
+            reset({
+              overallMeetingOutcome: "Good",
+              congregationResponse: "Positive & Engaged",
+              continueFellowship: "true",
+              futureOpportunities: [],
+              localChurchInfluence: "Medium",
+              networkOfPastors: "Medium",
+              followingWcmMembersCount: 0,
+              strengthsObserved: "",
+              challengesObserved: "",
+              opportunityForWcm: "",
+              coordinatorName: data.verification?.convenerName || data.leader?.username || "",
+              designation: "Coordinator",
+              signature: "",
+              submissionDate: new Date().toISOString().split("T")[0],
+            });
+          }
+        }
+      } catch (err) {
+        toast.error("Failed to load meeting details");
+      }
+    };
+
+    loadMeeting();
+  }, [selectedMeetingId, reset]);
+
+  const isLocked = selectedMeeting ? selectedMeeting.verificationStatus !== "COMPLETED" : true;
+
+  const handleSaveDraft = async (data: AfterMeetingFormInput) => {
+    if (!selectedMeetingId) {
+      toast.error("Please select a meeting first");
+      return;
+    }
+    if (isLocked) {
+      toast.error("Evaluation Form is locked until Verification Form receives final Admin approval.");
+      return;
     }
 
-    const isValid = await trigger(fieldsToValidate);
-    if (isValid) {
-      setStep((s) => s + 1);
-    } else {
-      toast.error("Please correct the errors in the form before continuing.");
-    }
-  };
-
-  const prevStep = () => {
-    setStep((s) => Math.max(5, s - 1));
-  };
-
-  const onSubmit = async (data: AfterMeetingFormInput) => {
     setSaving(true);
     try {
       const payload = {
+        meetingId: selectedMeetingId,
+        submit: false,
         ...data,
         continueFellowship: data.continueFellowship === "true",
         followingWcmMembersCount: Number(data.followingWcmMembersCount),
@@ -105,10 +185,11 @@ export default function AfterMeetingPage() {
 
       const result = await res.json();
       if (!res.ok) {
-        toast.error(result.error || "Failed to submit report");
+        toast.error(result.error || "Failed to save evaluation");
       } else {
-        toast.success("Report Submitted Successfully");
-        router.push("/coordinator/dashboard");
+        toast.success("Evaluation Draft Saved Successfully");
+        const refreshed = await fetch(`/api/reports/${selectedMeetingId}`);
+        if (refreshed.ok) setSelectedMeeting(await refreshed.json());
       }
     } catch (err) {
       toast.error("An unexpected error occurred");
@@ -117,389 +198,313 @@ export default function AfterMeetingPage() {
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
-    if (e.key === "Enter" && (e.target as HTMLElement).tagName === "INPUT") {
-      e.preventDefault();
+  const handleSubmitEvaluation = async (data: AfterMeetingFormInput) => {
+    if (!selectedMeetingId) {
+      toast.error("Please select a meeting first");
+      return;
+    }
+    if (isLocked) {
+      toast.error("Evaluation Form is locked until Verification Form receives final Admin approval.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const payload = {
+        meetingId: selectedMeetingId,
+        submit: true,
+        ...data,
+        continueFellowship: data.continueFellowship === "true",
+        followingWcmMembersCount: Number(data.followingWcmMembersCount),
+      };
+
+      const res = await fetch("/api/reports/after-meeting", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await res.json();
+      if (!res.ok) {
+        toast.error(result.error || "Failed to submit evaluation");
+      } else {
+        toast.success("After-Meeting Evaluation Submitted for Review");
+        router.push(`/coordinator/report/${selectedMeetingId}`);
+      }
+    } catch (err) {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const stepsList = [
-    { num: 5, label: "Meeting Result" },
-    { num: 6, label: "Future Ministry" },
-    { num: 7, label: "Influence" },
-    { num: 8, label: "Final Review" },
-  ];
+  if (loadingMeetings) {
+    return (
+      <DashboardLayout>
+        <div className="py-24 flex flex-col items-center justify-center gap-3">
+          <Loader2 className="h-10 w-10 animate-spin text-indigo-400" />
+          <span className="text-sm font-bold uppercase tracking-wider text-slate-500">Loading meetings...</span>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-3xl mx-auto pb-12 text-left animate-fadeIn">
         {/* Header section */}
-        <div>
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
-            After Meeting Report
-          </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Please fill in this report after the meeting is completed.
-          </p>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push("/coordinator/dashboard")}
+              className="rounded-xl p-2 text-slate-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <div>
+              <h2 className="text-xl font-black text-white uppercase tracking-wider flex items-center gap-2">
+                <ClipboardList className="h-5 w-5 text-indigo-400" />
+                After-Meeting Evaluation Form
+              </h2>
+              <p className="text-xs text-indigo-200/60 font-medium">
+                Record ministry outcomes linked to an approved meeting.
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Progress indicator */}
-        <div className="flex items-center justify-between bg-white dark:bg-slate-900 rounded-xl p-3 sm:p-4 shadow-sm border border-slate-100 dark:border-slate-800 overflow-x-auto no-scrollbar">
-          {stepsList.map((s, idx) => (
-            <React.Fragment key={s.num}>
-              <div className="flex items-center gap-2 shrink-0">
-                <div 
-                  className={`h-8 w-8 rounded-full flex items-center justify-center font-semibold text-sm transition-colors ${
-                    step >= s.num 
-                      ? "bg-sky-600 text-white" 
-                      : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
-                  }`}
-                >
-                  {step > s.num ? <CheckCircle className="h-5 w-5" /> : s.num}
+        {/* Meeting Selector Card */}
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-3">
+          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            Select Linked Meeting ID *
+          </label>
+          {meetings.length === 0 ? (
+            <div className="p-4 rounded-xl bg-white/5 border border-white/5 text-center space-y-2">
+              <p className="text-xs text-indigo-200/70">No meetings found. Create a meeting and complete verification first.</p>
+              <button
+                onClick={() => router.push("/coordinator/verification")}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors"
+              >
+                <PlusCircle className="h-4 w-4" /> Go to Verification Form
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <select
+                value={selectedMeetingId}
+                onChange={(e) => setSelectedMeetingId(e.target.value)}
+                className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-xs font-bold"
+              >
+                {meetings.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.reportId} — {m.title || "Meeting"} ({m.verificationStatus})
+                  </option>
+                ))}
+              </select>
+
+              {selectedMeeting && (
+                <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/5 border border-white/5 text-xs">
+                  <span className="text-slate-400 font-bold uppercase text-[9px]">Verification Status:</span>
+                  <FormStatusBadge status={selectedMeeting.verificationStatus} size="sm" />
                 </div>
-                <span className={`text-xs font-semibold ${step === s.num ? "text-sky-600 dark:text-sky-400" : "text-slate-500"}`}>
-                  {s.label}
-                </span>
-              </div>
-              {idx < stepsList.length - 1 && (
-                <div className={`flex-1 h-0.5 min-w-5 mx-4 transition-colors ${step > s.num ? "bg-sky-600" : "bg-slate-200 dark:bg-slate-800"}`} />
               )}
-            </React.Fragment>
-          ))}
+            </div>
+          )}
         </div>
 
-        {/* Form Container */}
-        <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleKeyDown} className="space-y-6">
-          {/* Step 5: Meeting Result */}
-          {step === 5 && (
-            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-4 sm:p-6 shadow-sm space-y-6">
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
-                {translate("Section 5 - Meeting Result", language)}
-              </h3>
-
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
-                    {translate("Remarks", language)}
-                  </label>
-                  <div className="flex gap-6">
-                    {["Excellent", "Good", "Average"].map((opt) => (
-                      <label key={opt} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 font-medium">
-                        <input
-                          type="radio"
-                          value={opt}
-                          {...register("overallMeetingOutcome")}
-                          className="h-4 w-4 text-sky-600"
-                        />
-                        {translate(opt, language)}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
-                    Congregation Response
-                  </label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {["Highly Encouraged", "Encouraged", "Neutral", "Not Interested"].map((opt) => (
-                      <label key={opt} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 font-medium">
-                        <input
-                          type="radio"
-                          value={opt}
-                          {...register("congregationResponse")}
-                          className="h-4 w-4 text-sky-600"
-                        />
-                        {opt}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
+        {/* Locked Warning or Form */}
+        {selectedMeeting && isLocked ? (
+          <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-8 text-center space-y-4">
+            <div className="h-16 w-16 mx-auto rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center">
+              <Lock className="h-8 w-8" />
             </div>
-          )}
-
-          {/* Step 6: Future Ministry */}
-          {step === 6 && (
-            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-4 sm:p-6 shadow-sm space-y-6">
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
-                {translate("Section 6 - Future Ministry Possibilities", language)}
-              </h3>
-
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
-                    Are they willing to continue fellowship with WCM?
-                  </label>
-                  <div className="flex gap-4">
-                    <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 font-medium">
-                      <input
-                        type="radio"
-                        value="true"
-                        {...register("continueFellowship")}
-                        className="h-4 w-4 text-sky-600"
-                      />
-                      Yes
-                    </label>
-                    <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 font-medium">
-                      <input
-                        type="radio"
-                        value="false"
-                        {...register("continueFellowship")}
-                        className="h-4 w-4 text-sky-600"
-                      />
-                      No
-                    </label>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
-                    Future Opportunities
-                  </label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[
-                      { val: "Future Meetings", label: "Future Meetings" },
-                      { val: "Leadership Training", label: "Leadership Training" },
-                      { val: "Literature Distribution", label: "Literature Distribution" },
-                      { val: "Digital Message Promotion", label: "Digital Message Promotion" },
-                    ].map((opt) => (
-                      <label key={opt.val} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 font-medium">
-                        <input
-                          type="checkbox"
-                          checked={selectedOps.includes(opt.val)}
-                          onChange={(e) => handleOpportunityChange(opt.val, e.target.checked)}
-                          className="h-4 w-4 text-sky-600 rounded border-slate-300"
-                        />
-                        {opt.label}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
+            <div>
+              <h4 className="text-base font-bold text-white uppercase tracking-wider">Evaluation Form Locked</h4>
+              <p className="text-xs text-indigo-200/70 mt-1 max-w-md mx-auto">
+                Meeting <span className="font-mono text-amber-300 font-bold">{selectedMeeting.reportId}</span> Verification Form must complete the approval sequence (Coordinator → Zonal Leader → State Leader → Admin) and receive final Admin approval before Evaluation can be submitted.
+              </p>
             </div>
-          )}
-
-          {/* Step 7: Ministry Influence */}
-          {step === 7 && (
-            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-4 sm:p-6 shadow-sm space-y-6">
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
-                {translate("Section 7 - Ministry Influence Assessment", language)}
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
-                    Local Church Influence
-                  </label>
-                  <div className="flex gap-4">
-                    {["Low", "Medium", "High"].map((opt) => (
-                      <label key={opt} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 font-medium">
-                        <input
-                          type="radio"
-                          value={opt}
-                          {...register("localChurchInfluence")}
-                          className="h-4 w-4 text-sky-600"
-                        />
-                        {opt}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
-                    Network of Pastors
-                  </label>
-                  <div className="flex gap-4">
-                    {["Low", "Medium", "High"].map((opt) => (
-                      <label key={opt} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 font-medium">
-                        <input
-                          type="radio"
-                          value={opt}
-                          {...register("networkOfPastors")}
-                          className="h-4 w-4 text-sky-600"
-                        />
-                        {opt}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="col-span-1 md:col-span-2 pt-4 border-t border-slate-100 dark:border-slate-800">
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                    {translate("How many members are following WCM Ministry?", language)} *
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    defaultValue={0}
-                    {...register("followingWcmMembersCount", { 
-                      required: "This field is required", 
-                      valueAsNumber: true,
-                      min: { value: 0, message: "Must be a positive number" } 
-                    })}
-                    className="w-full max-w-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3 py-2 text-sm text-slate-900 dark:text-white"
-                  />
-                  {errors.followingWcmMembersCount && (
-                    <p className="mt-1 text-xs text-red-500 font-medium">{errors.followingWcmMembersCount.message}</p>
-                  )}
-                </div>
-              </div>
+            <div className="inline-flex items-center gap-2 pt-2">
+              <span className="text-xs text-indigo-200/50">Current Verification Status:</span>
+              <FormStatusBadge status={selectedMeeting.verificationStatus} />
             </div>
-          )}
+            <div>
+              <button
+                onClick={() => router.push(`/coordinator/report/${selectedMeeting.id}`)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+              >
+                View Meeting Lifecycle Details
+              </button>
+            </div>
+          </div>
+        ) : selectedMeeting ? (
+          <form className="space-y-6">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 sm:p-8 space-y-6">
+              <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider">
+                  Linked to Meeting: {selectedMeeting.reportId}
+                </span>
+                <FormStatusBadge status={selectedMeeting.evaluationStatus || "PENDING"} />
+              </div>
 
-          {/* Step 8: Final Review */}
-          {step === 8 && (
-            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-4 sm:p-6 shadow-sm space-y-6">
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
-                {translate("Section 8 - Final Review", language)}
-              </h3>
-
-              <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    Overall Meeting Outcome *
+                  </label>
+                  <select
+                    {...register("overallMeetingOutcome", { required: true })}
+                    className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
+                  >
+                    <option value="Exceptional">Exceptional</option>
+                    <option value="Very Good">Very Good</option>
+                    <option value="Good">Good</option>
+                    <option value="Satisfactory">Satisfactory</option>
+                    <option value="Challenging">Challenging</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    Congregation Response *
+                  </label>
+                  <select
+                    {...register("congregationResponse", { required: true })}
+                    className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
+                  >
+                    <option value="Highly Receptive">Highly Receptive</option>
+                    <option value="Positive & Engaged">Positive & Engaged</option>
+                    <option value="Moderate">Moderate</option>
+                    <option value="Reserved">Reserved</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
                     Strengths Observed *
                   </label>
                   <textarea
                     rows={3}
-                    {...register("strengthsObserved", { required: "Strengths observed is required" })}
-                    className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-2.5 text-sm text-slate-900 dark:text-white"
-                    placeholder="Enter strengths observed"
+                    {...register("strengthsObserved", { required: true })}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
+                    placeholder="Observed strengths..."
                   />
-                  {errors.strengthsObserved && (
-                    <span className="text-red-500 text-xs mt-1 block">{errors.strengthsObserved.message}</span>
-                  )}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
                     Challenges Observed *
                   </label>
                   <textarea
                     rows={3}
-                    {...register("challengesObserved", { required: "Challenges observed is required" })}
-                    className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-2.5 text-sm text-slate-900 dark:text-white"
-                    placeholder="Enter challenges observed"
+                    {...register("challengesObserved", { required: true })}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
+                    placeholder="Observed challenges..."
                   />
-                  {errors.challengesObserved && (
-                    <span className="text-red-500 text-xs mt-1 block">{errors.challengesObserved.message}</span>
-                  )}
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    Opportunity for WCM *
+                  </label>
+                  <textarea
+                    rows={2}
+                    {...register("opportunityForWcm", { required: true })}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
+                    placeholder="Future outreach opportunities with this church..."
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                    Opportunity for WCM Ministry *
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    Coordinator Name *
                   </label>
-                  <textarea
-                    rows={3}
-                    {...register("opportunityForWcm", { required: "Opportunity is required" })}
-                    className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-2.5 text-sm text-slate-900 dark:text-white"
-                    placeholder="Enter opportunities for WCM"
+                  <input
+                    type="text"
+                    {...register("coordinatorName", { required: true })}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
                   />
-                  {errors.opportunityForWcm && (
-                    <span className="text-red-500 text-xs mt-1 block">{errors.opportunityForWcm.message}</span>
-                  )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100 dark:border-slate-800">
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                      Coordinator / Leader Name *
-                    </label>
-                    <input
-                      type="text"
-                      {...register("coordinatorName", { required: "Coordinator name is required" })}
-                      className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-2.5 text-sm text-slate-900 dark:text-white"
-                      placeholder="Enter name"
-                    />
-                    {errors.coordinatorName && (
-                      <span className="text-red-500 text-xs mt-1 block">{errors.coordinatorName.message}</span>
-                    )}
-                  </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    Designation *
+                  </label>
+                  <input
+                    type="text"
+                    {...register("designation", { required: true })}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                      Designation *
-                    </label>
-                    <input
-                      type="text"
-                      {...register("designation", { required: "Designation is required" })}
-                      className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-2.5 text-sm text-slate-900 dark:text-white"
-                      placeholder="e.g. Outreach Coordinator"
-                    />
-                    {errors.designation && (
-                      <span className="text-red-500 text-xs mt-1 block">{errors.designation.message}</span>
-                    )}
-                  </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    Signature / Consent *
+                  </label>
+                  <input
+                    type="text"
+                    {...register("signature", { required: true })}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold font-serif"
+                    placeholder="Type name as digital signature"
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                      Signature *
-                    </label>
-                    <input
-                      type="text"
-                      {...register("signature", { required: "Signature text is required" })}
-                      className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-2.5 text-sm text-slate-900 dark:text-white"
-                      placeholder="Enter digital signature (type name)"
-                    />
-                    {errors.signature && (
-                      <span className="text-red-500 text-xs mt-1 block">{errors.signature.message}</span>
-                    )}
-                  </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    Submission Date
+                  </label>
+                  <input
+                    type="date"
+                    {...register("submissionDate")}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
+                  />
+                </div>
+              </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                      Submission Date *
-                    </label>
-                    <input
-                      type="date"
-                      {...register("submissionDate", { required: "Date is required" })}
-                      className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-2.5 text-sm text-slate-900 dark:text-white"
-                    />
-                    {errors.submissionDate && (
-                      <span className="text-red-500 text-xs mt-1 block">{errors.submissionDate.message}</span>
-                    )}
-                  </div>
+              {/* Action Buttons */}
+              <div className="pt-4 border-t border-white/10 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => router.push(`/coordinator/report/${selectedMeeting.id}`)}
+                  className="text-xs text-indigo-300 hover:text-white font-bold uppercase tracking-wider transition-colors"
+                >
+                  View All 3 Forms
+                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleSubmit(handleSaveDraft)}
+                    disabled={saving || submitting}
+                    className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Draft"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSubmit(handleSubmitEvaluation)}
+                    disabled={saving || submitting}
+                    className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-md disabled:opacity-50"
+                  >
+                    {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit Evaluation"}
+                  </button>
                 </div>
               </div>
             </div>
-          )}
-
-          {/* Navigation Buttons */}
-          <div className="flex flex-wrap gap-3 justify-between items-center bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-3 sm:p-4 shadow-sm">
-            <button
-              type="button"
-              onClick={prevStep}
-              disabled={step === 5 || saving}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 disabled:opacity-50 transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              {translate("Previous Step", language)}
-            </button>
-
-            <button
-              type="button"
-              onClick={step < 8 ? nextStep : handleSubmit(onSubmit)}
-              disabled={saving}
-              className={`inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-colors ${
-                step < 8 ? "bg-sky-600 hover:bg-sky-700" : "bg-emerald-600 hover:bg-emerald-700"
-              } disabled:opacity-50`}
-            >
-              {step < 8 ? (
-                <>
-                  {translate("Next Step", language)}
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              ) : (
-                <>
-                  {saving ? "Submitting..." : translate("Save Form", language)}
-                </>
-              )}
-            </button>
-          </div>
-        </form>
+          </form>
+        ) : null}
       </div>
     </DashboardLayout>
+  );
+}
+
+export default function AfterMeetingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-400">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+      </div>
+    }>
+      <AfterMeetingFormContent />
+    </Suspense>
   );
 }

@@ -26,6 +26,15 @@ enum ReportStatus {
   REQUEST_CHANGES
 }
 
+enum FormStatus {
+  PENDING
+  SUBMITTED
+  FORWARDED_TO_STATE
+  FORWARDED_TO_ADMIN
+  REJECTED
+  COMPLETED
+}
+
 model User {
   id                    String                @id @default(uuid())
   username              String                @unique
@@ -107,7 +116,8 @@ model Verification {
 
 model MeetingReport {
   id                 String              @id @default(uuid())
-  reportId           String              @unique @map("report_id") // E.g., MR-2026-00015
+  reportId           String              @unique @map("report_id") // E.g., MTG-1001 or MR-2026-00015
+  title              String?             @map("title")
   leaderId           String              @map("leader_id")
   leader             User                @relation(fields: [leaderId], references: [id], onDelete: Cascade)
   status             ReportStatus        @default(DRAFT)
@@ -135,6 +145,7 @@ model ReviewerComment {
   meetingReport   MeetingReport @relation(fields: [meetingReportId], references: [id], onDelete: Cascade)
   reviewerId      String        @map("reviewer_id")
   reviewer        User          @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+  formType        String        @default("VERIFICATION") @map("form_type")
   comment         String
   createdAt       DateTime      @default(now()) @map("created_at")
 
@@ -147,6 +158,10 @@ model VerificationSheet {
   id                     String        @id @default(uuid())
   meetingReportId        String        @unique @map("meeting_report_id")
   meetingReport          MeetingReport @relation(fields: [meetingReportId], references: [id], onDelete: Cascade)
+  status                 FormStatus    @default(PENDING)
+  submittedAt            DateTime?     @map("submitted_at")
+  approvedAt             DateTime?     @map("approved_at")
+  rejectedAt             DateTime?     @map("rejected_at")
   createdAt              DateTime      @default(now()) @map("created_at")
   updatedAt              DateTime      @updatedAt @map("updated_at")
   convenerName           String        @map("convener_name")
@@ -174,6 +189,10 @@ model AttendanceRecord {
   id              String        @id @default(uuid())
   meetingReportId String        @unique @map("meeting_report_id")
   meetingReport   MeetingReport @relation(fields: [meetingReportId], references: [id], onDelete: Cascade)
+  status          FormStatus    @default(PENDING)
+  submittedAt     DateTime?     @map("submitted_at")
+  approvedAt      DateTime?     @map("approved_at")
+  rejectedAt      DateTime?     @map("rejected_at")
   date            DateTime      @db.Date
   location        String
   fieldExecuter   String        @map("field_executer")
@@ -192,6 +211,10 @@ model AfterMeetingReport {
   id                       String        @id @default(uuid())
   meetingReportId          String        @unique @map("meeting_report_id")
   meetingReport            MeetingReport @relation(fields: [meetingReportId], references: [id], onDelete: Cascade)
+  status                   FormStatus    @default(PENDING)
+  submittedAt              DateTime?     @map("submitted_at")
+  approvedAt               DateTime?     @map("approved_at")
+  rejectedAt               DateTime?     @map("rejected_at")
   createdAt                DateTime      @default(now()) @map("created_at")
   updatedAt                DateTime      @updatedAt @map("updated_at")
   overallMeetingOutcome    String        @map("overall_meeting_outcome")
@@ -254,6 +277,7 @@ model ReportAuditLog {
   meetingReport   MeetingReport @relation(fields: [meetingReportId], references: [id], onDelete: Cascade)
   actorId         String        @map("actor_id")
   actor           User          @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  formType        String        @default("VERIFICATION") @map("form_type")
   action          String
   details         String?
   createdAt       DateTime      @default(now()) @map("created_at")
