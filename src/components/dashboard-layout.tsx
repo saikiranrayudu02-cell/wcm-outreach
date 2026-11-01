@@ -9,10 +9,11 @@ import {
   Menu, X, LogOut, LayoutDashboard, FileCheck, Users, 
   FileSpreadsheet, ClipboardList, Sun, Moon, ShieldAlert,
   Bell, CheckCheck, CalendarCheck, Calendar, Inbox, User as UserIcon, Sparkles, ChevronRight, ChevronDown,
-  ShieldCheck, PhoneCall, Mail, BarChart3, LayoutGrid, Layers
+  ShieldCheck, PhoneCall, Mail, BarChart3, LayoutGrid, Layers, Download
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
+import { usePwa } from "@/components/pwa-provider";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -38,6 +39,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   const { sidebarOpen, toggleSidebar, user, setUser, language, setLanguage } = useUIStore();
   const { theme, setTheme } = useTheme();
+  const { isStandalone, installApp } = usePwa();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileFeaturesOpen, setMobileFeaturesOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -374,6 +376,15 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
               </div>
               <ChevronRight className="h-3.5 w-3.5 text-indigo-300/40 group-hover:text-indigo-300 transition-colors" />
             </button>
+            {!isStandalone && (
+              <button
+                onClick={installApp}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-4 py-2 text-[11px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-sm min-h-10"
+              >
+                <Download className="h-4 w-4" />
+                Download App
+              </button>
+            )}
             <button
               onClick={() => setShowLogoutConfirmModal(true)}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer border border-red-500/10 hover:border-red-500 min-h-11"
@@ -530,6 +541,18 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                 Profile
               </span>
             </button>
+            {!isStandalone && (
+              <button
+                onClick={() => {
+                  setMobileOpen(false);
+                  installApp();
+                }}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider cursor-pointer active:scale-98 transition-all min-h-11 shadow-sm"
+              >
+                <Download className="h-4 w-4" />
+                Download App
+              </button>
+            )}
             <button
               onClick={() => {
                 setMobileOpen(false);
@@ -752,6 +775,19 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
                     {/* Actions with proper touch target sizes */}
                     <div className="space-y-1">
+                      {!isStandalone && (
+                        <button
+                          onClick={() => {
+                            setShowUserMenu(false);
+                            installApp();
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 transition-all cursor-pointer min-h-11"
+                        >
+                          <Download className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                          <span>Download / Install App</span>
+                        </button>
+                      )}
+
                       <button
                         onClick={() => {
                           setShowUserMenu(false);
@@ -885,27 +921,41 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Quick Actions inside mobile features panel */}
-          <div className="mt-3 pt-3 border-t border-border/40 grid grid-cols-2 gap-2">
-            <button
-              onClick={() => {
-                setMobileFeaturesOpen(false);
-                router.push("/profile");
-              }}
-              className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-border/60 bg-card hover:bg-accent text-foreground text-xs font-bold transition-all min-h-11 cursor-pointer"
-            >
-              <UserIcon className="h-4 w-4 text-primary shrink-0" />
-              <span>{translate("My Profile", language)}</span>
-            </button>
-            <button
-              onClick={() => {
-                setMobileFeaturesOpen(false);
-                setShowLogoutConfirmModal(true);
-              }}
-              className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500 hover:text-white text-red-500 text-xs font-bold transition-all min-h-11 cursor-pointer"
-            >
-              <LogOut className="h-4 w-4 shrink-0" />
-              <span>{translate("Logout", language)}</span>
-            </button>
+          <div className="mt-3 pt-3 border-t border-border/40 space-y-2">
+            {!isStandalone && (
+              <button
+                onClick={() => {
+                  setMobileFeaturesOpen(false);
+                  installApp();
+                }}
+                className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold uppercase tracking-wider transition-all min-h-11 shadow-sm cursor-pointer"
+              >
+                <Download className="h-4 w-4 shrink-0" />
+                <span>Download / Install App</span>
+              </button>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  setMobileFeaturesOpen(false);
+                  router.push("/profile");
+                }}
+                className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-border/60 bg-card hover:bg-accent text-foreground text-xs font-bold transition-all min-h-11 cursor-pointer"
+              >
+                <UserIcon className="h-4 w-4 text-primary shrink-0" />
+                <span>{translate("My Profile", language)}</span>
+              </button>
+              <button
+                onClick={() => {
+                  setMobileFeaturesOpen(false);
+                  setShowLogoutConfirmModal(true);
+                }}
+                className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500 hover:text-white text-red-500 text-xs font-bold transition-all min-h-11 cursor-pointer"
+              >
+                <LogOut className="h-4 w-4 shrink-0" />
+                <span>{translate("Logout", language)}</span>
+              </button>
+            </div>
           </div>
         </div>
 
