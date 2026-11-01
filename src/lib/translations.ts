@@ -10,6 +10,16 @@ export const translations: Record<string, Record<"en" | "hi" | "te", string>> = 
     hi: "सत्यापन पत्र",
     te: "ధృవీకరణ పత్రం"
   },
+  "Completed Verifications": {
+    en: "Completed Verifications",
+    hi: "पूर्ण सत्यापन",
+    te: "పూర్తయిన ధృవీకరణలు"
+  },
+  "AI Calling Center": {
+    en: "AI Calling Center",
+    hi: "एआई कॉलिंग सेंटर",
+    te: "AI కాలింగ్ సెంటర్"
+  },
   "Attendance": {
     en: "Attendance",
     hi: "उपस्थिति",
@@ -24,6 +34,36 @@ export const translations: Record<string, Record<"en" | "hi" | "te", string>> = 
     en: "Confirmations",
     hi: "पुष्टिकरण",
     te: "ధృవీకరణలు"
+  },
+  "User Management": {
+    en: "User Management",
+    hi: "उपयोगकर्ता प्रबंधन",
+    te: "యూజర్ నిర్వహణ"
+  },
+  "Submitted Reports": {
+    en: "Submitted Reports",
+    hi: "जमा की गई रिपोर्ट",
+    te: "సమర్పించిన నివేదికలు"
+  },
+  "Send Messages": {
+    en: "Send Messages",
+    hi: "संदेश भेजें",
+    te: "సందేశాలు పంపండి"
+  },
+  "Administration": {
+    en: "Administration",
+    hi: "प्रशासन",
+    te: "పరిపాలన"
+  },
+  "Outreach & AI": {
+    en: "Outreach & AI",
+    hi: "आउटरीच और एआई",
+    te: "ఔట్‌రీచ్ & AI"
+  },
+  "Tools": {
+    en: "Tools",
+    hi: "उपकरण",
+    te: "సాధనాలు"
   },
   "Find People": {
     en: "Find People",
@@ -139,14 +179,29 @@ export const translations: Record<string, Record<"en" | "hi" | "te", string>> = 
   },
   // Status Labels
   "Submitted to Zone Leader": {
-    en: "Submitted to Zone Leader",
-    hi: "जोन लीडर को प्रस्तुत किया गया",
-    te: "జోన్ లీడర్‌కు సమర్పించబడింది"
+    en: "Submitted to Zonal Leader",
+    hi: "ज़ोनल लीडर को प्रस्तुत किया गया",
+    te: "జోనల్ లీడర్‌కు సమర్పించబడింది"
   },
   "Under Zone Leader Review": {
-    en: "Under Zone Leader Review",
-    hi: "जोन लीडर समीक्षा के अधीन",
-    te: "జోన్ లీడర్ సమీక్షలో ఉంది"
+    en: "Under Zonal Leader Review",
+    hi: "ज़ोनल लीडर समीक्षा के अधीन",
+    te: "జోనల్ లీడర్ సమీక్షలో ఉంది"
+  },
+  "Submitted to Zonal Leader": {
+    en: "Submitted to Zonal Leader",
+    hi: "ज़ोनल लीडर को प्रस्तुत किया गया",
+    te: "జోనల్ లీడర్‌కు సమర్పించబడింది"
+  },
+  "Under Zonal Leader Review": {
+    en: "Under Zonal Leader Review",
+    hi: "ज़ोनल लीडर समीक्षा के अधीन",
+    te: "జోనల్ లీడర్ సమీక్షలో ఉంది"
+  },
+  "Zonal Leader": {
+    en: "Zonal Leader",
+    hi: "ज़ोनल लीडर",
+    te: "జోనల్ లీడర్"
   },
   "Forwarded to State Leader": {
     en: "Forwarded to State Leader",
@@ -418,4 +473,19 @@ export function translate(key: string, lang: "en" | "hi" | "te" = "en"): string 
     return translations[normalizedKey][lang] || normalizedKey;
   }
   return normalizedKey;
+}
+
+export function formatRoleName(role?: string | null): string {
+  if (!role) return "";
+  if (role === "ZONE_LEADER") return "Zonal Leader";
+  if (role === "STATE_LEADER") return "State Leader";
+  if (role === "COORDINATOR") return "Coordinator";
+  if (role === "ADMIN") return "Admin";
+  return role.replace(/_/g, " ");
+}
+
+export function formatRoleBadge(role?: string | null): string {
+  if (!role) return "";
+  if (role === "ZONE_LEADER") return "ZONAL LEADER";
+  return role.replace(/_/g, " ");
 }

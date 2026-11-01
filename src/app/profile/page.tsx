@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useUIStore } from "@/store/ui-store";
+import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 import {
   User as UserIcon,
@@ -28,8 +30,10 @@ import {
   Image as ImageIcon,
   Smartphone,
   Download,
+  LogOut,
 } from "lucide-react";
 import { usePwa } from "@/components/pwa-provider";
+import { formatRoleName, formatRoleBadge } from "@/lib/translations";
 
 interface UserProfileData {
   id: string;
@@ -60,6 +64,7 @@ interface ProfileStats {
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { user: authUser, setUser: setAuthUser } = useUIStore();
   const { isStandalone, isIosDevice, installApp, isInstallable } = usePwa();
 
@@ -67,8 +72,25 @@ export default function ProfilePage() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSignOut = async () => {
+    try {
+      setIsLoggingOut(true);
+      await authClient.signOut();
+      setAuthUser(null);
+      toast.success("Successfully logged out");
+      setShowLogoutConfirm(false);
+      router.push("/login");
+    } catch (err) {
+      toast.error("Logout failed. Please try again.");
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [stats, setStats] = useState<ProfileStats | null>(null);
@@ -426,7 +448,7 @@ export default function ProfilePage() {
                       </h2>
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border backdrop-blur-sm ${themeConfig.badge}`}>
                         <Shield className="h-3 w-3" />
-                        {profile.role.replace(/_/g, " ")}
+                        {formatRoleBadge(profile.role)}
                       </span>
                     </div>
 
@@ -460,7 +482,7 @@ export default function ProfilePage() {
                     <span>Role Access Rights</span>
                   </div>
                   <p className="text-[11px] text-slate-200 leading-relaxed">
-                    Assigned as <span className="font-bold text-white">{profile.role.replace(/_/g, " ")}</span>. Roles are centrally administered and cannot be self-modified.
+                    Assigned as <span className="font-bold text-white">{formatRoleName(profile.role)}</span>. Roles are centrally administered and cannot be self-modified.
                   </p>
                 </div>
               </div>
@@ -687,7 +709,7 @@ export default function ProfilePage() {
                           </label>
                           <input
                             type="text"
-                            value={profile.role.replace(/_/g, " ")}
+                            value={formatRoleName(profile.role)}
                             disabled
                             className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-200/50 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 font-bold cursor-not-allowed"
                           />
@@ -953,10 +975,89 @@ export default function ProfilePage() {
                     </button>
                   )}
                 </div>
+
+                {/* Account Session & Sign Out Card */}
+                <div className="bg-red-50/50 dark:bg-red-950/20 border border-red-200/60 dark:border-red-900/40 rounded-3xl p-6 shadow-xs space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 shrink-0">
+                      <LogOut className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black uppercase tracking-wider text-red-700 dark:text-red-400">
+                        Account Session
+                      </h4>
+                      <p className="text-[11px] text-red-600/70 dark:text-red-400/60 font-medium">
+                        Securely sign out of this device
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Signing out ends your active session on this device. You will need your login credentials to sign back in.
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowLogoutConfirm(true)}
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-xs font-black uppercase tracking-wider shadow-sm shadow-red-600/20 transition-all active:scale-[0.98] cursor-pointer min-h-11"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sign Out of Account
+                  </button>
+                </div>
               </div>
             </div>
           </>
         ) : null}
+
+        {/* Profile Sign Out Confirmation Dialog */}
+        {showLogoutConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div 
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+              onClick={() => !isLoggingOut && setShowLogoutConfirm(false)}
+            />
+            <div className="relative w-full max-w-sm rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xl p-6 text-center animate-scaleIn z-50">
+              <div className="h-14 w-14 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center mx-auto mb-4">
+                <LogOut className="h-7 w-7" />
+              </div>
+              <h3 className="text-base font-black text-slate-900 dark:text-white mb-1.5">
+                Sign Out of Account?
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
+                Are you sure you want to sign out? Any unsaved edits will be discarded.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  disabled={isLoggingOut}
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all min-h-11 cursor-pointer disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isLoggingOut}
+                  onClick={handleSignOut}
+                  className="w-full py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-xs font-black uppercase tracking-wider transition-all min-h-11 cursor-pointer shadow-sm shadow-red-600/30 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  {isLoggingOut ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Signing out...</span>
+                    </>
+                  ) : (
+                    <>
+                      <LogOut className="h-4 w-4" />
+                      <span>Sign Out</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

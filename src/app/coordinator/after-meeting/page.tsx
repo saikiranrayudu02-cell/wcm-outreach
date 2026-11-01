@@ -462,20 +462,20 @@ function AfterMeetingFormContent() {
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-4 border-t border-white/10 flex items-center justify-between">
+              <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                 <button
                   type="button"
                   onClick={() => router.push(`/coordinator/report/${selectedMeeting.id}`)}
-                  className="text-xs text-indigo-300 hover:text-white font-bold uppercase tracking-wider transition-colors"
+                  className="text-xs text-indigo-300 hover:text-white font-bold uppercase tracking-wider transition-colors text-center sm:text-left py-2 cursor-pointer"
                 >
                   View All 3 Forms
                 </button>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
                   <button
                     type="button"
                     onClick={handleSubmit(handleSaveDraft)}
                     disabled={saving || submitting}
-                    className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50 min-h-11"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Draft"}
                   </button>
@@ -483,7 +483,7 @@ function AfterMeetingFormContent() {
                     type="button"
                     onClick={handleSubmit(handleSubmitEvaluation)}
                     disabled={saving || submitting}
-                    className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-md disabled:opacity-50"
+                    className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black uppercase tracking-wider transition-colors cursor-pointer shadow-md disabled:opacity-50 min-h-11"
                   >
                     {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit Evaluation"}
                   </button>

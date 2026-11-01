@@ -81,7 +81,7 @@ export async function POST(
     let auditDetails = "";
 
     if (role === "ZONE_LEADER") {
-      const isSameZone = Boolean(session.user.zone && report.leader.zone === session.user.zone);
+      const isSameZone = Boolean(session.user.zone && (report.leader.zone === session.user.zone || report.verificationSheet?.zone === session.user.zone));
       if (!isSameZone) {
         return NextResponse.json({ error: "Forbidden: You can only review meetings within your zone." }, { status: 403 });
       }
@@ -102,7 +102,7 @@ export async function POST(
         auditDetails = `Zonal Leader ${session.user.username} rejected ${targetFormKey} Form: "${comment}"`;
       }
     } else if (role === "STATE_LEADER") {
-      const isSameState = Boolean(session.user.state && report.leader.state === session.user.state);
+      const isSameState = Boolean(session.user.state && (report.leader.state === session.user.state || report.verificationSheet?.state === session.user.state));
       if (!isSameState) {
         return NextResponse.json({ error: "Forbidden: You can only review meetings within your state." }, { status: 403 });
       }

@@ -1,23 +1,63 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { 
   Users, FileSpreadsheet, Eye, UserPlus, Pencil, Trash2, 
   X, Save, FileText, ClipboardList, RefreshCw,
-  Mail, Send, MessageSquare, CalendarCheck, Phone, BarChart3
+  Mail, Send, MessageSquare, CalendarCheck, Phone, BarChart3,
+  ShieldCheck, PhoneCall, KeyRound, Power, CheckCircle2, XCircle, Search, Layers, GitFork
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useUIStore } from "@/store/ui-store";
-import { translate } from "@/lib/translations";
+import { translate, formatRoleBadge } from "@/lib/translations";
 import { FormStatusBadge } from "@/components/form-status-badge";
 import { MeetingReviewModal } from "@/components/meeting-review-modal";
 import { MonthlySummary } from "@/components/monthly-summary";
+import { GeographicFilterBar, GeographicFilterState } from "@/components/geographic-filter-bar";
+import { StateWorkloadOverview } from "@/components/state-workload-overview";
+import { Lock } from "lucide-react";
+import { CreateUserModal } from "@/components/create-user-modal";
+import { EditUserModal } from "@/components/edit-user-modal";
+import { ResetPasswordModal } from "@/components/reset-password-modal";
+import { AdminHierarchyTree } from "@/components/admin-hierarchy-tree";
 
 export default function AdminDashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="h-8 w-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+      </div>
+    }>
+      <AdminDashboardContent />
+    </Suspense>
+  );
+}
+
+function AdminDashboardContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, language } = useUIStore();
-  const [activeTab, setActiveTab] = useState<"users" | "reports" | "analytics" | "messages" | "confirmations">("users");
+  
+  const urlTab = searchParams.get("tab") as "users" | "reports" | "analytics" | "messages" | "confirmations" | null;
+  const [activeTab, setActiveTab] = useState<"users" | "reports" | "analytics" | "messages" | "confirmations">(
+    urlTab && ["users", "reports", "analytics", "messages", "confirmations"].includes(urlTab) ? urlTab : "users"
+  );
+
+  useEffect(() => {
+    if (urlTab && ["users", "reports", "analytics", "messages", "confirmations"].includes(urlTab)) {
+      setActiveTab(urlTab);
+    } else if (!urlTab) {
+      setActiveTab("users");
+    }
+  }, [urlTab]);
+
+  const handleTabChange = (tab: "users" | "reports" | "analytics" | "messages" | "confirmations") => {
+    setActiveTab(tab);
+    router.push(`/admin/dashboard?tab=${tab}`, { scroll: false });
+  };
   
   // Users state
   const [usersList, setUsersList] = useState<any[]>([]);
@@ -26,6 +66,7 @@ export default function AdminDashboardPage() {
   // Reports state
   const [reportsList, setReportsList] = useState<any[]>([]);
   const [reportsLoading, setReportsLoading] = useState(true);
+  const [geoFilters, setGeoFilters] = useState<GeographicFilterState>({});
 
   // Notifications (Messages) state
   const [notificationsList, setNotificationsList] = useState<any[]>([]);
@@ -43,22 +84,25 @@ export default function AdminDashboardPage() {
   const [adminFeedback, setAdminFeedback] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
+  // User Management state
+  const [userViewMode, setUserViewMode] = useState<"directory" | "tree">("directory");
+  const [userSearch, setUserSearch] = useState("");
+  const [userRoleFilter, setUserRoleFilter] = useState("ALL");
+  const [userStatusFilter, setUserStatusFilter] = useState("ALL");
+  const [userStateFilter, setUserStateFilter] = useState("ALL");
+  const [userZoneFilter, setUserZoneFilter] = useState("ALL");
+  const [availableStates, setAvailableStates] = useState<any[]>([]);
+  const [availableZones, setAvailableZones] = useState<any[]>([]);
+
   // User form modals state
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  
-  // Form fields
-  const [username, setUsername] = useState("");
-  const [name, setName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState("COORDINATOR");
-  const [state, setState] = useState("");
-  const [part, setPart] = useState("");
-  const [zone, setZone] = useState("");
-  
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
-  
+
+  // Password reset modal state
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [selectedUserForReset, setSelectedUserForReset] = useState<any | null>(null);
+
   // Report details modal state
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [reportDetail, setReportDetail] = useState<any | null>(null);
@@ -69,7 +113,15 @@ export default function AdminDashboardPage() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch("/api/users");
+      setUsersLoading(true);
+      const params = new URLSearchParams();
+      if (userSearch) params.set("search", userSearch);
+      if (userRoleFilter && userRoleFilter !== "ALL") params.set("role", userRoleFilter);
+      if (userStatusFilter && userStatusFilter !== "ALL") params.set("status", userStatusFilter);
+      if (userStateFilter && userStateFilter !== "ALL") params.set("state", userStateFilter);
+      if (userZoneFilter && userZoneFilter !== "ALL") params.set("zone", userZoneFilter);
+
+      const res = await fetch(`/api/admin/users?${params.toString()}`);
       if (!res.ok) throw new Error();
       const data = await res.json();
       setUsersList(data);
@@ -80,9 +132,94 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const fetchReports = async () => {
+  const fetchGeographicFilters = async () => {
     try {
-      const res = await fetch("/api/reports");
+      const res = await fetch("/api/admin/hierarchy/states");
+      if (res.ok) {
+        const data = await res.json();
+        setAvailableStates(data);
+      }
+    } catch {
+      console.error("Failed to load filter states");
+    }
+  };
+
+  useEffect(() => {
+    fetchGeographicFilters();
+  }, []);
+
+  useEffect(() => {
+    if (!userStateFilter || userStateFilter === "ALL") {
+      setAvailableZones([]);
+      setUserZoneFilter("ALL");
+      return;
+    }
+    const fetchZonesForFilter = async () => {
+      try {
+        const res = await fetch(`/api/admin/hierarchy/zones?stateName=${encodeURIComponent(userStateFilter)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setAvailableZones(data);
+        }
+      } catch {
+        console.error("Failed to load filter zones");
+      }
+    };
+    fetchZonesForFilter();
+  }, [userStateFilter]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchUsers();
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [userSearch, userRoleFilter, userStatusFilter, userStateFilter, userZoneFilter]);
+
+  const handleToggleUserStatus = async (u: any) => {
+    const nextStatus = !u.isActive;
+    const confirmMsg = nextStatus
+      ? `Are you sure you want to reactivate ${u.username}?`
+      : `Are you sure you want to deactivate ${u.username}? They will no longer be able to log in or take actions.`;
+    if (!confirm(confirmMsg)) return;
+
+    try {
+      const res = await fetch(`/api/admin/users/${u.id}/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: nextStatus }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to update status");
+        return;
+      }
+      toast.success(data.message || "User status updated");
+      fetchUsers();
+    } catch {
+      toast.error("An error occurred");
+    }
+  };
+
+  const handleOpenResetPassword = (u: any) => {
+    setSelectedUserForReset(u);
+    setShowResetModal(true);
+  };
+
+  const handleEditUserClick = (u: any) => {
+    setSelectedUser(u);
+    setShowEditModal(true);
+  };
+
+  const fetchReports = async (filters: GeographicFilterState = geoFilters) => {
+    try {
+      setReportsLoading(true);
+      const params = new URLSearchParams();
+      if (filters.state) params.set("state", filters.state);
+      if (filters.zone) params.set("zone", filters.zone);
+      if (filters.district) params.set("district", filters.district);
+      if (filters.part) params.set("part", filters.part);
+
+      const res = await fetch(`/api/reports?${params.toString()}`);
       if (!res.ok) throw new Error();
       const data = await res.json();
       setReportsList(data);
@@ -91,6 +228,11 @@ export default function AdminDashboardPage() {
     } finally {
       setReportsLoading(false);
     }
+  };
+
+  const handleGeoFilterChange = (newFilters: GeographicFilterState) => {
+    setGeoFilters(newFilters);
+    fetchReports(newFilters);
   };
 
   const fetchNotifications = async () => {
@@ -125,108 +267,6 @@ export default function AdminDashboardPage() {
     fetchNotifications();
     fetchConfirmations();
   }, []);
-
-  const handleCreateUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!username.trim() || !password.trim()) {
-      toast.error("Username and Password are required");
-      return;
-    }
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username,
-          name: name || username,
-          phoneNumber: phoneNumber || null,
-          password,
-          role,
-          state: state || null,
-          part: part || null,
-          zone: zone || null,
-        }),
-      });
-      const result = await res.json();
-      if (!res.ok) {
-        toast.error(result.error || "Failed to create user");
-      } else {
-        toast.success("User Created Successfully");
-        setShowCreateModal(false);
-        resetForm();
-        fetchUsers();
-      }
-    } catch (err) {
-      toast.error("An error occurred");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleEditUserClick = (u: any) => {
-    setSelectedUser(u);
-    setName(u.name || u.username);
-    setPhoneNumber(u.phoneNumber || "");
-    setRole(u.role);
-    setState(u.state || "");
-    setPart(u.part || "");
-    setZone(u.zone || "");
-    setPassword(""); // leave blank unless changing
-    setShowEditModal(true);
-  };
-
-  const handleUpdateUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedUser) return;
-    setSubmitting(true);
-    try {
-      const res = await fetch(`/api/users/${selectedUser.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name || undefined,
-          phoneNumber: phoneNumber || null,
-          role,
-          state: state || null,
-          part: part || null,
-          zone: zone || null,
-          password: password || null,
-        }),
-      });
-      const result = await res.json();
-      if (!res.ok) {
-        toast.error(result.error || "Failed to update user");
-      } else {
-        toast.success("User Updated Successfully");
-        setShowEditModal(false);
-        resetForm();
-        fetchUsers();
-      }
-    } catch (err) {
-      toast.error("An error occurred");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleDeleteUser = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this user?")) return;
-    try {
-      const res = await fetch(`/api/users/${id}`, {
-        method: "DELETE",
-      });
-      const result = await res.json();
-      if (!res.ok) {
-        toast.error(result.error || "Failed to delete user");
-      } else {
-        toast.success("User Deleted Successfully");
-        fetchUsers();
-      }
-    } catch (err) {
-      toast.error("An error occurred");
-    }
-  };
 
   const handleSendNotification = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -341,18 +381,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const resetForm = () => {
-    setUsername("");
-    setName("");
-    setPhoneNumber("");
-    setPassword("");
-    setRole("COORDINATOR");
-    setState("");
-    setPart("");
-    setZone("");
-    setSelectedUser(null);
-  };
-
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fadeIn text-left">
@@ -392,10 +420,7 @@ export default function AdminDashboardPage() {
             
             {activeTab === "users" && (
               <button
-                onClick={() => {
-                  resetForm();
-                  setShowCreateModal(true);
-                }}
+                onClick={() => setShowCreateModal(true)}
                 className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-blue-700 transition-all shadow-sm cursor-pointer active:scale-[0.96]"
               >
                 <UserPlus className="h-4 w-4" />
@@ -409,7 +434,7 @@ export default function AdminDashboardPage() {
         <div className="overflow-x-auto pb-1 max-w-full no-scrollbar">
           <div className="flex border border-slate-200 dark:border-slate-700/80 bg-slate-100 dark:bg-slate-900/90 p-1.5 rounded-2xl gap-1.5 w-max sm:w-fit shadow-xs">
             <button
-              onClick={() => setActiveTab("users")}
+              onClick={() => handleTabChange("users")}
               className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === "users"
                   ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-sm border border-slate-200 dark:border-indigo-500 font-black"
@@ -420,7 +445,7 @@ export default function AdminDashboardPage() {
               User Management
             </button>
             <button
-              onClick={() => setActiveTab("reports")}
+              onClick={() => handleTabChange("reports")}
               className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === "reports"
                   ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-sm border border-slate-200 dark:border-indigo-500 font-black"
@@ -431,7 +456,7 @@ export default function AdminDashboardPage() {
               Submitted Reports
             </button>
             <button
-              onClick={() => setActiveTab("analytics")}
+              onClick={() => handleTabChange("analytics")}
               className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === "analytics"
                   ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-sm border border-slate-200 dark:border-indigo-500 font-black"
@@ -442,7 +467,7 @@ export default function AdminDashboardPage() {
               Monthly Summary
             </button>
             <button
-              onClick={() => setActiveTab("messages")}
+              onClick={() => handleTabChange("messages")}
               className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === "messages"
                   ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-sm border border-slate-200 dark:border-indigo-500 font-black"
@@ -453,7 +478,7 @@ export default function AdminDashboardPage() {
               Send Messages
             </button>
             <button
-              onClick={() => setActiveTab("confirmations")}
+              onClick={() => handleTabChange("confirmations")}
               className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === "confirmations"
                   ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-sm border border-slate-200 dark:border-indigo-500 font-black"
@@ -468,148 +493,372 @@ export default function AdminDashboardPage() {
 
         {/* Tab Contents: Users */}
         {activeTab === "users" && (
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-2xl shadow-sm overflow-hidden animate-fadeIn text-left">
-            {usersLoading ? (
-              <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-                <span className="text-xs font-bold uppercase tracking-wider">Loading users...</span>
+          <div className="space-y-4 text-left animate-fadeIn">
+            {/* View Mode Switcher and Create Button Bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+              <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-950 p-1 rounded-2xl border border-slate-200/60 dark:border-slate-800 self-start">
+                <button
+                  type="button"
+                  onClick={() => setUserViewMode("directory")}
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                    userViewMode === "directory"
+                      ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-xs font-black"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <Users className="h-3.5 w-3.5" />
+                  Directory List
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUserViewMode("tree")}
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                    userViewMode === "tree"
+                      ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-xs font-black"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <GitFork className="h-3.5 w-3.5" />
+                  Organizational Tree
+                </button>
               </div>
-            ) : usersList.length === 0 ? (
-              <div className="py-12 text-center text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider italic">No Users Found</div>
+
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2 text-xs font-black uppercase tracking-wider text-white transition-all shadow-sm shadow-blue-500/20 cursor-pointer active:scale-[0.96]"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Create New User
+                </button>
+              </div>
+            </div>
+
+            {/* Tree View */}
+            {userViewMode === "tree" ? (
+              <AdminHierarchyTree
+                onEditUser={handleEditUserClick}
+                onResetPassword={handleOpenResetPassword}
+                onToggleStatus={handleToggleUserStatus}
+              />
             ) : (
-            <>
-              {/* Mobile Cards (Phone View: < md) */}
-              <div className="md:hidden space-y-3 p-3">
-                {usersList.map((u) => (
-                  <div
-                    key={u.id}
-                    className="p-4 rounded-2xl bg-slate-50/60 dark:bg-slate-950/40 border border-slate-200/80 dark:border-slate-800 space-y-3 shadow-xs"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h4 className="text-sm font-black text-slate-800 dark:text-white">
-                          {u.name || u.username}
-                        </h4>
-                        <span className="text-[11px] text-slate-400 font-semibold block">
-                          @{u.username}
-                        </span>
-                      </div>
-                      <span className="inline-flex rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/60 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider">
-                        {u.role.replace(/_/g, " ")}
-                      </span>
-                    </div>
-
-                    <div className="text-xs space-y-1.5 text-slate-600 dark:text-slate-300 border-y border-slate-200/60 dark:border-slate-800/60 py-2">
-                      {u.phoneNumber && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-400 font-semibold">Phone:</span>
-                          <a href={`tel:${u.phoneNumber}`} className="text-blue-600 dark:text-blue-400 font-bold flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            {u.phoneNumber}
-                          </a>
-                        </div>
-                      )}
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className="text-slate-400 font-semibold">Hierarchy:</span>
-                        <span className="font-semibold text-slate-600 dark:text-slate-300">
-                          {u.role === "ADMIN" ? "Full System Access" : `State: ${u.state || "All"} | Zone: ${u.zone || "All"}`}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-end gap-2 pt-1">
-                      <button
-                        onClick={() => handleEditUserClick(u)}
-                        className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-200 transition-colors border border-slate-200 dark:border-slate-700 cursor-pointer min-h-10 active:scale-[0.96]"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                        Edit User
-                      </button>
-                      <button
-                        onClick={() => handleDeleteUser(u.id)}
-                        className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-red-50 dark:bg-red-950/30 px-3.5 py-2 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-100 transition-colors border border-red-500/10 cursor-pointer min-h-10 active:scale-[0.96]"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        Delete
-                      </button>
-                    </div>
+              /* Directory View */
+              <div className="space-y-4">
+                {/* Advanced Filter Bar */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+                  {/* Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search name, username, phone..."
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950 pl-9 pr-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    />
                   </div>
-                ))}
-              </div>
 
-              {/* Desktop / Tablet Table View (>= md) */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-left border-collapse text-sm">
-                  <thead>
-                    <tr className="bg-slate-100/90 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-black uppercase tracking-wider text-[11px]">
-                      <th className="px-6 py-4">Username</th>
-                      <th className="px-6 py-4">Role</th>
-                      <th className="px-6 py-4">Hierarchy Assignment</th>
-                      <th className="px-6 py-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-slate-700 dark:text-slate-200">
-                    {usersList.map((u) => (
-                      <tr key={u.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/60 transition-colors">
-                        <td className="px-6 py-4">
-                          <span className="font-bold text-slate-900 dark:text-white block">{u.name || u.username}</span>
-                          <span className="text-[11px] text-slate-500 dark:text-slate-300 block font-medium">@{u.username}</span>
-                          {u.phoneNumber && (
-                            <span className="text-[11px] text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1 mt-0.5">
-                              <Phone className="h-3 w-3" />
-                              {u.phoneNumber}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="inline-flex rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/60 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider">
-                            {u.role.replace(/_/g, " ")}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-xs font-semibold text-slate-500">
-                          {u.role === "ADMIN" ? (
-                            <span className="text-slate-400 italic">Full System Access</span>
-                          ) : (
-                            <span>
-                              State: {u.state || "All"} | Part: {u.part || "All"} | Zone: {u.zone || "All"}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-right flex justify-end gap-1">
-                          <button
-                            onClick={() => handleEditUserClick(u)}
-                            className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 hover:text-slate-700 cursor-pointer transition-colors active:scale-[0.95]"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteUser(u.id)}
-                            className="rounded-xl p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer transition-colors active:scale-[0.95]"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
+                  {/* Role Filter */}
+                  <select
+                    value={userRoleFilter}
+                    onChange={(e) => setUserRoleFilter(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950 px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer"
+                  >
+                    <option value="ALL">All Roles</option>
+                    <option value="STATE_LEADER">State Leader</option>
+                    <option value="ZONE_LEADER">Zonal Leader</option>
+                    <option value="COORDINATOR">Coordinator</option>
+                    <option value="ADMIN">Admin</option>
+                  </select>
+
+                  {/* Status Filter */}
+                  <select
+                    value={userStatusFilter}
+                    onChange={(e) => setUserStatusFilter(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950 px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer"
+                  >
+                    <option value="ALL">All Statuses</option>
+                    <option value="ACTIVE">Active Accounts</option>
+                    <option value="INACTIVE">Deactivated Accounts</option>
+                  </select>
+
+                  {/* State Filter */}
+                  <select
+                    value={userStateFilter}
+                    onChange={(e) => {
+                      setUserStateFilter(e.target.value);
+                      setUserZoneFilter("ALL");
+                    }}
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950 px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer"
+                  >
+                    <option value="ALL">All States</option>
+                    {availableStates.map((s) => (
+                      <option key={s.id} value={s.name}>{s.name}</option>
                     ))}
-                  </tbody>
-                </table>
+                  </select>
+
+                  {/* Zone Filter */}
+                  <select
+                    value={userZoneFilter}
+                    onChange={(e) => setUserZoneFilter(e.target.value)}
+                    disabled={!userStateFilter || userStateFilter === "ALL" || availableZones.length === 0}
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950 px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer disabled:opacity-50"
+                  >
+                    <option value="ALL">All Zones</option>
+                    {availableZones.map((z) => (
+                      <option key={z.id} value={z.name}>{z.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Directory Table */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-2xl shadow-sm overflow-hidden text-left">
+                  {usersLoading ? (
+                    <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
+                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+                      <span className="text-xs font-bold uppercase tracking-wider">Loading users...</span>
+                    </div>
+                  ) : usersList.length === 0 ? (
+                    <div className="py-12 text-center text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider italic">No Users Found Matching Filters</div>
+                  ) : (
+                    <>
+                      {/* Mobile Cards (Phone View: < md) */}
+                      <div className="md:hidden space-y-3 p-3">
+                        {usersList.map((u) => (
+                          <div
+                            key={u.id}
+                            className={`p-4 rounded-2xl border space-y-3 shadow-xs ${
+                              u.isActive
+                                ? "bg-slate-50/60 dark:bg-slate-950/40 border-slate-200/80 dark:border-slate-800"
+                                : "bg-red-50/30 dark:bg-red-950/10 border-red-200/60 dark:border-red-900/30"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <h4 className="text-sm font-black text-slate-800 dark:text-white">
+                                  {u.name || u.username}
+                                </h4>
+                                <span className="text-[11px] text-slate-400 font-semibold block">
+                                  @{u.username}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="inline-flex rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/60 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider">
+                                  {formatRoleBadge(u.role)}
+                                </span>
+                                {u.isActive ? (
+                                  <span className="text-[9px] font-black uppercase text-emerald-600 dark:text-emerald-400">Active</span>
+                                ) : (
+                                  <span className="text-[9px] font-black uppercase text-red-500">Deactivated</span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="text-xs space-y-1.5 text-slate-600 dark:text-slate-300 border-y border-slate-200/60 dark:border-slate-800/60 py-2">
+                              {u.phoneNumber && (
+                                <div className="flex items-center justify-between">
+                                  <span className="text-slate-400 font-semibold">Phone:</span>
+                                  <a href={`tel:${u.phoneNumber}`} className="text-blue-600 dark:text-blue-400 font-bold flex items-center gap-1">
+                                    <Phone className="h-3 w-3" />
+                                    {u.phoneNumber}
+                                  </a>
+                                </div>
+                              )}
+                              <div className="flex items-center justify-between text-[11px]">
+                                <span className="text-slate-400 font-semibold">Hierarchy:</span>
+                                <span className="font-semibold text-slate-700 dark:text-slate-200">
+                                  {u.role === "ADMIN" ? "National Headquarters / Central" : `${u.displayState || u.state || "All"} ${u.displayZone ? `• ${u.displayZone}` : ""} ${u.displayDistrict ? `• ${u.displayDistrict}` : ""}`}
+                                </span>
+                              </div>
+                              {u.role === "COORDINATOR" && u.parentZonalLeader && (
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="text-slate-400 font-semibold">Zonal Leader:</span>
+                                  <span className="font-bold text-emerald-700 dark:text-emerald-300">
+                                    {u.parentZonalLeader.name} (@{u.parentZonalLeader.username})
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex items-center justify-end gap-1.5 pt-1">
+                              <button
+                                onClick={() => handleEditUserClick(u)}
+                                className="inline-flex items-center gap-1 rounded-xl bg-slate-100 dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-200 cursor-pointer"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleOpenResetPassword(u)}
+                                className="inline-flex items-center gap-1 rounded-xl bg-blue-50 dark:bg-blue-950/30 px-3 py-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-100 cursor-pointer"
+                              >
+                                <KeyRound className="h-3.5 w-3.5" />
+                                Password
+                              </button>
+                              {u.role !== "ADMIN" && (
+                                <button
+                                  onClick={() => handleToggleUserStatus(u)}
+                                  className={`inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold cursor-pointer ${
+                                    u.isActive
+                                      ? "bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 hover:bg-red-100"
+                                      : "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100"
+                                  }`}
+                                >
+                                  <Power className="h-3.5 w-3.5" />
+                                  {u.isActive ? "Deactivate" : "Activate"}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Desktop / Tablet Table View (>= md) */}
+                      <div className="hidden md:block overflow-x-auto">
+                        <table className="w-full text-left border-collapse text-sm">
+                          <thead>
+                            <tr className="bg-slate-100/90 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-black uppercase tracking-wider text-[11px]">
+                              <th className="px-6 py-4">User Details</th>
+                              <th className="px-6 py-4">Role</th>
+                              <th className="px-6 py-4">Hierarchy Assignment</th>
+                              <th className="px-6 py-4">Parent Zonal Leader</th>
+                              <th className="px-6 py-4 text-center">Status</th>
+                              <th className="px-6 py-4 text-right">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-slate-700 dark:text-slate-200">
+                            {usersList.map((u) => (
+                              <tr
+                                key={u.id}
+                                className={`transition-colors ${
+                                  u.isActive
+                                    ? "hover:bg-slate-50/70 dark:hover:bg-slate-800/60"
+                                    : "bg-red-50/20 dark:bg-red-950/10 hover:bg-red-50/40 opacity-80"
+                                }`}
+                              >
+                                <td className="px-6 py-4">
+                                  <span className="font-bold text-slate-900 dark:text-white block">{u.name || u.username}</span>
+                                  <span className="text-[11px] text-slate-500 dark:text-slate-300 block font-medium">@{u.username}</span>
+                                  {u.phoneNumber && (
+                                    <span className="text-[11px] text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1 mt-0.5">
+                                      <Phone className="h-3 w-3" />
+                                      {u.phoneNumber}
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className="inline-flex rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/60 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider">
+                                    {formatRoleBadge(u.role)}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                                  {u.role === "ADMIN" ? (
+                                    <span className="text-slate-400 italic">National Headquarters / Central</span>
+                                  ) : (
+                                    <div className="space-y-0.5">
+                                      <span className="font-bold block text-slate-800 dark:text-white">{u.displayState || u.state || "All States"}</span>
+                                      {(u.displayZone || u.zone) && (
+                                        <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-medium">Zone: {u.displayZone || u.zone}</span>
+                                      )}
+                                      {(u.displayDistrict || u.district) && (
+                                        <span className="text-[10px] text-slate-400 block">District: {u.displayDistrict || u.district}</span>
+                                      )}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 text-xs">
+                                  {u.role === "COORDINATOR" ? (
+                                    u.parentZonalLeader ? (
+                                      <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/50 text-emerald-800 dark:text-emerald-300">
+                                        <span className="font-black block text-[11px]">{u.parentZonalLeader.name}</span>
+                                        <span className="text-[10px] text-emerald-600/80 dark:text-emerald-400 font-medium block">@{u.parentZonalLeader.username}</span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold italic">Unassigned</span>
+                                    )
+                                  ) : (
+                                    <span className="text-slate-400 text-xs italic">—</span>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 text-center">
+                                  {u.isActive ? (
+                                    <span className="inline-flex rounded-full bg-emerald-50 dark:bg-emerald-950/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300 border border-emerald-200/40">
+                                      Active
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex rounded-full bg-red-50 dark:bg-red-950/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-red-600 dark:text-red-400 border border-red-200/40">
+                                      Deactivated
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                  <div className="flex items-center justify-end gap-1">
+                                    <button
+                                      title="Edit User"
+                                      onClick={() => handleEditUserClick(u)}
+                                      className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 hover:text-slate-700 cursor-pointer transition-colors"
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                      title="Reset Password"
+                                      onClick={() => handleOpenResetPassword(u)}
+                                      className="rounded-xl p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 cursor-pointer transition-colors"
+                                    >
+                                      <KeyRound className="h-4 w-4" />
+                                    </button>
+                                    {u.role !== "ADMIN" && (
+                                      <button
+                                        title={u.isActive ? "Deactivate User" : "Reactivate User"}
+                                        onClick={() => handleToggleUserStatus(u)}
+                                        className={`rounded-xl p-2 cursor-pointer transition-colors ${
+                                          u.isActive
+                                            ? "text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
+                                            : "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
+                                        }`}
+                                      >
+                                        <Power className="h-4 w-4" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
-            </>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        )}
 
       {/* Tab Contents: Reports */}
       {activeTab === "reports" && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-sm overflow-hidden animate-fadeIn text-left">
-          {reportsLoading ? (
-            <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
-              <span className="text-xs font-bold uppercase tracking-wider">Loading reports...</span>
-            </div>
-          ) : reportsList.length === 0 ? (
-            <div className="py-12 text-center text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider italic">No Reports Found</div>
-          ) : (
+        <div className="space-y-4 animate-fadeIn">
+          {/* State-Wise Workload & Calling Analytics Header */}
+          <StateWorkloadOverview
+            onSelectGeographicScope={(st, zn, dt) => handleGeoFilterChange({ state: st, zone: zn, district: dt })}
+          />
+
+          {/* Hierarchical Geographic Dependent Filter Bar */}
+          <GeographicFilterBar onFilterChange={handleGeoFilterChange} />
+
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-sm overflow-hidden text-left">
+            {reportsLoading ? (
+              <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+                <span className="text-xs font-bold uppercase tracking-wider">Loading reports for selected region...</span>
+              </div>
+            ) : reportsList.length === 0 ? (
+              <div className="py-12 text-center text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider italic">
+                {geoFilters.state || geoFilters.zone || geoFilters.district
+                  ? `No Forms Found for Selected Location (${[geoFilters.state, geoFilters.zone ? `${geoFilters.zone} Zone` : null, geoFilters.district, geoFilters.part].filter(Boolean).join(" • ")})`
+                  : "No Reports Found"}
+              </div>
+            ) : (
             <>
               {/* Mobile Cards (Phone View: < md) */}
               <div className="md:hidden space-y-3 p-3">
@@ -626,7 +875,20 @@ export default function AdminDashboardPage() {
                         <h4 className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
                           {r.title || `Outreach Meeting ${r.reportId}`}
                         </h4>
-                        <span className="text-[10px] text-slate-500 dark:text-slate-300 font-semibold block">
+                        <div className="flex flex-wrap items-center gap-1 mt-1">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">
+                            {r.state}
+                          </span>
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                            {r.district}
+                          </span>
+                          {r.isCallLocked && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-1">
+                              <Lock className="h-2.5 w-2.5" /> Answered
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-300 font-semibold block mt-1">
                           Coordinator: {r.coordinatorName || r.leader?.username || "Leader"}
                         </span>
                       </div>
@@ -699,7 +961,22 @@ export default function AdminDashboardPage() {
                         </td>
                         <td className="px-5 py-4">
                           <span className="font-bold block text-xs text-slate-900 dark:text-white">{r.coordinatorName || r.leader?.username}</span>
-                          <span className="text-[10px] text-slate-500 dark:text-slate-300 block font-medium">State: {r.leader?.state || "N/A"} • Zone: {r.leader?.zone || "N/A"}</span>
+                          <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">
+                              {r.state}
+                            </span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                              {r.zone} Zone
+                            </span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                              {r.district}
+                            </span>
+                            {r.isCallLocked && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-1">
+                                <Lock className="h-2.5 w-2.5" /> Answered & Locked
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-4 text-center">
                           <FormStatusBadge status={r.verificationStatus} size="sm" />
@@ -726,6 +1003,7 @@ export default function AdminDashboardPage() {
               </div>
             </>
           )}
+          </div>
         </div>
       )}
 
@@ -957,250 +1235,34 @@ export default function AdminDashboardPage() {
         )}
       </div>
 
-      {/* Modal: Create User */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto animate-fadeIn">
-          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 text-left max-h-[90vh] overflow-y-auto animate-modal my-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-              <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">
-                Create Coordinator User
-              </h3>
-              <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+      {/* Dynamic Role-Based Create User Modal */}
+      <CreateUserModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onUserCreated={fetchUsers}
+      />
 
-            <form onSubmit={handleCreateUser} className="space-y-4">
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Full Name</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Pastor Samuel"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold"
-                />
-              </div>
+      {/* Edit User Details & Territory Assignment Modal */}
+      <EditUserModal
+        isOpen={showEditModal}
+        user={selectedUser}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedUser(null);
+        }}
+        onUserUpdated={fetchUsers}
+      />
 
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Phone Number</label>
-                <input
-                  type="text"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="e.g. +91 98480 12345"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Username *</label>
-                <input
-                  type="text"
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="e.g. pastor_sam"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Password *</label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Minimum 6 characters"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-600 transition-all font-semibold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Role *</label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold cursor-pointer"
-                >
-                  <option value="COORDINATOR">Coordinator</option>
-                  <option value="ZONE_LEADER">Zone Leader</option>
-                  <option value="STATE_LEADER">State Leader</option>
-                  <option value="ADMIN">Admin</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">State</label>
-                  <input
-                    type="text"
-                    value={state}
-                    onChange={(e) => setState(e.target.value)}
-                    placeholder="e.g. AP"
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Part</label>
-                  <input
-                    type="text"
-                    value={part}
-                    onChange={(e) => setPart(e.target.value)}
-                    placeholder="e.g. Part-1"
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-600 transition-all font-semibold"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Zone</label>
-                <input
-                  type="text"
-                  value={zone}
-                  onChange={(e) => setZone(e.target.value)}
-                  placeholder="e.g. Zone-1"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 text-xs font-bold uppercase tracking-wider disabled:opacity-50 cursor-pointer shadow-sm active:scale-[0.98] transition-all"
-                >
-                  Create User
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal: Edit User */}
-      {showEditModal && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto animate-fadeIn">
-          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 text-left max-h-[90vh] overflow-y-auto animate-modal my-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
-              <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">
-                Edit User Settings: {selectedUser.username}
-              </h3>
-              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleUpdateUser} className="space-y-4">
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Full Name</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Pastor Samuel"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Phone Number</label>
-                <input
-                  type="text"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="e.g. +91 98480 12345"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">New Password (leave blank to keep current)</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter new password"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Role *</label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold cursor-pointer"
-                >
-                  <option value="COORDINATOR">Coordinator</option>
-                  <option value="ZONE_LEADER">Zone Leader</option>
-                  <option value="STATE_LEADER">State Leader</option>
-                  <option value="ADMIN">Admin</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">State</label>
-                  <input
-                    type="text"
-                    value={state}
-                    onChange={(e) => setState(e.target.value)}
-                    placeholder="e.g. AP"
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-semibold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Part</label>
-                  <input
-                    type="text"
-                    value={part}
-                    onChange={(e) => setPart(e.target.value)}
-                    placeholder="e.g. Part-1"
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-600 transition-all font-semibold"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400 mb-1.5">Zone</label>
-                <input
-                  type="text"
-                  value={zone}
-                  onChange={(e) => setZone(e.target.value)}
-                  placeholder="e.g. Zone-1"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-600 transition-all font-semibold"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 text-xs font-bold uppercase tracking-wider disabled:opacity-50 cursor-pointer shadow-sm active:scale-[0.98] transition-all"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Secure Password Reset Modal */}
+      <ResetPasswordModal
+        isOpen={showResetModal}
+        user={selectedUserForReset}
+        onClose={() => {
+          setShowResetModal(false);
+          setSelectedUserForReset(null);
+        }}
+        onPasswordReset={fetchUsers}
+      />
 
       {/* Meeting-wise 3-Forms Review Modal */}
       <MeetingReviewModal

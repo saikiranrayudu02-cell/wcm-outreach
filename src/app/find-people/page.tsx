@@ -10,6 +10,7 @@ import {
   Download, ZoomIn, Eye
 } from "lucide-react";
 import { toast } from "sonner";
+import { formatRoleName, formatRoleBadge } from "@/lib/translations";
 
 interface Candidate {
   id: string;
@@ -147,7 +148,7 @@ export default function FindPeoplePage() {
         };
       case "ZONE_LEADER":
         return {
-          label: "Zone Leader",
+          label: "Zonal Leader",
           className: "bg-blue-50 text-blue-700 border-blue-200/80 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800",
         };
       default:
@@ -163,7 +164,7 @@ export default function FindPeoplePage() {
       return "Ministry-Wide Directory: Search and view all leaders, coordinators, and candidates across all states and zones.";
     }
     if (user?.role === "STATE_LEADER") {
-      return `State Directory (${user.state || "Your State"}): Search and view all Zone Leaders and Coordinators in your state.`;
+      return `State Directory (${user.state || "Your State"}): Search and view all Zonal Leaders and Coordinators in your state.`;
     }
     if (user?.role === "ZONE_LEADER") {
       return `Zone Directory (${user.zone || "Your Zone"}): Search and view all Coordinators assigned to your zone.`;
@@ -177,7 +178,7 @@ export default function FindPeoplePage() {
       return [
         { label: "All Roles", value: "ALL" },
         { label: "State Leaders", value: "STATE_LEADER" },
-        { label: "Zone Leaders", value: "ZONE_LEADER" },
+        { label: "Zonal Leaders", value: "ZONE_LEADER" },
         { label: "Coordinators", value: "COORDINATOR" },
         { label: "Admins", value: "ADMIN" },
       ];
@@ -185,7 +186,7 @@ export default function FindPeoplePage() {
     if (user?.role === "STATE_LEADER") {
       return [
         { label: "All Members", value: "ALL" },
-        { label: "Zone Leaders", value: "ZONE_LEADER" },
+        { label: "Zonal Leaders", value: "ZONE_LEADER" },
         { label: "Coordinators", value: "COORDINATOR" },
       ];
     }
@@ -525,7 +526,7 @@ export default function FindPeoplePage() {
                         </p>
                         <div className="mt-1.5">
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/20 backdrop-blur-md border border-white/30">
-                            {candidateProfile.role.replace(/_/g, " ")}
+                            {formatRoleBadge(candidateProfile.role)}
                           </span>
                         </div>
                       </div>
@@ -731,7 +732,7 @@ export default function FindPeoplePage() {
                 <div className="min-w-0">
                   <h3 className="text-sm font-black truncate">{viewingImage.name || viewingImage.username}</h3>
                   <p className="text-[10px] text-slate-400 font-semibold truncate">
-                    @{viewingImage.username} &bull; {viewingImage.role.replace(/_/g, " ")}
+                    @{viewingImage.username} &bull; {formatRoleName(viewingImage.role)}
                   </p>
                 </div>
                 <button

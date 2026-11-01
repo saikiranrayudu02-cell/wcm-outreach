@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { parseGeographicLocation } from "@/lib/geographic";
 
 export const dynamic = "force-dynamic";
 
@@ -84,9 +85,9 @@ export async function GET(
     } else if (role === "ADMIN") {
       allowed = hasSubmittedForms || report.status !== "DRAFT";
     } else if (role === "STATE_LEADER") {
-      allowed = Boolean(session.user.state && report.leader.state === session.user.state) && (hasSubmittedForms || report.status !== "DRAFT");
+      allowed = Boolean(session.user.state && (report.leader.state === session.user.state || report.verificationSheet?.state === session.user.state)) && (hasSubmittedForms || report.status !== "DRAFT");
     } else if (role === "ZONE_LEADER") {
-      allowed = Boolean(session.user.zone && report.leader.zone === session.user.zone) && (hasSubmittedForms || report.status !== "DRAFT");
+      allowed = Boolean(session.user.zone && (report.leader.zone === session.user.zone || report.verificationSheet?.zone === session.user.zone)) && (hasSubmittedForms || report.status !== "DRAFT");
     }
 
     if (!allowed) {
@@ -159,7 +160,7 @@ export async function PUT(
 
     const user = session.user as any;
     const isOwner = report.leaderId === user.id;
-    const isZoneLeader = user.role === "ZONE_LEADER" && Boolean(user.zone && report.leader.zone === user.zone);
+    const isZoneLeader = user.role === "ZONE_LEADER" && Boolean(user.zone && (report.leader.zone === user.zone || report.verificationSheet?.zone === user.zone));
     const isAdmin = user.role === "ADMIN";
 
     if (!isOwner && !isZoneLeader && !isAdmin) {
@@ -207,7 +208,8 @@ export async function PUT(
 
       // 1. Update/Create VerificationSheet
       if (vData) {
-        await tx.verificationSheet.upsert({
+        const geo = parseGeographicLocation(vData.stateDistrictCity, report.leader);
+        await (tx as any).verificationSheet.upsert({
           where: { meetingReportId: reportId },
           create: {
             meetingReportId: reportId,
@@ -215,6 +217,10 @@ export async function PUT(
             convenerName: vData.convenerName || "",
             churchMinistryName: vData.churchMinistryName || "",
             stateDistrictCity: vData.stateDistrictCity || "",
+            state: geo.state,
+            zone: geo.zone,
+            district: geo.district,
+            part: geo.part,
             contactNumber: vData.contactNumber || "",
             meetingDates: vData.meetingDates || "",
             numberOfDays: vData.numberOfDays !== undefined ? Number(vData.numberOfDays) : 0,
@@ -234,6 +240,10 @@ export async function PUT(
             convenerName: vData.convenerName,
             churchMinistryName: vData.churchMinistryName,
             stateDistrictCity: vData.stateDistrictCity,
+            state: geo.state,
+            zone: geo.zone,
+            district: geo.district,
+            part: geo.part,
             contactNumber: vData.contactNumber,
             meetingDates: vData.meetingDates,
             numberOfDays: vData.numberOfDays !== undefined ? Number(vData.numberOfDays) : undefined,
@@ -324,7 +334,7 @@ export async function PUT(
       const targetForm = vData ? "VERIFICATION" : aData ? "ATTENDANCE" : rData ? "EVALUATION" : "MEETING";
       const auditAction = isZoneLeader ? "ZONE_LEADER_EDITED" : "DRAFT_SAVED";
       const auditDetails = isZoneLeader
-        ? `Zone Leader ${user.username} edited details for ${targetForm}.`
+        ? `Zonal Leader ${user.username} edited details for ${targetForm}.`
         : `Draft form details saved by coordinator.`;
 
       await tx.reportAuditLog.create({

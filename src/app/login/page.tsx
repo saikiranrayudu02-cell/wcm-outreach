@@ -215,7 +215,7 @@ export default function LoginPage() {
               { label: "Admin", uname: "admin" },
               { label: "Coordinator", uname: "coordinator" },
               { label: "State Leader", uname: "stateleader" },
-              { label: "Zone Leader", uname: "zoneleader" },
+              { label: "Zonal Leader", uname: "zoneleader" },
             ].map((acct) => (
               <button
                 key={acct.uname}

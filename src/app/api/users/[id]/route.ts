@@ -80,12 +80,16 @@ export async function GET(
 
     // Role-based scoping
     if (sessionRole === "STATE_LEADER") {
-      if (!sessionUser.state || user.state !== sessionUser.state || (user.role !== "ZONE_LEADER" && user.role !== "COORDINATOR")) {
+      if (!sessionUser.state || (user.state !== sessionUser.state && user.stateRef?.name !== sessionUser.state) || (user.role !== "ZONE_LEADER" && user.role !== "COORDINATOR")) {
         return NextResponse.json({ error: "Forbidden: Candidate is outside your state scope" }, { status: 403 });
       }
     } else if (sessionRole === "ZONE_LEADER") {
-      if (!sessionUser.zone || user.zone !== sessionUser.zone || user.role !== "COORDINATOR") {
-        return NextResponse.json({ error: "Forbidden: Candidate is outside your zone scope" }, { status: 403 });
+      if (user.role !== "COORDINATOR" || user.parentZonalLeaderId !== sessionUser.id) {
+        return NextResponse.json({ error: "Forbidden: Candidate is not in your assigned team" }, { status: 403 });
+      }
+    } else if (sessionRole === "COORDINATOR") {
+      if (user.id !== sessionUser.id) {
+        return NextResponse.json({ error: "Forbidden: You may only view your own profile" }, { status: 403 });
       }
     }
 

@@ -35,6 +35,19 @@ enum FormStatus {
   COMPLETED
 }
 
+enum MeetingAssignmentStatus {
+  CREATED_AND_PENDING_ASSIGNMENT
+  ASSIGNED_TO_LEADER
+  ACCEPTED_BY_LEADER
+  SELF_HANDLED_BY_LEADER
+  PENDING_COORDINATOR_SELECTION
+  FORWARDED_TO_COORDINATOR
+  RECEIVED_BY_COORDINATOR
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
 model User {
   id                    String                @id @default(uuid())
   username              String                @unique
@@ -47,10 +60,29 @@ model User {
   email                 String                @unique
   emailVerified         Boolean               @map("email_verified")
   image                 String?
+  district              String?               @map("district")
   phoneNumber           String?               @map("phone_number")
+  isActive              Boolean               @default(true) @map("is_active")
   createdAt             DateTime              @default(now()) @map("created_at")
   updatedAt             DateTime              @updatedAt @map("updated_at")
   
+  // Hierarchical Leader-Coordinator Parent Relationship
+  parentZonalLeaderId   String?               @map("parent_zonal_leader_id")
+  parentZonalLeader     User?                 @relation("ZonalLeaderCoordinators", fields: [parentZonalLeaderId], references: [id], onDelete: SetNull)
+  subordinateCoordinators User[]              @relation("ZonalLeaderCoordinators")
+
+  // Master Geographic Relations
+  stateId               String?               @map("state_id")
+  stateRef              State?                @relation(fields: [stateId], references: [id], onDelete: SetNull)
+  zoneId                String?               @map("zone_id")
+  zoneRef               Zone?                 @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  districtId            String?               @map("district_id")
+  districtRef           District?             @relation(fields: [districtId], references: [id], onDelete: SetNull)
+
+  // Audit Logs
+  performedOrgAudits    OrganizationAuditLog[] @relation("OrgAuditActor")
+  targetedOrgAudits     OrganizationAuditLog[] @relation("OrgAuditTargetUser")
+
   accounts              Account[]
   sessions              Session[]
   meetingConfirmations  MeetingConfirmation[]
@@ -60,13 +92,27 @@ model User {
   meetingReports        MeetingReport[]
   reportAuditLogs       ReportAuditLog[]
   reviewerComments      ReviewerComment[]
+  callAttempts          CallAttempt[]
+
+  createdMeetings       Meeting[]             @relation("CreatedMeetings")
+  assignedMeetings      Meeting[]             @relation("AssignedMeetings")
+  originalLeaderMeetings Meeting[]            @relation("OriginalLeaderMeetings")
+  prevAssigneeHistories MeetingAssignmentHistory[] @relation("PrevAssigneeHistory")
+  newAssigneeHistories  MeetingAssignmentHistory[] @relation("NewAssigneeHistory")
+  actionByHistories     MeetingAssignmentHistory[] @relation("ActionByHistory")
 
   @@index([username])
   @@index([role])
   @@index([state])
   @@index([part])
   @@index([zone])
+  @@index([district])
   @@index([phoneNumber])
+  @@index([stateId])
+  @@index([zoneId])
+  @@index([districtId])
+  @@index([parentZonalLeaderId])
+  @@index([isActive])
   @@map("users")
 }
 
@@ -133,6 +179,8 @@ model MeetingReport {
 
   auditLogs          ReportAuditLog[]
   reviewerComments   ReviewerComment[]
+  callAttempts       CallAttempt[]
+  meetingAssignment  Meeting?
 
   @@index([leaderId])
   @@index([status])
@@ -182,6 +230,24 @@ model VerificationSheet {
   accommodationTeam      String        @map("accommodation_team")
   volunteerSupport       String        @map("volunteer_support")
 
+  callAttempts           CallAttempt[]
+
+  // Call Lock fields (Permanent lock once answered)
+  isCallLocked           Boolean       @default(false) @map("is_call_locked")
+  callLockedReason       String?       @map("call_locked_reason")
+  callAnsweredAt         DateTime?     @map("call_answered_at")
+
+  // Hierarchical Geographic fields
+  state                  String?       @map("state")
+  zone                   String?       @map("zone")
+  district               String?       @map("district")
+  part                   String?       @map("part")
+
+  @@index([isCallLocked])
+  @@index([state])
+  @@index([zone])
+  @@index([district])
+  @@index([part])
   @@map("verification_sheets")
 }
 
@@ -287,3 +353,189 @@ model ReportAuditLog {
   @@index([createdAt])
   @@map("report_audit_logs")
 }
+
+model CallAttempt {
+  id                  String             @id @default(uuid())
+  verificationSheetId String             @map("verification_sheet_id")
+  verificationSheet   VerificationSheet  @relation(fields: [verificationSheetId], references: [id], onDelete: Cascade)
+  meetingReportId     String             @map("meeting_report_id")
+  meetingReport       MeetingReport      @relation(fields: [meetingReportId], references: [id], onDelete: Cascade)
+  initiatedById       String?            @map("initiated_by_id")
+  initiatedBy         User?              @relation(fields: [initiatedById], references: [id], onDelete: SetNull)
+
+  providerRequestId   String?            @map("provider_request_id")
+  providerCallId      String?            @map("provider_call_id")
+  agentId             Int                @map("agent_id")
+  fromNumber          String?            @map("from_number")
+  toNumber            String             @map("to_number")
+  contactName         String             @map("contact_name")
+  churchName          String             @map("church_name")
+
+  status              String             @default("DISPATCHED") // DISPATCHED, IN_PROGRESS, COMPLETED, BUSY, NO_ANSWER, FAILED, CANCELLED
+  duration            Int?               @map("duration")
+  durationFormatted   String?            @map("duration_formatted")
+  recordingUrl        String?            @map("recording_url")
+  transcript          String?            @map("transcript") @db.Text
+  summary             String?            @map("summary") @db.Text
+  sentiment           String?            @map("sentiment")
+
+  attemptNumber       Int                @default(1) @map("attempt_number")
+  parentAttemptId     String?            @map("parent_attempt_id")
+  parentAttempt       CallAttempt?       @relation("CallRetries", fields: [parentAttemptId], references: [id], onDelete: SetNull)
+  retryAttempts       CallAttempt[]      @relation("CallRetries")
+
+  errorCode           String?            @map("error_code")
+  errorMessage        String?            @map("error_message")
+  metadata            Json?              @map("metadata")
+
+  initiatedAt         DateTime           @default(now()) @map("initiated_at")
+  answeredAt          DateTime?          @map("answered_at")
+  endedAt             DateTime?          @map("ended_at")
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
+
+  @@index([verificationSheetId])
+  @@index([meetingReportId])
+  @@index([providerRequestId])
+  @@index([providerCallId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("call_attempts")
+}
+
+model Meeting {
+  id                    String                   @id @default(uuid())
+  referenceId           String                   @unique @map("reference_id")
+  meetingDate           DateTime                 @map("meeting_date")
+  organizerName         String                   @map("organizer_name")
+  state                 String                   @map("state")
+  district              String                   @map("district")
+  
+  createdById           String                   @map("created_by_id")
+  createdBy             User                     @relation("CreatedMeetings", fields: [createdById], references: [id], onDelete: Restrict)
+  
+  currentAssigneeId     String?                  @map("current_assignee_id")
+  currentAssignee       User?                    @relation("AssignedMeetings", fields: [currentAssigneeId], references: [id], onDelete: SetNull)
+  currentAssigneeRole   Role?                    @map("current_assignee_role")
+
+  originalLeaderId      String?                  @map("original_leader_id")
+  originalLeader        User?                    @relation("OriginalLeaderMeetings", fields: [originalLeaderId], references: [id], onDelete: SetNull)
+
+  status                MeetingAssignmentStatus  @default(ASSIGNED_TO_LEADER) @map("status")
+  
+  meetingReportId       String?                  @unique @map("meeting_report_id")
+  meetingReport         MeetingReport?           @relation(fields: [meetingReportId], references: [id], onDelete: SetNull)
+
+  remarks               String?                  @map("remarks")
+
+  createdAt             DateTime                 @default(now()) @map("created_at")
+  updatedAt             DateTime                 @updatedAt @map("updated_at")
+
+  assignmentHistory     MeetingAssignmentHistory[]
+
+  @@index([state])
+  @@index([district])
+  @@index([currentAssigneeId])
+  @@index([originalLeaderId])
+  @@index([status])
+  @@index([meetingDate])
+  @@map("meetings")
+}
+
+model MeetingAssignmentHistory {
+  id                    String                   @id @default(uuid())
+  meetingId             String                   @map("meeting_id")
+  meeting               Meeting                  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  
+  previousAssigneeId    String?                  @map("previous_assignee_id")
+  previousAssignee      User?                    @relation("PrevAssigneeHistory", fields: [previousAssigneeId], references: [id], onDelete: SetNull)
+  previousRole          Role?                    @map("previous_role")
+
+  newAssigneeId         String                   @map("new_assignee_id")
+  newAssignee           User                     @relation("NewAssigneeHistory", fields: [newAssigneeId], references: [id], onDelete: Restrict)
+  newRole               Role                     @map("new_role")
+
+  assignedById          String                   @map("assigned_by_id")
+  assignedBy            User                     @relation("ActionByHistory", fields: [assignedById], references: [id], onDelete: Restrict)
+
+  assignmentAction      String                   @map("assignment_action") // "INITIAL_ADMIN_ASSIGNMENT", "SELF_HANDLED", "FORWARDED_TO_COORDINATOR", "ACCEPTED", "STATUS_CHANGE"
+  status                MeetingAssignmentStatus  @map("status")
+  remarks               String?                  @map("remarks")
+
+  createdAt             DateTime                 @default(now()) @map("created_at")
+
+  @@index([meetingId])
+  @@index([newAssigneeId])
+  @@index([assignedById])
+  @@index([createdAt])
+  @@map("meeting_assignment_histories")
+}
+
+model State {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  code      String?
+  isActive  Boolean    @default(true) @map("is_active")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  zones     Zone[]
+  users     User[]
+
+  @@map("ministry_states")
+}
+
+model Zone {
+  id        String     @id @default(uuid())
+  name      String
+  stateId   String     @map("state_id")
+  state     State      @relation(fields: [stateId], references: [id], onDelete: Restrict)
+  isActive  Boolean    @default(true) @map("is_active")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  districts District[]
+  users     User[]
+
+  @@unique([stateId, name])
+  @@index([stateId])
+  @@map("ministry_zones")
+}
+
+model District {
+  id        String     @id @default(uuid())
+  name      String
+  zoneId    String     @map("zone_id")
+  zone      Zone       @relation(fields: [zoneId], references: [id], onDelete: Restrict)
+  isActive  Boolean    @default(true) @map("is_active")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  users     User[]
+
+  @@unique([zoneId, name])
+  @@index([zoneId])
+  @@map("ministry_districts")
+}
+
+model OrganizationAuditLog {
+  id             String    @id @default(uuid())
+  action         String    // "USER_CREATED", "USER_UPDATED", "USER_DEACTIVATED", "USER_REACTIVATED", "PASSWORD_RESET", "STATE_CREATED", "ZONE_CREATED", "DISTRICT_CREATED", "LEADER_ASSIGNED"
+  actorId        String    @map("actor_id")
+  actor          User      @relation("OrgAuditActor", fields: [actorId], references: [id], onDelete: Restrict)
+  targetUserId   String?   @map("target_user_id")
+  targetUser     User?     @relation("OrgAuditTargetUser", fields: [targetUserId], references: [id], onDelete: SetNull)
+  entityType     String?   @map("entity_type") // "USER", "STATE", "ZONE", "DISTRICT"
+  entityId       String?   @map("entity_id")
+  previousState  Json?     @map("previous_state")
+  newState       Json?     @map("new_state")
+  remarks        String?
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@index([actorId])
+  @@index([targetUserId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("organization_audit_logs")
+}
+

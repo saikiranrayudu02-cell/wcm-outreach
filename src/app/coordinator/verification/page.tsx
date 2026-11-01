@@ -542,12 +542,12 @@ export default function VerificationPage() {
           )}
 
           {/* Navigation Buttons */}
-          <div className="flex flex-wrap gap-3 justify-between items-center bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-3 sm:p-4 shadow-sm">
+          <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-3 sm:p-4 shadow-sm">
             <button
               type="button"
               onClick={prevStep}
               disabled={step === 1 || saving}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 hover:bg-slate-50 disabled:opacity-50 transition-colors min-h-11 cursor-pointer"
             >
               <ArrowLeft className="h-4 w-4" />
               {translate("Previous Step", language)}
@@ -557,18 +557,18 @@ export default function VerificationPage() {
               <button
                 type="button"
                 onClick={nextStep}
-                className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition-all shadow-md active:scale-[0.97] cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-5 py-2.5 text-xs font-black uppercase tracking-wider text-white transition-all shadow-md active:scale-[0.97] cursor-pointer min-h-11"
               >
                 {translate("Next Step", language)}
                 <ArrowRight className="h-4 w-4" />
               </button>
             ) : (
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 <button
                   type="button"
                   onClick={handleSubmit((d) => saveVerification(d, false))}
                   disabled={saving || submitting}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer shadow-xs min-h-11"
                 >
                   <Save className="h-4 w-4" />
                   {saving ? "Saving..." : "Save Draft"}
@@ -577,7 +577,7 @@ export default function VerificationPage() {
                   type="button"
                   onClick={handleSubmit((d) => saveVerification(d, true))}
                   disabled={saving || submitting}
-                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition-all shadow-md active:scale-[0.97] disabled:opacity-50 cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 text-xs font-black uppercase tracking-wider text-white transition-all shadow-md active:scale-[0.97] disabled:opacity-50 cursor-pointer min-h-11"
                 >
                   <CheckCircle className="h-4 w-4" />
                   {submitting ? "Submitting..." : "Submit & Forward to Zonal Leader"}

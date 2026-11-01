@@ -1,30 +1,60 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import React, { Suspense, useEffect, useState } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { useUIStore } from "@/store/ui-store";
-import { translate } from "@/lib/translations";
+import { translate, formatRoleName, formatRoleBadge } from "@/lib/translations";
 import { 
   Menu, X, LogOut, LayoutDashboard, FileCheck, Users, 
   FileSpreadsheet, ClipboardList, Sun, Moon, ShieldAlert,
-  Bell, CheckCheck, CalendarCheck, User as UserIcon, Sparkles, ChevronRight, ChevronDown
+  Bell, CheckCheck, CalendarCheck, Calendar, Inbox, User as UserIcon, Sparkles, ChevronRight, ChevronDown,
+  ShieldCheck, PhoneCall, Mail, BarChart3, LayoutGrid, Layers
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen w-screen items-center justify-center" style={{ background: "var(--gradient-hero)" }}>
+        <div className="flex flex-col items-center gap-5">
+          <div className="relative">
+            <div className="h-12 w-12 rounded-2xl border-2 border-indigo-400/30 border-t-indigo-400 animate-spin" />
+            <div className="absolute inset-0 rounded-2xl animate-pulseGlow" />
+          </div>
+          <p className="text-sm font-bold text-indigo-200/70 tracking-widest uppercase animate-pulse">Loading...</p>
+        </div>
+      </div>
+    }>
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </Suspense>
+  );
+}
+
+function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { sidebarOpen, toggleSidebar, user, setUser, language, setLanguage } = useUIStore();
   const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileFeaturesOpen, setMobileFeaturesOpen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showLogoutConfirmModal, setShowLogoutConfirmModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const [afterMeetingOpen, setAfterMeetingOpen] = useState(
     pathname.includes("/coordinator/attendance") || pathname.includes("/coordinator/after-meeting")
   );
+
+  useEffect(() => {
+    setMobileFeaturesOpen(false);
+    setMobileOpen(false);
+    setShowUserMenu(false);
+  }, [pathname, searchParams]);
 
   const fetchNotifications = async () => {
     try {
@@ -93,12 +123,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const handleLogout = async () => {
     try {
+      setIsLoggingOut(true);
       await authClient.signOut();
       setUser(null);
       toast.success("Successfully logged out");
+      setShowLogoutConfirmModal(false);
       router.push("/login");
     } catch (err) {
-      toast.error("Logout failed");
+      toast.error("Logout failed. Please try again.");
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -121,25 +155,35 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const getSidebarLinks = () => {
     if (role === "ADMIN") {
       return [
-        { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-        { name: "Find People", href: "/find-people", icon: Users },
+        { name: "Meeting Management", href: "/admin/meetings", icon: Calendar, sectionHeader: "Administration", badge: "New" },
+        { name: "User Management", href: "/admin/dashboard?tab=users", icon: Users },
+        { name: "Submitted Reports", href: "/admin/dashboard?tab=reports", icon: FileSpreadsheet },
+        { name: "Monthly Summary", href: "/admin/dashboard?tab=analytics", icon: BarChart3 },
+        { name: "Send Messages", href: "/admin/dashboard?tab=messages", icon: Mail },
+        { name: "Confirmations", href: "/admin/dashboard?tab=confirmations", icon: CalendarCheck },
+        { name: "Completed Verifications", href: "/admin/completed-verifications", icon: ShieldCheck, sectionHeader: "Outreach & AI", badge: "Live" },
+        { name: "AI Calling Center", href: "/admin/calling-center", icon: PhoneCall, badge: "Voice AI" },
+        { name: "Find People", href: "/find-people", icon: Users, sectionHeader: "Tools" },
         { name: "My Profile", href: "/profile", icon: UserIcon },
       ];
     } else if (role === "STATE_LEADER") {
       return [
         { name: "Dashboard", href: "/state-leader/dashboard", icon: LayoutDashboard },
+        { name: "Assigned Meetings", href: "/state-leader/assigned-meetings", icon: CalendarCheck, badge: "New" },
         { name: "Find People", href: "/find-people", icon: Users },
         { name: "My Profile", href: "/profile", icon: UserIcon },
       ];
     } else if (role === "ZONE_LEADER") {
       return [
         { name: "Dashboard", href: "/zone-leader/dashboard", icon: LayoutDashboard },
+        { name: "Assigned Meetings", href: "/zone-leader/assigned-meetings", icon: CalendarCheck, badge: "New" },
         { name: "Find People", href: "/find-people", icon: Users },
         { name: "My Profile", href: "/profile", icon: UserIcon },
       ];
     } else if (role === "COORDINATOR" || role === "LEADER") {
       return [
         { name: "Dashboard", href: "/coordinator/dashboard", icon: LayoutDashboard },
+        { name: "Received Meetings", href: "/coordinator/received-meetings", icon: Inbox, badge: "New" },
         { name: "Verification", href: "/coordinator/verification", icon: FileCheck },
         { 
           name: "After Meeting", 
@@ -160,6 +204,24 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const links = getSidebarLinks();
 
+  const isLinkActive = (linkHref: string) => {
+    const [linkPath, linkQuery] = linkHref.split("?");
+    if (linkQuery) {
+      if (pathname !== linkPath) return false;
+      const currentTab = searchParams ? searchParams.get("tab") : null;
+      const linkTab = new URLSearchParams(linkQuery).get("tab");
+      if (linkTab === "users") {
+        return !currentTab || currentTab === "users";
+      }
+      return currentTab === linkTab;
+    }
+    if (linkHref === "/admin/dashboard") {
+      const currentTab = searchParams ? searchParams.get("tab") : null;
+      return pathname === "/admin/dashboard" && (!currentTab || currentTab === "users");
+    }
+    return pathname === linkPath || pathname.startsWith(linkPath + "/");
+  };
+
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
@@ -171,9 +233,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         style={{ background: "var(--gradient-sidebar)" }}
       >
         <div className="flex flex-col h-full justify-between">
-          <div>
+          <div className="flex flex-col flex-1 min-h-0">
             {/* Logo Section */}
-            <div className="flex h-18 items-center px-6 gap-3 border-b border-white/5">
+            <div className="flex h-18 items-center px-6 gap-3 border-b border-white/5 shrink-0">
               <div className="relative">
                 <img src="/wcm-logo.png" alt="WCM Logo" className="h-9 w-auto object-contain rounded-xl" style={{ filter: "drop-shadow(0 2px 8px rgba(129,140,248,0.3))" }} />
               </div>
@@ -184,16 +246,23 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </div>
 
             {/* Navigation Links */}
-            <nav className="space-y-1.5 px-3 py-6">
+            <nav className="flex-1 overflow-y-auto space-y-1 px-3 py-4 no-scrollbar">
               {links.map((link: any) => {
                 const Icon = link.icon;
                 if (link.subItems) {
-                  const isSubActive = link.subItems.some((s: any) => pathname === s.href);
+                  const isSubActive = link.subItems.some((s: any) => isLinkActive(s.href));
                   return (
                     <div key={link.name} className="space-y-1">
+                      {link.sectionHeader && (
+                        <div className="pt-3 pb-1 px-3 first:pt-0">
+                          <p className="text-[10px] font-black tracking-widest text-indigo-300/40 uppercase">
+                            {translate(link.sectionHeader, language)}
+                          </p>
+                        </div>
+                      )}
                       <button
                         onClick={() => setAfterMeetingOpen((prev) => !prev)}
-                        className={`relative flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3.5 text-[11px] font-bold uppercase tracking-wider transition-all duration-200 group cursor-pointer ${
+                        className={`relative flex w-full items-center justify-between gap-3 rounded-2xl px-3.5 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all duration-200 group cursor-pointer ${
                           isSubActive 
                             ? "bg-white/10 text-white shadow-sm backdrop-blur-sm" 
                             : "text-indigo-200/50 hover:bg-white/5 hover:text-white"
@@ -212,7 +281,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       {afterMeetingOpen && (
                         <div className="pl-4 space-y-1 pt-0.5 border-l border-white/10 ml-5">
                           {link.subItems.map((sub: any) => {
-                            const subActive = pathname === sub.href;
+                            const subActive = isLinkActive(sub.href);
                             const SubIcon = sub.icon;
                             return (
                               <a
@@ -239,38 +308,51 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   );
                 }
 
-                const active = pathname === link.href;
+                const active = isLinkActive(link.href);
                 return (
-                  <a
-                    key={link.name}
-                    href={link.href}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      router.push(link.href);
-                    }}
-                    className={`relative flex items-center gap-3 rounded-2xl px-4 py-3.5 text-[11px] font-bold uppercase tracking-wider transition-all duration-200 group ${
-                      active 
-                        ? "bg-white/10 text-white shadow-sm backdrop-blur-sm" 
-                        : "text-indigo-200/50 hover:bg-white/5 hover:text-white"
-                    }`}
-                  >
-                    {active && (
-                      <span className="absolute left-0 top-1/4 bottom-1/4 w-0.75 rounded-r-full bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.5)]"></span>
+                  <div key={link.name} className="space-y-1">
+                    {link.sectionHeader && (
+                      <div className="pt-3 pb-1 px-3 first:pt-0">
+                        <p className="text-[10px] font-black tracking-widest text-indigo-300/40 uppercase">
+                          {translate(link.sectionHeader, language)}
+                        </p>
+                      </div>
                     )}
-                    <Icon className={`h-4.5 w-4.5 transition-all ${active ? "text-indigo-300" : "text-indigo-300/40 group-hover:text-indigo-300/70"}`} />
-                    {translate(link.name, language)}
-                    {active && <ChevronRight className="h-3 w-3 ml-auto text-indigo-300/50" />}
-                  </a>
+                    <a
+                      href={link.href}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        router.push(link.href);
+                      }}
+                      className={`relative flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all duration-200 group ${
+                        active 
+                          ? "bg-white/10 text-white shadow-sm backdrop-blur-sm" 
+                          : "text-indigo-200/50 hover:bg-white/5 hover:text-white"
+                      }`}
+                    >
+                      {active && (
+                        <span className="absolute left-0 top-1/4 bottom-1/4 w-0.75 rounded-r-full bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.5)]"></span>
+                      )}
+                      <Icon className={`h-4.5 w-4.5 transition-all shrink-0 ${active ? "text-indigo-300" : "text-indigo-300/40 group-hover:text-indigo-300/70"}`} />
+                      <span className="truncate">{translate(link.name, language)}</span>
+                      {link.badge && (
+                        <span className="ml-auto text-[8px] font-black tracking-wider uppercase px-1.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 shrink-0">
+                          {link.badge}
+                        </span>
+                      )}
+                      {active && !link.badge && <ChevronRight className="h-3 w-3 ml-auto text-indigo-300/50 shrink-0" />}
+                    </a>
+                  </div>
                 );
               })}
             </nav>
           </div>
 
           {/* User profile & logout info at bottom of sidebar */}
-          <div className="border-t border-white/5 p-3">
+          <div className="border-t border-white/5 p-3 shrink-0 space-y-2">
             <button
               onClick={() => router.push("/profile")}
-              className="flex w-full items-center gap-3 mb-3 p-3 rounded-2xl bg-white/5 hover:bg-white/10 backdrop-blur-sm border border-white/5 hover:border-indigo-400/20 transition-all text-left cursor-pointer group"
+              className="flex w-full items-center gap-3 p-3 rounded-2xl bg-white/5 hover:bg-white/10 backdrop-blur-sm border border-white/5 hover:border-indigo-400/20 transition-all text-left cursor-pointer group"
               title="View and edit your profile"
             >
               {user?.image ? (
@@ -288,12 +370,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               )}
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold text-white truncate group-hover:text-indigo-300 transition-colors">{user?.name || user?.username}</p>
-                <p className="text-[9px] text-indigo-300/40 font-semibold uppercase tracking-wider mt-0.5">{user?.role?.replace(/_/g, " ")}</p>
+                <p className="text-[9px] text-indigo-300/40 font-semibold uppercase tracking-wider mt-0.5">{formatRoleBadge(user?.role)}</p>
               </div>
+              <ChevronRight className="h-3.5 w-3.5 text-indigo-300/40 group-hover:text-indigo-300 transition-colors" />
             </button>
             <button
-              onClick={handleLogout}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer border border-red-500/10 hover:border-red-500"
+              onClick={() => setShowLogoutConfirmModal(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer border border-red-500/10 hover:border-red-500 min-h-11"
             >
               <LogOut className="h-4 w-4" />
               {translate("Logout", language)}
@@ -308,8 +391,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <aside className={`absolute inset-y-0 left-0 w-70 max-w-[85vw] text-white p-4 transition-transform duration-300 ${mobileOpen ? "translate-x-0" : "-translate-x-full"} flex flex-col justify-between`}
           style={{ background: "var(--gradient-sidebar)" }}
         >
-          <div>
-            <div className="flex h-12 items-center justify-between mb-6 px-2">
+          <div className="flex flex-col flex-1 min-h-0">
+            <div className="flex h-12 items-center justify-between mb-4 px-2 shrink-0">
               <div className="flex items-center gap-2.5">
                 <img src="/wcm-logo.png" alt="WCM Logo" className="h-8 w-auto object-contain rounded-xl" style={{ filter: "drop-shadow(0 2px 8px rgba(129,140,248,0.3))" }} />
                 <div className="flex flex-col">
@@ -321,16 +404,23 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <nav className="space-y-1.5">
+            <nav className="flex-1 overflow-y-auto space-y-1 pr-1 no-scrollbar">
               {links.map((link: any) => {
                 const Icon = link.icon;
                 if (link.subItems) {
-                  const isSubActive = link.subItems.some((s: any) => pathname === s.href);
+                  const isSubActive = link.subItems.some((s: any) => isLinkActive(s.href));
                   return (
                     <div key={link.name} className="space-y-1">
+                      {link.sectionHeader && (
+                        <div className="pt-3 pb-1 px-3 first:pt-0">
+                          <p className="text-[10px] font-black tracking-widest text-indigo-300/40 uppercase">
+                            {translate(link.sectionHeader, language)}
+                          </p>
+                        </div>
+                      )}
                       <button
                         onClick={() => setAfterMeetingOpen((prev) => !prev)}
-                        className={`flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
+                        className={`flex w-full items-center justify-between gap-3 rounded-2xl px-3.5 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
                           isSubActive ? "bg-white/10 text-white" : "text-indigo-200/50 hover:bg-white/5 hover:text-white"
                         }`}
                       >
@@ -347,7 +437,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       {afterMeetingOpen && (
                         <div className="pl-4 space-y-1 pt-0.5 border-l border-white/10 ml-5">
                           {link.subItems.map((sub: any) => {
-                            const subActive = pathname === sub.href;
+                            const subActive = isLinkActive(sub.href);
                             const SubIcon = sub.icon;
                             return (
                               <a
@@ -375,35 +465,49 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   );
                 }
 
-                const active = pathname === link.href;
+                const active = isLinkActive(link.href);
                 return (
-                  <a
-                    key={link.name}
-                    href={link.href}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setMobileOpen(false);
-                      router.push(link.href);
-                    }}
-                    className={`flex items-center gap-3 rounded-2xl px-4 py-3.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
-                      active ? "bg-white/10 text-white" : "text-indigo-200/50 hover:bg-white/5 hover:text-white"
-                    }`}
-                  >
-                    <Icon className={`h-4.5 w-4.5 ${active ? "text-indigo-300" : "text-indigo-300/40"}`} />
-                    {translate(link.name, language)}
-                  </a>
+                  <div key={link.name} className="space-y-1">
+                    {link.sectionHeader && (
+                      <div className="pt-3 pb-1 px-3 first:pt-0">
+                        <p className="text-[10px] font-black tracking-widest text-indigo-300/40 uppercase">
+                          {translate(link.sectionHeader, language)}
+                        </p>
+                      </div>
+                    )}
+                    <a
+                      href={link.href}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setMobileOpen(false);
+                        router.push(link.href);
+                      }}
+                      className={`flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
+                        active ? "bg-white/10 text-white" : "text-indigo-200/50 hover:bg-white/5 hover:text-white"
+                      }`}
+                    >
+                      <Icon className={`h-4.5 w-4.5 shrink-0 ${active ? "text-indigo-300" : "text-indigo-300/40"}`} />
+                      <span className="truncate">{translate(link.name, language)}</span>
+                      {link.badge && (
+                        <span className="ml-auto text-[8px] font-black tracking-wider uppercase px-1.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 shrink-0">
+                          {link.badge}
+                        </span>
+                      )}
+                    </a>
+                  </div>
                 );
               })}
             </nav>
           </div>
           
-          <div className="border-t border-white/5 pt-4">
+          <div className="border-t border-white/5 pt-4 space-y-3 shrink-0">
             <button
               onClick={() => {
                 setMobileOpen(false);
                 router.push("/profile");
               }}
-              className="flex w-full items-center gap-3 mb-4 p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 text-left cursor-pointer"
+              className="flex w-full items-center gap-3 p-3 rounded-2xl bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 text-left cursor-pointer transition-all min-h-13"
+              title="View and edit your profile"
             >
               {user?.image ? (
                 <img
@@ -420,12 +524,18 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               )}
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold text-white truncate">{user?.name || user?.username}</p>
-                <p className="text-[9px] text-indigo-300/40 font-semibold uppercase tracking-wider mt-0.5">{user?.role?.replace(/_/g, " ")}</p>
+                <p className="text-[9px] text-indigo-300/50 font-semibold uppercase tracking-wider mt-0.5">{formatRoleBadge(user?.role)}</p>
               </div>
+              <span className="text-[10px] font-bold text-indigo-300 bg-white/10 px-2 py-1 rounded-lg shrink-0">
+                Profile
+              </span>
             </button>
             <button
-              onClick={handleLogout}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-500/10 text-red-400 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider border border-red-500/10 cursor-pointer hover:bg-red-500 hover:text-white transition-all"
+              onClick={() => {
+                setMobileOpen(false);
+                setShowLogoutConfirmModal(true);
+              }}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-500/15 hover:bg-red-500 text-red-400 hover:text-white px-4 py-3 text-[11px] font-bold uppercase tracking-wider border border-red-500/20 cursor-pointer active:scale-98 transition-all min-h-12"
             >
               <LogOut className="h-4 w-4" />
               {translate("Logout", language)}
@@ -457,6 +567,21 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 WCM Reporting
               </h1>
             </div>
+
+            {/* Mobile Collapsible Features Trigger Button */}
+            <button
+              onClick={() => setMobileFeaturesOpen((prev) => !prev)}
+              className={`md:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer active:scale-95 ${
+                mobileFeaturesOpen
+                  ? "bg-indigo-600 text-white border-indigo-500 shadow-sm shadow-indigo-500/25 font-black"
+                  : "bg-card/90 border-border/70 text-foreground/80 hover:bg-accent"
+              }`}
+              title="Toggle Features Panel"
+            >
+              <LayoutGrid className="h-3.5 w-3.5 text-indigo-400" />
+              <span>Features</span>
+              <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${mobileFeaturesOpen ? "rotate-180" : ""}`} />
+            </button>
           </div>
           
           <div className="flex items-center gap-1.5 sm:gap-2">
@@ -558,36 +683,231 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               {theme === "light" ? <Moon className="h-4.5 w-4.5" /> : <Sun className="h-4.5 w-4.5" />}
             </button>
 
-            {/* Profile info on Navbar */}
-            <button
-              onClick={() => router.push("/profile")}
-              className="flex items-center gap-2 sm:gap-2.5 sm:border-l sm:border-border/50 sm:pl-3 hover:opacity-85 transition-opacity cursor-pointer text-left group"
-              title="Click to view and edit profile"
-            >
-              {user?.image ? (
-                <img
-                  src={user.image}
-                  alt={user?.name || user?.username || "Avatar"}
-                  className="h-8 w-8 sm:h-8 sm:w-8 rounded-xl object-cover border border-primary/20 group-hover:scale-105 transition-transform shrink-0 shadow-sm"
-                />
-              ) : (
-                <div className="h-8 w-8 sm:h-8 sm:w-8 rounded-xl font-black text-xs flex items-center justify-center group-hover:scale-105 transition-transform shrink-0 shadow-sm text-white"
-                  style={{ background: "var(--gradient-accent)" }}
-                >
-                  {user?.username?.[0]?.toUpperCase() || "U"}
+            {/* User Profile & Actions Dropdown Menu on Navbar */}
+            <div className="relative sm:border-l sm:border-border/50 sm:pl-3">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-2 sm:gap-2.5 p-1 rounded-xl hover:bg-accent/60 transition-all cursor-pointer text-left group"
+                title="Account menu"
+                aria-label="Account menu"
+                aria-expanded={showUserMenu}
+              >
+                {user?.image ? (
+                  <img
+                    src={user.image}
+                    alt={user?.name || user?.username || "Avatar"}
+                    className="h-8 w-8 sm:h-8 sm:w-8 rounded-xl object-cover border border-primary/20 group-hover:scale-105 transition-transform shrink-0 shadow-sm"
+                  />
+                ) : (
+                  <div className="h-8 w-8 sm:h-8 sm:w-8 rounded-xl font-black text-xs flex items-center justify-center group-hover:scale-105 transition-transform shrink-0 shadow-sm text-white"
+                    style={{ background: "var(--gradient-accent)" }}
+                  >
+                    {user?.username?.[0]?.toUpperCase() || "U"}
+                  </div>
+                )}
+                <div className="hidden sm:block">
+                  <span className="text-xs font-bold text-foreground/80 block leading-tight group-hover:text-primary transition-colors">
+                    {user?.name || user?.username}
+                  </span>
+                  <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider inline-block">
+                    {formatRoleName(user?.role)}
+                  </span>
                 </div>
+                <ChevronDown className={`h-3 w-3 text-foreground/40 transition-transform duration-200 hidden sm:block ${showUserMenu ? "rotate-180" : ""}`} />
+              </button>
+
+              {/* User Dropdown Popover */}
+              {showUserMenu && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setShowUserMenu(false)}
+                  />
+                  <div className="absolute right-0 mt-2 z-50 w-64 rounded-2xl border border-border/70 bg-card/95 backdrop-blur-md p-3 shadow-2xl animate-slideDown text-left"
+                    style={{ boxShadow: "var(--shadow-float)" }}
+                  >
+                    {/* User Info Header */}
+                    <div className="flex items-center gap-3 p-2.5 rounded-xl bg-accent/50 mb-2">
+                      {user?.image ? (
+                        <img
+                          src={user.image}
+                          alt={user?.name || user?.username || "Avatar"}
+                          className="h-9 w-9 rounded-xl object-cover border border-primary/20 shrink-0"
+                        />
+                      ) : (
+                        <div className="h-9 w-9 rounded-xl font-black text-xs flex items-center justify-center shrink-0 text-white"
+                          style={{ background: "var(--gradient-accent)" }}
+                        >
+                          {user?.username?.[0]?.toUpperCase() || "U"}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-extrabold text-foreground truncate">{user?.name || user?.username}</p>
+                        <p className="text-[10px] text-foreground/50 truncate">@{user?.username}</p>
+                        <span className="text-[8px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black uppercase tracking-wider mt-0.5 inline-block">
+                          {formatRoleName(user?.role)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Actions with proper touch target sizes */}
+                    <div className="space-y-1">
+                      <button
+                        onClick={() => {
+                          setShowUserMenu(false);
+                          router.push("/profile");
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-foreground/80 hover:bg-accent hover:text-foreground transition-all cursor-pointer min-h-11"
+                      >
+                        <UserIcon className="h-4 w-4 text-primary shrink-0" />
+                        <span>{translate("My Profile", language)}</span>
+                        <ChevronRight className="h-3.5 w-3.5 ml-auto text-foreground/40 shrink-0" />
+                      </button>
+
+                      <div className="h-px bg-border/40 my-1" />
+
+                      <button
+                        onClick={() => {
+                          setShowUserMenu(false);
+                          setShowLogoutConfirmModal(true);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-all cursor-pointer min-h-11"
+                      >
+                        <LogOut className="h-4 w-4 text-red-500 shrink-0" />
+                        <span>{translate("Logout", language)}</span>
+                      </button>
+                    </div>
+                  </div>
+                </>
               )}
-              <div className="hidden sm:block">
-                <span className="text-xs font-bold text-foreground/80 block leading-tight group-hover:text-primary transition-colors">
-                  {user?.name || user?.username}
-                </span>
-                <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider inline-block">
-                  {user?.role}
-                </span>
-              </div>
-            </button>
+            </div>
           </div>
         </header>
+
+        {/* Mobile Collapsible Top Features Panel */}
+        <div
+          className={`md:hidden border-b border-border/70 glass transition-all duration-300 ease-in-out ${
+            mobileFeaturesOpen
+              ? "max-h-[85vh] opacity-100 py-3.5 px-3 overflow-y-auto shadow-xl"
+              : "max-h-0 opacity-0 py-0 px-3 overflow-hidden pointer-events-none border-b-0"
+          }`}
+        >
+          {/* Header inside Mobile Features Panel */}
+          <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-border/40">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-foreground/50">
+                {translate("Navigation & Features", language)}
+              </span>
+              <span className="text-[9px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
+                {formatRoleName(user?.role)}
+              </span>
+            </div>
+            <button
+              onClick={() => setMobileFeaturesOpen(false)}
+              className="text-foreground/40 hover:text-foreground p-1 rounded-lg cursor-pointer"
+              title="Close Panel"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Grid of features */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {links.map((link: any) => {
+              const active = isLinkActive(link.href);
+              const Icon = link.icon;
+              if (link.subItems) {
+                return (
+                  <div key={link.name} className="col-span-2 sm:col-span-3 space-y-1.5 p-2 rounded-xl bg-accent/40 border border-border/50">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-foreground/50 block px-1">
+                      {translate(link.name, language)}
+                    </span>
+                    <div className="grid grid-cols-2 gap-2">
+                      {link.subItems.map((sub: any) => {
+                        const subActive = isLinkActive(sub.href);
+                        const SubIcon = sub.icon;
+                        return (
+                          <button
+                            key={sub.name}
+                            onClick={() => {
+                              setMobileFeaturesOpen(false);
+                              router.push(sub.href);
+                            }}
+                            className={`flex items-center gap-2 p-2.5 rounded-xl border text-left transition-all cursor-pointer active:scale-95 ${
+                              subActive
+                                ? "bg-primary text-white border-primary shadow-xs font-bold"
+                                : "bg-card border-border/50 text-foreground/80 hover:bg-accent"
+                            }`}
+                          >
+                            <SubIcon className={`h-4 w-4 shrink-0 ${subActive ? "text-white" : "text-primary"}`} />
+                            <span className="text-[10px] font-bold uppercase tracking-wider truncate">
+                              {translate(sub.name, language)}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <button
+                  key={link.name}
+                  onClick={() => {
+                    setMobileFeaturesOpen(false);
+                    router.push(link.href);
+                  }}
+                  className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all cursor-pointer active:scale-[0.98] ${
+                    active
+                      ? "bg-primary text-white border-primary shadow-xs font-black"
+                      : "bg-card border-border/50 text-foreground/80 hover:bg-accent hover:border-border"
+                  }`}
+                >
+                  <div className={`p-1.5 rounded-lg shrink-0 ${active ? "bg-white/20 text-white" : "bg-primary/10 text-primary"}`}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider block truncate">
+                      {translate(link.name, language)}
+                    </span>
+                    {link.badge && (
+                      <span className={`text-[8px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded mt-0.5 inline-block ${
+                        active ? "bg-white/20 text-white" : "bg-primary/10 text-primary"
+                      }`}>
+                        {link.badge}
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Quick Actions inside mobile features panel */}
+          <div className="mt-3 pt-3 border-t border-border/40 grid grid-cols-2 gap-2">
+            <button
+              onClick={() => {
+                setMobileFeaturesOpen(false);
+                router.push("/profile");
+              }}
+              className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-border/60 bg-card hover:bg-accent text-foreground text-xs font-bold transition-all min-h-11 cursor-pointer"
+            >
+              <UserIcon className="h-4 w-4 text-primary shrink-0" />
+              <span>{translate("My Profile", language)}</span>
+            </button>
+            <button
+              onClick={() => {
+                setMobileFeaturesOpen(false);
+                setShowLogoutConfirmModal(true);
+              }}
+              className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500 hover:text-white text-red-500 text-xs font-bold transition-all min-h-11 cursor-pointer"
+            >
+              <LogOut className="h-4 w-4 shrink-0" />
+              <span>{translate("Logout", language)}</span>
+            </button>
+          </div>
+        </div>
 
         {/* Mobile Notification Bottom Sheet Modal */}
         {showNotifDropdown && (
@@ -665,61 +985,74 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Main Content Area */}
-        <main className="flex-1 p-3 sm:p-5 md:p-8 max-w-7xl w-full mx-auto animate-slideUp pb-24 md:pb-8 min-w-0">
+        <main className="flex-1 p-3 sm:p-5 md:p-8 max-w-7xl w-full mx-auto animate-slideUp pb-8 min-w-0">
           {children}
         </main>
 
         {/* Footer */}
-        <footer className="py-4 border-t border-border/30 text-center text-[10px] uppercase font-semibold tracking-widest text-foreground/25 mb-16 md:mb-0">
+        <footer className="py-4 border-t border-border/30 text-center text-[10px] uppercase font-semibold tracking-widest text-foreground/25 mb-0">
           &copy; {new Date().getFullYear()} WCM Ministry. All rights reserved.
         </footer>
-
-        {/* Native Mobile Bottom Navigation Bar */}
-        <nav className="fixed bottom-0 left-0 right-0 z-30 flex md:hidden items-center justify-around border-t border-border/30 glass px-2 py-1.5 pb-safe shadow-[0_-4px_24px_rgba(0,0,0,0.08)]">
-          {links.map((link) => {
-            const active = pathname === link.href;
-            const Icon = link.icon;
-            return (
-              <button
-                key={link.name}
-                onClick={() => router.push(link.href)}
-                className={`flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-2xl transition-all cursor-pointer min-h-11 min-w-14 active-press ${
-                  active 
-                    ? "text-primary font-bold" 
-                    : "text-foreground/40 font-medium hover:text-foreground/70"
-                }`}
-              >
-                <div className={`p-1.5 rounded-xl transition-all ${active ? "bg-primary/10 shadow-sm" : ""}`}>
-                  <Icon className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] uppercase tracking-wider leading-none">
-                  {translate(link.name, language)}
-                </span>
-              </button>
-            );
-          })}
-
-          {/* Quick Notifications Button in Mobile Bottom Bar */}
-          <button
-            onClick={() => setShowNotifDropdown(true)}
-            className="flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-2xl transition-all cursor-pointer min-h-11 min-w-14 active-press text-foreground/40 font-medium hover:text-foreground/70"
-          >
-            <div className="relative p-1.5 rounded-xl">
-              <Bell className="h-5 w-5" />
-              {notifications.filter(n => !n.read).length > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 px-1 items-center justify-center rounded-full text-[9px] font-black text-white shadow-sm"
-                  style={{ background: "var(--gradient-accent)" }}
-                >
-                  {notifications.filter(n => !n.read).length}
-                </span>
-              )}
-            </div>
-            <span className="text-[10px] uppercase tracking-wider leading-none">
-              Notifs
-            </span>
-          </button>
-        </nav>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            onClick={() => !isLoggingOut && setShowLogoutConfirmModal(false)}
+          />
+          <div 
+            className="relative w-full max-w-sm rounded-3xl bg-card border border-border/70 shadow-2xl p-6 text-center animate-scaleIn z-50"
+            style={{ boxShadow: "var(--shadow-float)" }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="logout-title"
+          >
+            <div className="h-14 w-14 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center mx-auto mb-4">
+              <LogOut className="h-7 w-7" />
+            </div>
+            <h3 id="logout-title" className="text-base font-black text-foreground text-center mb-1.5">
+              {translate("Logout", language)}
+            </h3>
+            <p className="text-xs text-foreground/60 leading-relaxed text-center mb-6">
+              {language === "te" 
+                ? "మీరు ఖచ్చితంగా లాగ్ అవుట్ చేయాలనుకుంటున్నారా? నివేదికలను యాక్సెస్ చేయడానికి మీరు మళ్లీ సైన్ ఇన్ చేయాలి."
+                : language === "hi"
+                ? "क्या आप निश्चित रूप से लॉग आउट करना चाहते हैं? रिपोर्ट्स तक पहुंचने के लिए आपको फिर से साइन इन करना होगा।"
+                : "Are you sure you want to sign out? You will need to log in again to access reports, forms, and ministry tools."}
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                disabled={isLoggingOut}
+                onClick={() => setShowLogoutConfirmModal(false)}
+                className="w-full py-2.5 px-4 rounded-xl border border-border/70 bg-accent/40 hover:bg-accent text-foreground text-xs font-bold transition-all min-h-11 cursor-pointer disabled:opacity-50"
+              >
+                {translate("Cancel", language) || "Cancel"}
+              </button>
+              <button
+                type="button"
+                disabled={isLoggingOut}
+                onClick={handleLogout}
+                className="w-full py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-xs font-black uppercase tracking-wider transition-all min-h-11 cursor-pointer shadow-sm shadow-red-600/30 flex items-center justify-center gap-1.5 disabled:opacity-50"
+              >
+                {isLoggingOut ? (
+                  <>
+                    <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Signing out...</span>
+                  </>
+                ) : (
+                  <>
+                    <LogOut className="h-4 w-4" />
+                    <span>{translate("Logout", language) || "Sign Out"}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

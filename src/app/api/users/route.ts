@@ -41,20 +41,17 @@ export async function GET(request: Request) {
     // Build base role-based access scope
     let baseWhere: any = {};
     if (userRole === "STATE_LEADER") {
-      if (!sessionUser.state) {
-        return NextResponse.json([]);
-      }
       baseWhere = {
-        state: sessionUser.state,
         role: { in: ["ZONE_LEADER", "COORDINATOR"] },
+        OR: [
+          { state: { equals: sessionUser.state || "", mode: "insensitive" } },
+          { stateRef: { name: { equals: sessionUser.state || "", mode: "insensitive" } } },
+        ],
       };
     } else if (userRole === "ZONE_LEADER") {
-      if (!sessionUser.zone) {
-        return NextResponse.json([]);
-      }
       baseWhere = {
-        zone: sessionUser.zone,
         role: "COORDINATOR",
+        parentZonalLeaderId: sessionUser.id,
       };
     }
 
@@ -69,11 +66,16 @@ export async function GET(request: Request) {
 
     // Search by Name, Username, Phone Number, or Email
     if (search) {
-      baseWhere.OR = [
-        { name: { contains: search, mode: "insensitive" } },
-        { username: { contains: search, mode: "insensitive" } },
-        { phoneNumber: { contains: search, mode: "insensitive" } },
-        { email: { contains: search, mode: "insensitive" } },
+      baseWhere.AND = [
+        ...(baseWhere.AND || []),
+        {
+          OR: [
+            { name: { contains: search, mode: "insensitive" } },
+            { username: { contains: search, mode: "insensitive" } },
+            { phoneNumber: { contains: search, mode: "insensitive" } },
+            { email: { contains: search, mode: "insensitive" } },
+          ],
+        },
       ];
     }
 
@@ -86,17 +88,34 @@ export async function GET(request: Request) {
         email: true,
         phoneNumber: true,
         role: true,
+        isActive: true,
         state: true,
         zone: true,
+        district: true,
         part: true,
         image: true,
-        createdAt: true,
+        stateId: true,
+        zoneId: true,
+        districtId: true,
+        parentZonalLeaderId: true,
+        stateRef: { select: { id: true, name: true, code: true } },
+        zoneRef: { select: { id: true, name: true } },
+        districtRef: { select: { id: true, name: true } },
+        parentZonalLeader: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+          },
+        },
         _count: {
           select: {
+            subordinateCoordinators: true,
             meetingReports: true,
           },
         },
-      } as any,
+        createdAt: true,
+      },
       orderBy: { createdAt: "desc" },
     });
 
@@ -133,7 +152,7 @@ export async function POST(request: Request) {
       }
     } else if (userRole === "ZONE_LEADER") {
       if (validatedData.role !== "COORDINATOR" || validatedData.zone !== session.user.zone) {
-        return NextResponse.json({ error: "Forbidden: Zone leaders can only create coordinators in their zone" }, { status: 403 });
+        return NextResponse.json({ error: "Forbidden: Zonal leaders can only create coordinators in their zone" }, { status: 403 });
       }
     }
 

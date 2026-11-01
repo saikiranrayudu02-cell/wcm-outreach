@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { parseGeographicLocation } from "@/lib/geographic";
 
 export async function POST(request: Request) {
   try {
@@ -16,6 +17,7 @@ export async function POST(request: Request) {
     const user = session.user as any;
     const body = await request.json();
     const { meetingId, submit = false, ...vData } = body;
+    const geo = parseGeographicLocation(vData.stateDistrictCity, user);
 
     let meeting: any = null;
 
@@ -58,6 +60,10 @@ export async function POST(request: Request) {
         convenerName: vData.convenerName || "",
         churchMinistryName: vData.churchMinistryName || "",
         stateDistrictCity: vData.stateDistrictCity || "",
+        state: geo.state,
+        zone: geo.zone,
+        district: geo.district,
+        part: geo.part,
         contactNumber: vData.contactNumber || "",
         meetingDates: vData.meetingDates || "",
         numberOfDays: vData.numberOfDays !== undefined ? Number(vData.numberOfDays) : 0,
@@ -79,6 +85,10 @@ export async function POST(request: Request) {
         convenerName: vData.convenerName,
         churchMinistryName: vData.churchMinistryName,
         stateDistrictCity: vData.stateDistrictCity,
+        state: geo.state,
+        zone: geo.zone,
+        district: geo.district,
+        part: geo.part,
         contactNumber: vData.contactNumber,
         meetingDates: vData.meetingDates,
         numberOfDays: vData.numberOfDays !== undefined ? Number(vData.numberOfDays) : undefined,
