@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["@prisma/client", "bcrypt"],
+  outputFileTracingIncludes: {
+    "/**": ["./node_modules/.prisma/client/**/*"],
+  },
   experimental: {
     optimizePackageImports: ["lucide-react"],
   },
