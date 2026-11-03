@@ -51,18 +51,31 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
 
     const alreadyInstalled = checkStandalone();
 
-    // 2. Register Service Worker safely
-    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker
-          .register("/sw.js")
-          .then((reg) => {
-            console.log("WCM ServiceWorker registered with scope:", reg.scope);
-          })
-          .catch((err) => {
-            console.warn("WCM ServiceWorker registration failed:", err);
+    // 2. Clear obsolete caches and register Service Worker safely
+    if (typeof window !== "undefined") {
+      if ("caches" in window) {
+        caches.keys().then((keys) => {
+          keys.forEach((key) => {
+            if (key !== "wcm-outreach-pwa-v2") {
+              caches.delete(key);
+            }
           });
-      });
+        }).catch(() => {});
+      }
+
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("/sw.js")
+            .then((reg) => {
+              reg.update().catch(() => {});
+              console.log("WCM ServiceWorker registered with scope:", reg.scope);
+            })
+            .catch((err) => {
+              console.warn("WCM ServiceWorker registration failed:", err);
+            });
+        });
+      }
     }
 
     if (alreadyInstalled) {
@@ -76,11 +89,11 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
       // Ignore localStorage errors
     }
 
-    // 4. Detect device platform
-    const userAgent = window.navigator.userAgent.toLowerCase();
+    // 4. Detect device platform safely
+    const userAgent = typeof window !== "undefined" ? window.navigator.userAgent.toLowerCase() : "";
     const isIos =
       /iphone|ipad|ipod/.test(userAgent) ||
-      (window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1);
+      (typeof navigator !== "undefined" && (navigator as any).platform === "MacIntel" && navigator.maxTouchPoints > 1);
     const isAndroid = /android/.test(userAgent);
     setIsIosDevice(isIos);
     setIsAndroidDevice(isAndroid);

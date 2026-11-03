@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wcm-outreach-pwa-v1';
+const CACHE_NAME = 'wcm-outreach-pwa-v2';
 const OFFLINE_URL = '/offline.html';
 
 const PRECACHE_ASSETS = [
@@ -21,13 +21,14 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate: purge obsolete caches
+// Activate: purge obsolete caches immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((name) => {
           if (name !== CACHE_NAME) {
+            console.log('Purging obsolete cache:', name);
             return caches.delete(name);
           }
         })
@@ -47,8 +48,13 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
 
-  // 2. CRITICAL: Never cache API requests, auth calls, or database mutations
-  if (url.pathname.startsWith('/api/')) {
+  // 2. CRITICAL: NEVER intercept or cache Next.js build chunks or API requests
+  // Next.js manages its own immutable chunk hashing and cache headers
+  if (
+    url.pathname.startsWith('/api/') ||
+    url.pathname.startsWith('/_next/') ||
+    url.pathname.startsWith('/__next')
+  ) {
     return;
   }
 
@@ -57,11 +63,9 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          // If valid response, return it
           return response;
         })
         .catch(async () => {
-          // Offline fallback
           const cache = await caches.open(CACHE_NAME);
           const cachedOffline = await cache.match(OFFLINE_URL);
           return cachedOffline || new Response('Offline', { status: 503 });
@@ -70,9 +74,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 4. Static assets (_next/static, images, icons, fonts): Cache-first with network background revalidation
+  // 4. Static media assets (icons, images, fonts): Cache-first with network revalidation
   const isStaticAsset = (
-    url.pathname.startsWith('/_next/static/') ||
     url.pathname.startsWith('/icons/') ||
     url.pathname.endsWith('.png') ||
     url.pathname.endsWith('.jpg') ||
@@ -86,24 +89,11 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       caches.match(request).then((cachedResponse) => {
         if (cachedResponse) {
-          // Revalidate in background
-          fetch(request)
-            .then((networkResponse) => {
-              if (networkResponse && networkResponse.status === 200) {
-                caches.open(CACHE_NAME).then((cache) => {
-                  cache.put(request, networkResponse);
-                });
-              }
-            })
-            .catch(() => {
-              /* ignore background fetch errors */
-            });
           return cachedResponse;
         }
 
-        // Not in cache: fetch from network and store in cache
         return fetch(request).then((networkResponse) => {
-          if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+          if (!networkResponse || networkResponse.status !== 200) {
             return networkResponse;
           }
           const responseToCache = networkResponse.clone();
@@ -111,6 +101,8 @@ self.addEventListener('fetch', (event) => {
             cache.put(request, responseToCache);
           });
           return networkResponse;
+        }).catch(() => {
+          return cachedResponse;
         });
       })
     );
