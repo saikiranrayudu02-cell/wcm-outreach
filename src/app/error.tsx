@@ -13,25 +13,30 @@ export default function ErrorBoundary({
   useEffect(() => {
     console.error("Application client-side exception caught:", error);
 
-    // Auto-recover from chunk load errors caused by new deployments
-    const isChunkError =
-      error?.message?.includes("Loading chunk") ||
-      error?.message?.includes("ChunkLoadError") ||
-      error?.message?.includes("Failed to fetch") ||
-      error?.name === "ChunkLoadError";
+    try {
+      const isChunkError =
+        error?.message?.includes("Loading chunk") ||
+        error?.message?.includes("ChunkLoadError") ||
+        error?.message?.includes("Failed to fetch") ||
+        error?.name === "ChunkLoadError";
 
-    if (isChunkError && typeof window !== "undefined") {
-      const hasAutoReloaded = sessionStorage.getItem("wcm_chunk_autoreload");
-      if (!hasAutoReloaded) {
-        sessionStorage.setItem("wcm_chunk_autoreload", "true");
-        window.location.reload();
+      if (isChunkError && typeof window !== "undefined") {
+        const hasAutoReloaded = sessionStorage.getItem("wcm_chunk_autoreload");
+        if (!hasAutoReloaded) {
+          sessionStorage.setItem("wcm_chunk_autoreload", "true");
+          window.location.reload();
+        }
       }
+    } catch {
+      // Storage might be restricted
     }
   }, [error]);
 
   const handleManualReload = () => {
     if (typeof window !== "undefined") {
-      sessionStorage.removeItem("wcm_chunk_autoreload");
+      try {
+        sessionStorage.removeItem("wcm_chunk_autoreload");
+      } catch {}
       window.location.href = "/login";
     } else {
       reset();

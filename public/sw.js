@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wcm-outreach-pwa-v2';
+const CACHE_NAME = 'wcm-outreach-pwa-v3';
 const OFFLINE_URL = '/offline.html';
 
 const PRECACHE_ASSETS = [
@@ -12,16 +12,22 @@ const PRECACHE_ASSETS = [
   '/favicon.ico',
 ];
 
-// Install: precache offline fallback and essential icons
+// Install: precache offline fallback and essential icons safely
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE_ASSETS);
+      return Promise.allSettled(
+        PRECACHE_ASSETS.map((url) =>
+          cache.add(url).catch((err) => {
+            console.warn('Precache failed for asset:', url, err);
+          })
+        )
+      );
     }).then(() => self.skipWaiting())
   );
 });
 
-// Activate: purge obsolete caches immediately
+// Activate: purge all obsolete caches immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -102,7 +108,7 @@ self.addEventListener('fetch', (event) => {
           });
           return networkResponse;
         }).catch(() => {
-          return cachedResponse;
+          return new Response('', { status: 404 });
         });
       })
     );

@@ -41,12 +41,17 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // 1. Detect if already running in standalone mode (installed app)
     const checkStandalone = () => {
-      const isStandaloneMode =
-        window.matchMedia("(display-mode: standalone)").matches ||
-        (window.navigator as any).standalone === true ||
-        document.referrer.includes("android-app://");
-      setIsStandalone(isStandaloneMode);
-      return isStandaloneMode;
+      try {
+        const isStandaloneMode =
+          (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
+          (typeof navigator !== "undefined" && (window.navigator as any)?.standalone === true) ||
+          (typeof document !== "undefined" && Boolean(document.referrer?.includes("android-app://")));
+        const standaloneBool = Boolean(isStandaloneMode);
+        setIsStandalone(standaloneBool);
+        return standaloneBool;
+      } catch {
+        return false;
+      }
     };
 
     const alreadyInstalled = checkStandalone();
@@ -56,7 +61,7 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
       if ("caches" in window) {
         caches.keys().then((keys) => {
           keys.forEach((key) => {
-            if (key !== "wcm-outreach-pwa-v2") {
+            if (key !== "wcm-outreach-pwa-v3") {
               caches.delete(key);
             }
           });
@@ -98,8 +103,13 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
     setIsIosDevice(isIos);
     setIsAndroidDevice(isAndroid);
 
-    // 5. Check if user dismissed the prompt in this active browser session
-    const isSessionDismissed = sessionStorage.getItem("wcm_pwa_session_dismissed") === "true";
+    // 5. Check if user dismissed the prompt in this active browser session safely
+    let isSessionDismissed = false;
+    try {
+      isSessionDismissed = sessionStorage.getItem("wcm_pwa_session_dismissed") === "true";
+    } catch {
+      // Ignore sessionStorage security exceptions on private/sandboxed browsers
+    }
 
     // 6. Show the install prompt banner after a brief gentle delay (1.5 seconds)
     // Ensures mobile and desktop users see the download prompt box immediately
