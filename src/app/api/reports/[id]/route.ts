@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { parseGeographicLocation } from "@/lib/geographic";
+import { syncVerificationMedia, syncEvaluationMedia } from "@/lib/media-sync";
+import { findOrCreateMeetingPerson } from "@/lib/person-service";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +23,7 @@ export async function GET(
 
     const { id: reportId } = await props.params;
 
-    const report = await prisma.meetingReport.findUnique({
+    const report: any = await (prisma as any).meetingReport.findUnique({
       where: { id: reportId },
       include: {
         leader: {
@@ -34,9 +36,18 @@ export async function GET(
             name: true,
           },
         },
-        verificationSheet: true,
+        verificationSheet: {
+          include: {
+            media: true,
+            arrangedByPerson: true,
+          },
+        },
         attendanceRecord: true,
-        afterMeetingReport: true,
+        afterMeetingReport: {
+          include: {
+            media: true,
+          },
+        },
         auditLogs: {
           include: {
             actor: {
@@ -144,13 +155,22 @@ export async function PUT(
 
     const { id: reportId } = await props.params;
 
-    const report = await prisma.meetingReport.findUnique({
+    const report: any = await (prisma as any).meetingReport.findUnique({
       where: { id: reportId },
       include: {
         leader: true,
-        verificationSheet: true,
+        verificationSheet: {
+          include: {
+            media: true,
+            arrangedByPerson: true,
+          },
+        },
         attendanceRecord: true,
-        afterMeetingReport: true,
+        afterMeetingReport: {
+          include: {
+            media: true,
+          },
+        },
       },
     });
 
@@ -197,7 +217,7 @@ export async function PUT(
       }
     }
 
-    await prisma.$transaction(async (tx) => {
+    await (prisma as any).$transaction(async (tx: any) => {
       // 0. Update title if provided
       if (title && typeof title === "string" && title.trim()) {
         await tx.meetingReport.update({
@@ -208,6 +228,20 @@ export async function PUT(
 
       // 1. Update/Create VerificationSheet
       if (vData) {
+        let person: any = null;
+        if (vData.arrangedByName || vData.arrangedByPersonId) {
+          try {
+            person = await findOrCreateMeetingPerson({
+              personId: vData.arrangedByPersonId,
+              name: vData.arrangedByName,
+              phoneNumber: vData.arrangedByPhone,
+              notes: vData.arrangedByNotes,
+            });
+          } catch (personErr) {
+            console.warn("Meeting person link warning in PUT /api/reports/[id]:", personErr);
+          }
+        }
+
         const geo = parseGeographicLocation(vData.stateDistrictCity, report.leader);
         await (tx as any).verificationSheet.upsert({
           where: { meetingReportId: reportId },
@@ -221,6 +255,14 @@ export async function PUT(
             zone: geo.zone,
             district: geo.district,
             part: geo.part,
+            meetingSession: vData.meetingSession || null,
+            travelMode: vData.travelMode || null,
+            travelOtherDetails: vData.travelOtherDetails || null,
+            stayLocation: vData.stayLocation || null,
+            arrangedByPersonId: person ? person.id : vData.arrangedByPersonId || null,
+            arrangedByName: person ? person.name : vData.arrangedByName || null,
+            arrangedByPhone: person ? person.phoneNumber : vData.arrangedByPhone || null,
+            arrangedByNotes: person ? person.notes : vData.arrangedByNotes || null,
             contactNumber: vData.contactNumber || "",
             meetingDates: vData.meetingDates || "",
             numberOfDays: vData.numberOfDays !== undefined ? Number(vData.numberOfDays) : 0,
@@ -244,6 +286,14 @@ export async function PUT(
             zone: geo.zone,
             district: geo.district,
             part: geo.part,
+            meetingSession: vData.meetingSession !== undefined ? vData.meetingSession : undefined,
+            travelMode: vData.travelMode !== undefined ? vData.travelMode : undefined,
+            travelOtherDetails: vData.travelOtherDetails !== undefined ? vData.travelOtherDetails : undefined,
+            stayLocation: vData.stayLocation !== undefined ? vData.stayLocation : undefined,
+            arrangedByPersonId: person ? person.id : vData.arrangedByPersonId !== undefined ? vData.arrangedByPersonId : undefined,
+            arrangedByName: person ? person.name : vData.arrangedByName !== undefined ? vData.arrangedByName : undefined,
+            arrangedByPhone: person ? person.phoneNumber : vData.arrangedByPhone !== undefined ? vData.arrangedByPhone : undefined,
+            arrangedByNotes: person ? person.notes : vData.arrangedByNotes !== undefined ? vData.arrangedByNotes : undefined,
             contactNumber: vData.contactNumber,
             meetingDates: vData.meetingDates,
             numberOfDays: vData.numberOfDays !== undefined ? Number(vData.numberOfDays) : undefined,
@@ -348,6 +398,36 @@ export async function PUT(
       });
     }, { maxWait: 20000, timeout: 30000 });
 
+    // Synchronize media if provided in vData or rData
+    try {
+      if (vData && (vData.images !== undefined || vData.media !== undefined)) {
+        const vMedia = vData.images || vData.media || [];
+        const sheet = await (prisma as any).verificationSheet.findUnique({
+          where: { meetingReportId: reportId },
+        });
+        if (sheet) {
+          await syncVerificationMedia(sheet.id, vMedia);
+        }
+      }
+
+      if (rData && (rData.images !== undefined || rData.video !== undefined || rData.videos !== undefined || rData.media !== undefined)) {
+        const rMedia = [
+          ...(Array.isArray(rData.images) ? rData.images.map((i: any) => ({ ...i, mediaType: "IMAGE" as const })) : []),
+          ...(rData.video ? [{ ...rData.video, mediaType: "VIDEO" as const }] : []),
+          ...(Array.isArray(rData.videos) ? rData.videos.map((v: any) => ({ ...v, mediaType: "VIDEO" as const })) : []),
+          ...(Array.isArray(rData.media) ? rData.media : []),
+        ];
+        const aReport = await (prisma as any).afterMeetingReport.findUnique({
+          where: { meetingReportId: reportId },
+        });
+        if (aReport) {
+          await syncEvaluationMedia(aReport.id, rMedia);
+        }
+      }
+    } catch (syncErr) {
+      console.warn("Media synchronization warning in PUT /api/reports/[id]:", syncErr);
+    }
+
     return NextResponse.json({ message: "Form saved successfully" });
   } catch (err) {
     console.error("PUT /api/reports/[id] error:", err);
@@ -370,12 +450,21 @@ export async function DELETE(
 
     const { id: reportId } = await props.params;
 
-    const report = await prisma.meetingReport.findUnique({
+    const report: any = await (prisma as any).meetingReport.findUnique({
       where: { id: reportId },
       include: {
-        verificationSheet: true,
+        verificationSheet: {
+          include: {
+            media: true,
+            arrangedByPerson: true,
+          },
+        },
         attendanceRecord: true,
-        afterMeetingReport: true,
+        afterMeetingReport: {
+          include: {
+            media: true,
+          },
+        },
       },
     });
 
@@ -397,7 +486,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Cannot delete meetings with submitted forms" }, { status: 400 });
     }
 
-    await prisma.meetingReport.delete({
+    await (prisma as any).meetingReport.delete({
       where: { id: reportId },
     });
 

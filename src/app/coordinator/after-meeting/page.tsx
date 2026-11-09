@@ -8,6 +8,8 @@ import { ArrowLeft, Save, Lock, CheckCircle2, Loader2, ClipboardList, PlusCircle
 import { useUIStore } from "@/store/ui-store";
 import { translate } from "@/lib/translations";
 import { toast } from "sonner";
+import { MediaUploader } from "@/components/media-uploader";
+import { MediaItemInput } from "@/lib/media-sync";
 import { FormStatusBadge } from "@/components/form-status-badge";
 
 interface AfterMeetingFormInput {
@@ -39,6 +41,8 @@ function AfterMeetingFormContent() {
   const [loadingMeetings, setLoadingMeetings] = useState(true);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [evaluationImages, setEvaluationImages] = useState<MediaItemInput[]>([]);
+  const [evaluationVideo, setEvaluationVideo] = useState<MediaItemInput[]>([]);
 
   const {
     register,
@@ -110,6 +114,12 @@ function AfterMeetingFormContent() {
           setSelectedMeeting(data);
 
           if (data.report) {
+            const reportMedia = data.report.media || [];
+            const imgs = reportMedia.filter((m: any) => m.mediaType === "IMAGE" || (!m.mediaType && (m.mimeType.startsWith("image/") || ["jpg", "jpeg", "png", "webp"].some((ext: string) => m.fileName.toLowerCase().endsWith(ext)))));
+            const vids = reportMedia.filter((m: any) => m.mediaType === "VIDEO" || (!m.mediaType && (m.mimeType.startsWith("video/") || ["mp4", "mov", "webm"].some((ext: string) => m.fileName.toLowerCase().endsWith(ext)))));
+            setEvaluationImages(imgs);
+            setEvaluationVideo(vids);
+
             reset({
               overallMeetingOutcome: data.report.overallMeetingOutcome || "Good",
               congregationResponse: data.report.congregationResponse || "Positive & Engaged",
@@ -129,6 +139,8 @@ function AfterMeetingFormContent() {
                 : new Date().toISOString().split("T")[0],
             });
           } else {
+            setEvaluationImages([]);
+            setEvaluationVideo([]);
             reset({
               overallMeetingOutcome: "Good",
               congregationResponse: "Positive & Engaged",
@@ -175,6 +187,9 @@ function AfterMeetingFormContent() {
         ...data,
         continueFellowship: data.continueFellowship === "true",
         followingWcmMembersCount: Number(data.followingWcmMembersCount),
+        images: evaluationImages,
+        video: evaluationVideo[0] || null,
+        videos: evaluationVideo,
       };
 
       const res = await fetch("/api/reports/after-meeting", {
@@ -208,6 +223,15 @@ function AfterMeetingFormContent() {
       return;
     }
 
+    if (evaluationImages.length < 1) {
+      toast.error("Evaluation Images required: Please upload at least 1 image (up to 5).");
+      return;
+    }
+    if (evaluationVideo.length < 1) {
+      toast.error("Evaluation Video required: Please upload at least 1 video.");
+      return;
+    }
+
     setSubmitting(true);
     try {
       const payload = {
@@ -216,6 +240,9 @@ function AfterMeetingFormContent() {
         ...data,
         continueFellowship: data.continueFellowship === "true",
         followingWcmMembersCount: Number(data.followingWcmMembersCount),
+        images: evaluationImages,
+        video: evaluationVideo[0] || null,
+        videos: evaluationVideo,
       };
 
       const res = await fetch("/api/reports/after-meeting", {
@@ -459,6 +486,29 @@ function AfterMeetingFormContent() {
                     className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
                   />
                 </div>
+              </div>
+
+              {/* Media Upload Sections: Evaluation Images & Evaluation Video */}
+              <div className="space-y-5 pt-4 border-t border-white/10">
+                <MediaUploader
+                  category="EVALUATION_IMAGE"
+                  value={evaluationImages}
+                  onChange={setEvaluationImages}
+                  title="Evaluation Images"
+                  description="Upload a minimum of 1 image and a maximum of 5 images capturing congregation engagement and ministry outcomes."
+                  minCount={1}
+                  maxCount={5}
+                />
+
+                <MediaUploader
+                  category="EVALUATION_VIDEO"
+                  value={evaluationVideo}
+                  onChange={setEvaluationVideo}
+                  title="Evaluation Video"
+                  description="Upload a video recording of the meeting / congregation response (MP4, MOV, WEBM - up to 50MB)."
+                  minCount={1}
+                  maxCount={1}
+                />
               </div>
 
               {/* Action Buttons */}

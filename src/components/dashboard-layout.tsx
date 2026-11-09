@@ -9,7 +9,7 @@ import {
   Menu, X, LogOut, LayoutDashboard, FileCheck, Users, 
   FileSpreadsheet, ClipboardList, Sun, Moon, ShieldAlert,
   Bell, CheckCheck, CalendarCheck, Calendar, Inbox, User as UserIcon, Sparkles, ChevronRight, ChevronDown,
-  ShieldCheck, PhoneCall, Mail, BarChart3, LayoutGrid, Layers, Download
+  ShieldCheck, PhoneCall, Mail, BarChart3, LayoutGrid, Layers, Download, History
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
@@ -157,13 +157,15 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const getSidebarLinks = () => {
     if (role === "ADMIN") {
       return [
-        { name: "Meeting Management", href: "/admin/meetings", icon: Calendar, sectionHeader: "Administration", badge: "New" },
+        { name: "Calendar", href: "/admin/calendar", icon: Calendar, sectionHeader: "Schedule & Bookings", badge: "Live" },
+        { name: "Previous Meeting Preview", href: "/admin/previous-meetings", icon: History, sectionHeader: "History & Tracking", badge: "New" },
+        { name: "Meeting Management", href: "/admin/meetings", icon: Layers, sectionHeader: "Administration", badge: "New" },
         { name: "User Management", href: "/admin/dashboard?tab=users", icon: Users },
         { name: "Submitted Reports", href: "/admin/dashboard?tab=reports", icon: FileSpreadsheet },
         { name: "Monthly Summary", href: "/admin/dashboard?tab=analytics", icon: BarChart3 },
         { name: "Send Messages", href: "/admin/dashboard?tab=messages", icon: Mail },
         { name: "Confirmations", href: "/admin/dashboard?tab=confirmations", icon: CalendarCheck },
-        { name: "Completed Verifications", href: "/admin/completed-verifications", icon: ShieldCheck, sectionHeader: "Outreach & AI", badge: "Live" },
+        { name: "Completed Verifications", href: "/admin/completed-verifications", icon: ShieldCheck, sectionHeader: "Outreach & AI" },
         { name: "AI Calling Center", href: "/admin/calling-center", icon: PhoneCall, badge: "Voice AI" },
         { name: "Find People", href: "/find-people", icon: Users, sectionHeader: "Tools" },
         { name: "My Profile", href: "/profile", icon: UserIcon },

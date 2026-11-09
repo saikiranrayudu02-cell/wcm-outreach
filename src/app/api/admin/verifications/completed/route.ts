@@ -48,8 +48,19 @@ export async function GET(request: Request) {
     const verificationSheets: any[] = await (prisma as any).verificationSheet.findMany({
       where: whereClause,
       include: {
+        media: true,
         meetingReport: {
           include: {
+            meetingAssignment: {
+              select: {
+                id: true,
+                referenceId: true,
+                meetingDate: true,
+                organizerName: true,
+                status: true,
+                remarks: true,
+              },
+            },
             leader: {
               select: {
                 id: true,
@@ -119,6 +130,10 @@ export async function GET(request: Request) {
         meetingDates: sheet.meetingDates,
         numberOfDays: sheet.numberOfDays,
         expectedAttendance: sheet.expectedAttendance,
+        meetingSession: sheet.meetingSession || null,
+        travelMode: sheet.travelMode || null,
+        travelOtherDetails: sheet.travelOtherDetails || null,
+        stayLocation: sheet.stayLocation || null,
         yearsOfMinistry: sheet.yearsOfMinistry,
         churchMembers: sheet.churchMembers,
         workersLeaders: sheet.workersLeaders,
@@ -129,9 +144,11 @@ export async function GET(request: Request) {
         soundSystem: sheet.soundSystem,
         accommodationTeam: sheet.accommodationTeam,
         volunteerSupport: sheet.volunteerSupport,
+        media: sheet.media || [],
         submittedAt: sheet.submittedAt,
         approvedAt: sheet.approvedAt || sheet.meetingReport.updatedAt,
         leader: sheet.meetingReport.leader,
+        meetingAssignment: sheet.meetingReport.meetingAssignment || null,
         latestCallAttempt: latestAttempt,
         totalAttempts,
         isEligibleForCall,

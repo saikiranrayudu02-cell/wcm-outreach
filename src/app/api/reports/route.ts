@@ -152,9 +152,16 @@ export async function GET(request: Request) {
             callAnsweredAt: true,
             contactNumber: true,
             meetingDates: true,
+            numberOfDays: true,
+            expectedAttendance: true,
+            meetingSession: true,
+            travelMode: true,
+            travelOtherDetails: true,
+            stayLocation: true,
             submittedAt: true,
             approvedAt: true,
             rejectedAt: true,
+            media: true,
             callAttempts: {
               select: {
                 id: true,
@@ -188,6 +195,7 @@ export async function GET(request: Request) {
             submittedAt: true,
             approvedAt: true,
             rejectedAt: true,
+            media: true,
           },
         },
         auditLogs: {
@@ -255,6 +263,10 @@ export async function GET(request: Request) {
         forwardedBy: forwardedByText,
         lastAuditDetails: lastAudit?.details || null,
         auditLogs: r.auditLogs,
+        verification: sheet,
+        verificationSheet: sheet,
+        report: r.afterMeetingReport,
+        afterMeetingReport: r.afterMeetingReport,
       };
     });
 

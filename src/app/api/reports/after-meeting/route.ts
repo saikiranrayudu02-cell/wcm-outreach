@@ -2,6 +2,53 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { syncEvaluationMedia } from "@/lib/media-sync";
+
+export async function GET(request: Request) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const meetingId = searchParams.get("meetingId") || searchParams.get("id") || searchParams.get("reportId");
+
+    if (!meetingId) {
+      return NextResponse.json({ error: "meetingId parameter is required" }, { status: 400 });
+    }
+
+    const meeting: any = await (prisma as any).meetingReport.findFirst({
+      where: {
+        OR: [{ id: meetingId }, { reportId: meetingId }],
+      },
+      include: {
+        afterMeetingReport: {
+          include: {
+            media: true,
+          },
+        },
+      },
+    });
+
+    if (!meeting || !meeting.afterMeetingReport) {
+      return NextResponse.json({ error: "Evaluation report not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      meetingId: meeting.id,
+      reportId: meeting.reportId,
+      status: meeting.status,
+      afterMeetingReport: meeting.afterMeetingReport,
+    });
+  } catch (err) {
+    console.error("GET /api/reports/after-meeting error:", err);
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -15,16 +62,17 @@ export async function POST(request: Request) {
 
     const user = session.user as any;
     const body = await request.json();
-    const { meetingId, submit = false, ...rData } = body;
+    const { meetingId, submit = false, images, video, videos, media, ...rData } = body;
 
     if (!meetingId) {
       return NextResponse.json({ error: "meetingId is required to associate After-Meeting Evaluation Form with a meeting." }, { status: 400 });
     }
 
-    const meeting = await prisma.meetingReport.findFirst({
+    const isPrivileged = ["ADMIN", "STATE_LEADER", "ZONE_LEADER"].includes(user.role);
+    const meeting: any = await (prisma as any).meetingReport.findFirst({
       where: {
         OR: [{ id: meetingId }, { reportId: meetingId }],
-        leaderId: user.role === "ADMIN" ? undefined : user.id,
+        leaderId: isPrivileged ? undefined : user.id,
       },
       include: {
         verificationSheet: true,
@@ -43,7 +91,44 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    const updatedRecord = await prisma.afterMeetingReport.upsert({
+    // Process evaluation media (Images + Video)
+    let imageList = Array.isArray(images) ? images : [];
+    let videoList = Array.isArray(videos) ? videos : video ? [video] : [];
+
+    if (Array.isArray(media)) {
+      if (imageList.length === 0) imageList = media.filter((m: any) => m.mediaType === "IMAGE" || !m.mediaType);
+      if (videoList.length === 0) videoList = media.filter((m: any) => m.mediaType === "VIDEO");
+    }
+
+    // Requirements validation when submitting:
+    if (submit) {
+      if (imageList.length < 1) {
+        return NextResponse.json(
+          { error: "Evaluation Images required: Please upload at least 1 image (up to 5)." },
+          { status: 400 }
+        );
+      }
+      if (videoList.length < 1) {
+        return NextResponse.json(
+          { error: "Evaluation Video required: Please upload at least 1 video." },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (imageList.length > 5) {
+      return NextResponse.json(
+        { error: "Maximum of 5 Evaluation Images allowed." },
+        { status: 400 }
+      );
+    }
+
+    const combinedMedia = [
+      ...imageList.map((img: any) => ({ ...img, mediaType: "IMAGE" as const })),
+      ...videoList.map((vid: any) => ({ ...vid, mediaType: "VIDEO" as const })),
+    ];
+
+    const updatedRecord: any = await (prisma as any).afterMeetingReport.upsert({
       where: { meetingReportId: meeting.id },
       create: {
         meetingReportId: meeting.id,
@@ -84,12 +169,32 @@ export async function POST(request: Request) {
       },
     });
 
-    await prisma.reportAuditLog.create({
+    // Synchronize Evaluation Media (Images + Video)
+    if (combinedMedia && (combinedMedia.length > 0 || body.images !== undefined || body.video !== undefined || body.media !== undefined)) {
+      try {
+        await syncEvaluationMedia(updatedRecord.id, combinedMedia);
+      } catch (mediaErr) {
+        console.warn("Evaluation media sync warning:", mediaErr);
+      }
+    }
+
+    if (submit) {
+      await (prisma as any).meetingReport.update({
+        where: { id: meeting.id },
+        data: {
+          status: "SUBMITTED",
+          submittedAt: new Date(),
+        },
+      });
+    }
+
+    const actorName = user.username || user.name || "User";
+    await (prisma as any).reportAuditLog.create({
       data: {
         meetingReportId: meeting.id,
         actorId: user.id,
         action: submit ? "EVALUATION_SUBMITTED" : "EVALUATION_SAVED",
-        details: submit ? "After-Meeting Evaluation Form submitted for review" : "After-Meeting Evaluation Form draft saved",
+        details: submit ? `After-Meeting Evaluation Form submitted for review by ${actorName}` : `After-Meeting Evaluation Form draft saved by ${actorName}`,
         formType: "EVALUATION",
       },
     });

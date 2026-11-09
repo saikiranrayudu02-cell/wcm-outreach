@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { 
-  FileText, CalendarCheck, Plus, Bell, Eye, Pencil, X, Loader2, Trash2, BarChart3, Inbox
+  FileText, CalendarCheck, Plus, Bell, Eye, Pencil, X, Loader2, Trash2, BarChart3, Inbox, Calendar as CalendarIcon
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useUIStore } from "@/store/ui-store";
@@ -13,12 +13,13 @@ import { toast } from "sonner";
 import { FormStatusBadge } from "@/components/form-status-badge";
 import { FormTrackingTable } from "@/components/form-tracking-table";
 import { MonthlySummary } from "@/components/monthly-summary";
+import { CompletedVerificationsCalendar } from "@/components/completed-verifications-calendar";
 
 export default function CoordinatorDashboardPage() {
   const { user, language } = useUIStore();
   const router = useRouter();
   const [username, setUsername] = useState("Coordinator");
-  const [dashboardTab, setDashboardTab] = useState<"reports" | "analytics">("reports");
+  const [dashboardTab, setDashboardTab] = useState<"reports" | "calendar" | "analytics">("reports");
   
   // Announcements
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -28,6 +29,42 @@ export default function CoordinatorDashboardPage() {
   const [reports, setReports] = useState<any[]>([]);
   const [reportsLoading, setReportsLoading] = useState(true);
   const [creatingReport, setCreatingReport] = useState(false);
+
+  // Mapped verification records for Calendar View
+  const calendarVerifications = React.useMemo(() => {
+    return reports
+      .filter((r) => r.verificationSheet)
+      .map((r) => ({
+        id: r.verificationSheet.id,
+        meetingReportId: r.id,
+        reportId: r.reportId,
+        reportTitle: r.title,
+        status: r.verificationSheet.status,
+        convenerName: r.verificationSheet.convenerName,
+        churchMinistryName: r.verificationSheet.churchMinistryName,
+        stateDistrictCity: r.verificationSheet.stateDistrictCity,
+        contactNumber: r.verificationSheet.contactNumber,
+        formattedPhone: r.verificationSheet.contactNumber,
+        meetingDates: r.verificationSheet.meetingDates,
+        numberOfDays: r.verificationSheet.numberOfDays,
+        expectedAttendance: r.verificationSheet.expectedAttendance,
+        meetingSession: r.verificationSheet.meetingSession,
+        travelMode: r.verificationSheet.travelMode,
+        travelOtherDetails: r.verificationSheet.travelOtherDetails,
+        stayLocation: r.verificationSheet.stayLocation,
+        yearsOfMinistry: r.verificationSheet.yearsOfMinistry,
+        churchMembers: r.verificationSheet.churchMembers,
+        workersLeaders: r.verificationSheet.workersLeaders,
+        meetingHallStage: r.verificationSheet.meetingHallStage,
+        soundSystem: r.verificationSheet.soundSystem,
+        accommodationTeam: r.verificationSheet.accommodationTeam,
+        volunteerSupport: r.verificationSheet.volunteerSupport,
+        submittedAt: r.verificationSheet.submittedAt,
+        approvedAt: r.verificationSheet.approvedAt,
+        latestCallAttempt: r.verificationSheet.callAttempts?.[0] || null,
+        totalAttempts: r.verificationSheet.callAttempts?.length || 0,
+      }));
+  }, [reports]);
 
   const fetchReports = async () => {
     setReportsLoading(true);
@@ -272,6 +309,18 @@ export default function CoordinatorDashboardPage() {
           </button>
           <button
             type="button"
+            onClick={() => setDashboardTab("calendar")}
+            className={`flex items-center gap-2 px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
+              dashboardTab === "calendar"
+                ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-xs font-black border border-slate-200 dark:border-indigo-500"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <CalendarIcon className="h-4 w-4" />
+            Meetings Calendar
+          </button>
+          <button
+            type="button"
             onClick={() => setDashboardTab("analytics")}
             className={`flex items-center gap-2 px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
               dashboardTab === "analytics"
@@ -300,7 +349,18 @@ export default function CoordinatorDashboardPage() {
           </div>
         )}
 
-        {/* Tab 2: Monthly Summary & Charts */}
+        {/* Tab 2: Meetings Calendar View */}
+        {dashboardTab === "calendar" && (
+          <div className="space-y-4 animate-fadeIn text-left">
+            <CompletedVerificationsCalendar
+              verifications={calendarVerifications}
+              loading={reportsLoading}
+              canEdit={true}
+            />
+          </div>
+        )}
+
+        {/* Tab 3: Monthly Summary & Charts */}
         {dashboardTab === "analytics" && (
           <div className="glass-card rounded-2xl text-left p-4 sm:p-6 animate-fadeIn">
             <MonthlySummary role="COORDINATOR" user={user} language={language} />

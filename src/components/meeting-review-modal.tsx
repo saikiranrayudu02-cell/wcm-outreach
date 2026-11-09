@@ -6,6 +6,7 @@ import {
   ArrowUpRight, AlertCircle, Loader2, Send, MessageSquare 
 } from "lucide-react";
 import { toast } from "sonner";
+import { MediaViewer } from "@/components/media-viewer";
 import { FormStatusBadge } from "@/components/form-status-badge";
 
 interface MeetingReviewModalProps {
@@ -261,6 +262,25 @@ export function MeetingReviewModal({
                             <span className="text-slate-400 uppercase text-[9px] font-bold block mb-0.5">Expected Attendance</span>
                             <p className="font-bold text-emerald-400 text-sm">{report.verification.expectedAttendance || 0} People</p>
                           </div>
+                          <div>
+                            <span className="text-slate-400 uppercase text-[9px] font-bold block mb-0.5">Meeting Session</span>
+                            <p className="font-bold text-amber-400 text-xs">
+                              {report.verification.meetingSession || "Not Specified"}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 uppercase text-[9px] font-bold block mb-0.5">Travel Mode</span>
+                            <p className="font-semibold text-slate-200 text-xs">
+                              {report.verification.travelMode || "Not Specified"}
+                              {report.verification.travelMode === "Other" && report.verification.travelOtherDetails ? ` (${report.verification.travelOtherDetails})` : ""}
+                            </p>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <span className="text-slate-400 uppercase text-[9px] font-bold block mb-0.5">Stay Location</span>
+                            <p className="font-semibold text-indigo-300 text-xs">
+                              {report.verification.stayLocation || "Not Specified"}
+                            </p>
+                          </div>
                         </div>
                       </div>
 
@@ -337,6 +357,17 @@ export function MeetingReviewModal({
                             <p className="font-semibold text-slate-200">{report.verification.volunteerSupport || "N/A"}</p>
                           </div>
                         </div>
+                      </div>
+
+                      {/* Verification Images Display */}
+                      <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+                        <h5 className="text-[11px] font-black uppercase tracking-wider text-indigo-300 border-b border-white/10 pb-1.5">
+                          5. Verification Images
+                        </h5>
+                        <MediaViewer
+                          media={report.verification.media}
+                          kind="IMAGES"
+                        />
                       </div>
                     </div>
                   ) : (
@@ -668,6 +699,17 @@ export function MeetingReviewModal({
                             </p>
                           </div>
                         </div>
+                      </div>
+
+                      {/* Evaluation Media (Images & Video) Display */}
+                      <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+                        <h5 className="text-[11px] font-black uppercase tracking-wider text-indigo-300 border-b border-white/10 pb-1.5">
+                          5. Evaluation Media (Images & Video)
+                        </h5>
+                        <MediaViewer
+                          media={report.report.media || report.afterMeetingReport?.media}
+                          kind="ALL"
+                        />
                       </div>
                     </div>
                   ) : (

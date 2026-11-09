@@ -8,6 +8,8 @@ import {
   Loader2, AlertCircle, Lock, CheckCircle2, Clock
 } from "lucide-react";
 import { toast } from "sonner";
+import { MediaUploader } from "@/components/media-uploader";
+import { MediaItemInput } from "@/lib/media-sync";
 import { useUIStore } from "@/store/ui-store";
 import { translate } from "@/lib/translations";
 import { FormStatusBadge } from "@/components/form-status-badge";
@@ -38,6 +40,10 @@ export default function MeetingReportWizardPage() {
     meetingDates: "",
     numberOfDays: 1,
     expectedAttendance: 100,
+    meetingSession: "Morning",
+    travelMode: "Car",
+    travelOtherDetails: "",
+    stayLocation: "",
     yearsOfMinistry: 0,
     churchMembers: 0,
     workersLeaders: 0,
@@ -79,6 +85,11 @@ export default function MeetingReportWizardPage() {
     followingWcmMembersCount: 0,
   });
 
+  // Media states for Verification & Evaluation
+  const [vImages, setVImages] = useState<MediaItemInput[]>([]);
+  const [rImages, setRImages] = useState<MediaItemInput[]>([]);
+  const [rVideo, setRVideo] = useState<MediaItemInput[]>([]);
+
   const fetchReport = async () => {
     try {
       const res = await fetch(`/api/reports/${reportId}`);
@@ -95,6 +106,10 @@ export default function MeetingReportWizardPage() {
 
       if (data.verification) {
         setVForm((prev) => ({ ...prev, ...data.verification }));
+        if (data.verification.media) {
+          const imgs = data.verification.media.filter((m: any) => m.mediaType === "IMAGE" || !m.mediaType);
+          setVImages(imgs);
+        }
       }
       if (data.attendance) {
         const dateStr = data.attendance.date 
@@ -107,6 +122,12 @@ export default function MeetingReportWizardPage() {
           ? new Date(data.report.submissionDate).toISOString().split("T")[0]
           : new Date().toISOString().split("T")[0];
         setRForm((prev) => ({ ...prev, ...data.report, submissionDate: subDateStr }));
+        if (data.report.media) {
+          const imgs = data.report.media.filter((m: any) => m.mediaType === "IMAGE" || (!m.mediaType && (m.mimeType.startsWith("image/") || ["jpg", "jpeg", "png", "webp"].some((ext: string) => m.fileName.toLowerCase().endsWith(ext)))));
+          const vids = data.report.media.filter((m: any) => m.mediaType === "VIDEO" || (!m.mediaType && (m.mimeType.startsWith("video/") || ["mp4", "mov", "webm"].some((ext: string) => m.fileName.toLowerCase().endsWith(ext)))));
+          setRImages(imgs);
+          setRVideo(vids);
+        }
       }
     } catch (err) {
       toast.error("Failed to load meeting forms");
@@ -207,9 +228,9 @@ export default function MeetingReportWizardPage() {
     setSaving(true);
     try {
       const payload: any = {};
-      if (formType === "VERIFICATION") payload.verification = vForm;
+      if (formType === "VERIFICATION") payload.verification = { ...vForm, images: vImages };
       if (formType === "ATTENDANCE") payload.attendance = aForm;
-      if (formType === "EVALUATION") payload.report = rForm;
+      if (formType === "EVALUATION") payload.report = { ...rForm, images: rImages, videos: rVideo };
 
       const res = await fetch(`/api/reports/${reportId}`, {
         method: "PUT",
@@ -233,26 +254,42 @@ export default function MeetingReportWizardPage() {
 
   // Submit specific form
   const handleSubmitForm = async (formType: "VERIFICATION" | "ATTENDANCE" | "EVALUATION") => {
-    if (formType === "VERIFICATION" && !checkVComplete()) {
-      toast.error("Please fill all required Verification Form fields.");
-      return;
+    if (formType === "VERIFICATION") {
+      if (!checkVComplete()) {
+        toast.error("Please fill all required Verification Form fields.");
+        return;
+      }
+      if (vImages.length < 1) {
+        toast.error("Verification Images required: Please upload at least 1 image (up to 5).");
+        return;
+      }
     }
     if (formType === "ATTENDANCE" && !checkAComplete()) {
       toast.error("Please fill all required Attendance Form fields.");
       return;
     }
-    if (formType === "EVALUATION" && !checkRComplete()) {
-      toast.error("Please fill all required After-Meeting Evaluation fields.");
-      return;
+    if (formType === "EVALUATION") {
+      if (!checkRComplete()) {
+        toast.error("Please fill all required After-Meeting Evaluation fields.");
+        return;
+      }
+      if (rImages.length < 1) {
+        toast.error("Evaluation Images required: Please upload at least 1 image (up to 5).");
+        return;
+      }
+      if (rVideo.length < 1) {
+        toast.error("Evaluation Video required: Please upload at least 1 video.");
+        return;
+      }
     }
 
     setSubmittingForm(formType);
     try {
       // 1. Auto save draft first
       const payload: any = {};
-      if (formType === "VERIFICATION") payload.verification = vForm;
+      if (formType === "VERIFICATION") payload.verification = { ...vForm, images: vImages };
       if (formType === "ATTENDANCE") payload.attendance = aForm;
-      if (formType === "EVALUATION") payload.report = rForm;
+      if (formType === "EVALUATION") payload.report = { ...rForm, images: rImages, videos: rVideo };
 
       const saveRes = await fetch(`/api/reports/${reportId}`, {
         method: "PUT",
@@ -292,6 +329,14 @@ export default function MeetingReportWizardPage() {
       toast.error("Please fill all required fields in both Attendance and Evaluation forms.");
       return;
     }
+    if (rImages.length < 1) {
+      toast.error("Evaluation Images required: Please upload at least 1 image (up to 5).");
+      return;
+    }
+    if (rVideo.length < 1) {
+      toast.error("Evaluation Video required: Please upload at least 1 video.");
+      return;
+    }
 
     setSubmittingForm("BOTH");
     try {
@@ -301,7 +346,7 @@ export default function MeetingReportWizardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           attendance: aForm,
-          report: rForm,
+          report: { ...rForm, images: rImages, videos: rVideo },
         }),
       });
 
@@ -626,6 +671,81 @@ export default function MeetingReportWizardPage() {
                     className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
                   />
                 </div>
+
+                {/* Field 1: Meeting Session */}
+                <div className="md:col-span-2 pt-2 border-t border-white/5">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    Meeting Session / Time of Day *
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {["Morning", "Afternoon", "Evening"].map((sessionOpt) => (
+                      <button
+                        key={sessionOpt}
+                        type="button"
+                        disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
+                        onClick={() => setVForm({ ...vForm, meetingSession: sessionOpt })}
+                        className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                          vForm.meetingSession === sessionOpt
+                            ? "bg-indigo-500/20 border-indigo-400 text-indigo-300 ring-2 ring-indigo-500/20 shadow-xs"
+                            : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
+                        } disabled:opacity-50`}
+                      >
+                        {sessionOpt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Field 2: Travel Mode */}
+                <div className="md:col-span-2">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    Travel Mode *
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    {["Car", "Flight", "Train", "Bus", "Other"].map((modeOpt) => (
+                      <button
+                        key={modeOpt}
+                        type="button"
+                        disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
+                        onClick={() => setVForm({ ...vForm, travelMode: modeOpt })}
+                        className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                          vForm.travelMode === modeOpt
+                            ? "bg-indigo-500/20 border-indigo-400 text-indigo-300 ring-2 ring-indigo-500/20 shadow-xs"
+                            : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
+                        } disabled:opacity-50`}
+                      >
+                        {modeOpt}
+                      </button>
+                    ))}
+                  </div>
+                  {vForm.travelMode === "Other" && (
+                    <div className="mt-2.5">
+                      <input
+                        type="text"
+                        disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
+                        value={vForm.travelOtherDetails || ""}
+                        onChange={(e) => setVForm({ ...vForm, travelOtherDetails: e.target.value })}
+                        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-xs font-semibold placeholder:text-slate-500"
+                        placeholder="Please specify travel details..."
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Field 3: Stay Location */}
+                <div className="md:col-span-2">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    Stay Location *
+                  </label>
+                  <input
+                    type="text"
+                    disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
+                    value={vForm.stayLocation || ""}
+                    onChange={(e) => setVForm({ ...vForm, stayLocation: e.target.value })}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold placeholder:text-slate-500 disabled:opacity-60"
+                    placeholder="Enter hotel name, address or accommodation location"
+                  />
+                </div>
               </div>
 
               <div>
@@ -800,6 +920,21 @@ export default function MeetingReportWizardPage() {
                     </select>
                   </div>
                 </div>
+              </div>
+
+              {/* Verification Images Upload Section */}
+              <div className="md:col-span-2 pt-4 border-t border-white/10">
+                <MediaUploader
+                  category="VERIFICATION_IMAGE"
+                  value={vImages}
+                  onChange={setVImages}
+                  recordId={reportId}
+                  disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
+                  title="Verification Images"
+                  description="Upload a minimum of 1 image and a maximum of 5 images for pre-meeting verification."
+                  minCount={1}
+                  maxCount={5}
+                />
               </div>
             </div>
 
@@ -1336,6 +1471,33 @@ export default function MeetingReportWizardPage() {
                       className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
                     />
                   </div>
+                </div>
+
+                {/* Media Upload Sections: Evaluation Images & Evaluation Video */}
+                <div className="space-y-5 pt-4 border-t border-white/10">
+                  <MediaUploader
+                    category="EVALUATION_IMAGE"
+                    value={rImages}
+                    onChange={setRImages}
+                    recordId={reportId}
+                    disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
+                    title="Evaluation Images"
+                    description="Upload between 1 and 5 photos capturing congregation engagement and ministry outcomes."
+                    minCount={1}
+                    maxCount={5}
+                  />
+
+                  <MediaUploader
+                    category="EVALUATION_VIDEO"
+                    value={rVideo}
+                    onChange={setRVideo}
+                    recordId={reportId}
+                    disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
+                    title="Evaluation Video"
+                    description="Upload an evaluation video (MP4, MOV, WEBM - up to 50MB) with preview playback."
+                    minCount={1}
+                    maxCount={1}
+                  />
                 </div>
 
                 <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">

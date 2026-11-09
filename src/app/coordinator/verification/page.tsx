@@ -6,8 +6,14 @@ import { useForm } from "react-hook-form";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useUIStore } from "@/store/ui-store";
 import { translate } from "@/lib/translations";
-import { ArrowLeft, ArrowRight, Save, ClipboardList, CheckCircle } from "lucide-react";
+import { 
+  ArrowLeft, ArrowRight, Save, ClipboardList, CheckCircle, 
+  Sun, Sunrise, Sunset, Moon, Car, Plane, Train, Bus, Navigation, Hotel, MapPin, Clock
+} from "lucide-react";
 import { toast } from "sonner";
+import { MediaUploader } from "@/components/media-uploader";
+import { MediaItemInput } from "@/lib/media-sync";
+import { PersonSearchSelect, PersonValue } from "@/components/person-search-select";
 
 interface VerificationFormInput {
   // Section 1
@@ -18,6 +24,11 @@ interface VerificationFormInput {
   meetingDates: string;
   numberOfDays: number;
   expectedAttendance: number;
+  // New Logistical Fields
+  meetingSession: "Morning" | "Afternoon" | "Evening";
+  travelMode: "Car" | "Flight" | "Train" | "Bus" | "Other";
+  travelOtherDetails?: string;
+  stayLocation: string;
   // Section 2
   yearsOfMinistry: number;
   churchMembers: number;
@@ -43,12 +54,17 @@ export default function VerificationPage() {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
     trigger,
   } = useForm<VerificationFormInput>({
     defaultValues: {
       numberOfDays: 1,
       expectedAttendance: 100,
+      meetingSession: "Morning",
+      travelMode: "Car",
+      travelOtherDetails: "",
+      stayLocation: "",
       yearsOfMinistry: 0,
       churchMembers: 0,
       workersLeaders: 0,
@@ -62,14 +78,37 @@ export default function VerificationPage() {
     },
   });
 
+  const selectedSession = watch("meetingSession");
+  const selectedTravelMode = watch("travelMode");
+
+  const [arrangedBy, setArrangedBy] = useState<PersonValue>({
+    personId: null,
+    name: "",
+    phoneNumber: "",
+    notes: "",
+  });
+  const [arrangedByError, setArrangedByError] = useState("");
+
   const nextStep = async () => {
     // Validate fields for current step before moving forward
     let fieldsToValidate: any[] = [];
     if (step === 1) {
+      if (!arrangedBy.name.trim()) {
+        setArrangedByError("Person Name for Meeting Arranged By / Referred By is required");
+        toast.error("Please enter who arranged or referred this meeting.");
+        return;
+      } else {
+        setArrangedByError("");
+      }
+
       fieldsToValidate = [
         "convenerName", "churchMinistryName", "stateDistrictCity", 
-        "contactNumber", "meetingDates", "numberOfDays", "expectedAttendance"
+        "contactNumber", "meetingDates", "numberOfDays", "expectedAttendance",
+        "meetingSession", "travelMode", "stayLocation"
       ];
+      if (selectedTravelMode === "Other") {
+        fieldsToValidate.push("travelOtherDetails");
+      }
     } else if (step === 2) {
       fieldsToValidate = ["yearsOfMinistry", "churchMembers", "workersLeaders"];
     } else if (step === 3) {
@@ -89,8 +128,19 @@ export default function VerificationPage() {
   };
 
   const [submitting, setSubmitting] = useState(false);
+  const [verificationImages, setVerificationImages] = useState<MediaItemInput[]>([]);
 
   const saveVerification = async (data: VerificationFormInput, shouldSubmit: boolean) => {
+    if (shouldSubmit && verificationImages.length < 1) {
+      toast.error("Verification Images required: Please upload at least 1 image (up to 5).");
+      return;
+    }
+    if (shouldSubmit && !arrangedBy.name.trim()) {
+      setArrangedByError("Person Name for Meeting Arranged By / Referred By is required");
+      toast.error("Please enter who arranged or referred this meeting.");
+      setStep(1);
+      return;
+    }
     if (shouldSubmit) {
       setSubmitting(true);
     } else {
@@ -99,6 +149,10 @@ export default function VerificationPage() {
     try {
       const payload = {
         ...data,
+        arrangedByPersonId: arrangedBy.personId || null,
+        arrangedByName: arrangedBy.name.trim(),
+        arrangedByPhone: arrangedBy.phoneNumber?.trim() || null,
+        arrangedByNotes: arrangedBy.notes?.trim() || null,
         numberOfDays: Number(data.numberOfDays),
         expectedAttendance: Number(data.expectedAttendance),
         yearsOfMinistry: Number(data.yearsOfMinistry),
@@ -106,6 +160,7 @@ export default function VerificationPage() {
         workersLeaders: Number(data.workersLeaders),
         readWcmBooks: data.readWcmBooks === "true",
         attendedProphetMeeting: data.attendedProphetMeeting === "true",
+        images: verificationImages,
         submit: shouldSubmit,
       };
 
@@ -300,6 +355,129 @@ export default function VerificationPage() {
                   {errors.expectedAttendance && (
                     <span className="text-red-500 text-xs mt-1 block">{errors.expectedAttendance.message}</span>
                   )}
+                </div>
+
+                {/* Field 1: Meeting Session / Time of Day */}
+                <div className="md:col-span-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                    Meeting Session / Time of Day *
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { value: "Morning", label: "Morning", icon: Sunrise, desc: "09:00 AM – 12:00 PM" },
+                      { value: "Afternoon", label: "Afternoon", icon: Sun, desc: "01:00 PM – 04:00 PM" },
+                      { value: "Evening", label: "Evening", icon: Moon, desc: "05:00 PM – 09:00 PM" },
+                    ].map((s) => {
+                      const IconComp = s.icon;
+                      const isSelected = selectedSession === s.value;
+                      return (
+                        <button
+                          key={s.value}
+                          type="button"
+                          onClick={() => setValue("meetingSession", s.value as any, { shouldValidate: true })}
+                          className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer ${
+                            isSelected
+                              ? "bg-indigo-50 dark:bg-indigo-950/40 border-indigo-500 text-indigo-600 dark:text-indigo-400 ring-2 ring-indigo-500/20 shadow-xs"
+                              : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 hover:bg-slate-100"
+                          }`}
+                        >
+                          <IconComp className={`h-5 w-5 mb-1 ${isSelected ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400"}`} />
+                          <span className="font-bold text-xs">{s.label}</span>
+                          <span className="text-[10px] text-slate-400 mt-0.5">{s.desc}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <input type="hidden" {...register("meetingSession", { required: "Meeting Session is required" })} />
+                  {errors.meetingSession && (
+                    <span className="text-red-500 text-xs mt-1 block">{errors.meetingSession.message}</span>
+                  )}
+                </div>
+
+                {/* Field 2: Travel Mode */}
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                    Travel Mode to Location *
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                    {[
+                      { value: "Car", label: "Car", icon: Car },
+                      { value: "Flight", label: "Flight", icon: Plane },
+                      { value: "Train", label: "Train", icon: Train },
+                      { value: "Bus", label: "Bus", icon: Bus },
+                      { value: "Other", label: "Other", icon: Navigation },
+                    ].map((t) => {
+                      const IconComp = t.icon;
+                      const isSelected = selectedTravelMode === t.value;
+                      return (
+                        <button
+                          key={t.value}
+                          type="button"
+                          onClick={() => setValue("travelMode", t.value as any, { shouldValidate: true })}
+                          className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                            isSelected
+                              ? "bg-indigo-50 dark:bg-indigo-950/40 border-indigo-500 text-indigo-600 dark:text-indigo-400 ring-2 ring-indigo-500/20 shadow-xs"
+                              : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 hover:bg-slate-100"
+                          }`}
+                        >
+                          <IconComp className={`h-4 w-4 ${isSelected ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400"}`} />
+                          <span>{t.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <input type="hidden" {...register("travelMode", { required: "Travel Mode is required" })} />
+                  {errors.travelMode && (
+                    <span className="text-red-500 text-xs mt-1 block">{errors.travelMode.message}</span>
+                  )}
+
+                  {/* Other Travel Details text input */}
+                  {selectedTravelMode === "Other" && (
+                    <div className="mt-3 animate-fadeIn">
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+                        Please Specify Travel Details *
+                      </label>
+                      <input
+                        type="text"
+                        {...register("travelOtherDetails", {
+                          required: selectedTravelMode === "Other" ? "Please enter travel details" : false,
+                        })}
+                        className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-4 py-2.5 text-sm text-slate-900 dark:text-white"
+                        placeholder="e.g. Hired Taxi, Bike, Ferry, etc."
+                      />
+                      {errors.travelOtherDetails && (
+                        <span className="text-red-500 text-xs mt-1 block">{errors.travelOtherDetails.message}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Field 3: Stay Location */}
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                    Stay Location *
+                  </label>
+                  <div className="relative">
+                    <Hotel className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <input
+                      type="text"
+                      {...register("stayLocation", { required: "Stay Location is required" })}
+                      className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 pl-10 pr-4 py-2.5 text-sm text-slate-900 dark:text-white"
+                      placeholder="Enter hotel name, address or accommodation location"
+                    />
+                  </div>
+                  {errors.stayLocation && (
+                    <span className="text-red-500 text-xs mt-1 block">{errors.stayLocation.message}</span>
+                  )}
+                </div>
+
+                {/* Field 4: Meeting Arranged By / Referred By (Person-Wise Tracking) */}
+                <div className="md:col-span-2">
+                  <PersonSearchSelect
+                    value={arrangedBy}
+                    onChange={setArrangedBy}
+                    error={arrangedByError}
+                  />
                 </div>
               </div>
             </div>
@@ -537,6 +715,19 @@ export default function VerificationPage() {
                     ))}
                   </div>
                 </div>
+              </div>
+
+              {/* Verification Images Upload Section */}
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                <MediaUploader
+                  category="VERIFICATION_IMAGE"
+                  value={verificationImages}
+                  onChange={setVerificationImages}
+                  title="Verification Images"
+                  description="Upload a minimum of 1 image and a maximum of 5 images for meeting verification."
+                  minCount={1}
+                  maxCount={5}
+                />
               </div>
             </div>
           )}

@@ -102,6 +102,9 @@ model User {
   newAssigneeHistories  MeetingAssignmentHistory[] @relation("NewAssigneeHistory")
   actionByHistories     MeetingAssignmentHistory[] @relation("ActionByHistory")
 
+  createdBookings       MeetingBooking[]      @relation("CreatedBookings")
+  bookingAudits         MeetingBookingAudit[]
+
   @@index([username])
   @@index([role])
   @@index([state])
@@ -244,12 +247,44 @@ model VerificationSheet {
   district               String?       @map("district")
   part                   String?       @map("part")
 
+  // Logistical & Calendar Schedule fields
+  meetingSession         String?       @map("meeting_session") // "Morning" | "Afternoon" | "Evening"
+  travelMode             String?       @map("travel_mode")    // "Car" | "Flight" | "Train" | "Bus" | "Other"
+  travelOtherDetails     String?       @map("travel_other_details")
+  stayLocation           String?       @map("stay_location")
+
+  // Meeting Arranged By / Referred By
+  arrangedByPersonId     String?       @map("arranged_by_person_id")
+  arrangedByPerson       MeetingPerson? @relation(fields: [arrangedByPersonId], references: [id], onDelete: SetNull)
+  arrangedByName         String?       @map("arranged_by_name")
+  arrangedByPhone        String?       @map("arranged_by_phone")
+  arrangedByNotes        String?       @map("arranged_by_notes")
+
+  meetingBookings        MeetingBooking[]
+  media                  VerificationMedia[]
+
   @@index([isCallLocked])
   @@index([state])
   @@index([zone])
   @@index([district])
   @@index([part])
+  @@index([arrangedByPersonId])
   @@map("verification_sheets")
+}
+
+model MeetingPerson {
+  id                 String              @id @default(uuid())
+  name               String              @map("name")
+  phoneNumber        String?             @map("phone_number")
+  notes              String?             @map("notes")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+
+  verificationSheets VerificationSheet[]
+
+  @@index([name])
+  @@index([phoneNumber])
+  @@map("meeting_persons")
 }
 
 model AttendanceRecord {
@@ -298,6 +333,8 @@ model AfterMeetingReport {
   signature                String
   submissionDate           DateTime      @map("submission_date") @db.Date
   followingWcmMembersCount Int           @default(0) @map("following_wcm_members_count")
+
+  media                    EvaluationMedia[]
 
   @@map("after_meeting_reports")
 }
@@ -539,4 +576,93 @@ model OrganizationAuditLog {
   @@index([createdAt])
   @@map("organization_audit_logs")
 }
+
+model MeetingBooking {
+  id                  String               @id @default(uuid())
+  verificationSheetId String?              @map("verification_sheet_id")
+  verificationSheet   VerificationSheet?   @relation(fields: [verificationSheetId], references: [id], onDelete: SetNull)
+  clientName          String               @map("client_name")
+  phoneNumber         String               @map("phone_number")
+  email               String?              @map("email")
+  meetingDate         DateTime             @map("meeting_date")
+  meetingDateStr      String               @map("meeting_date_str") // YYYY-MM-DD
+  meetingCity         String               @map("meeting_city")
+  meetingSession      String               @default("Morning") @map("meeting_session") // "Morning" | "Afternoon" | "Evening"
+  travelMode          String?              @map("travel_mode") // "Car" | "Flight" | "Train" | "Bus" | "Other"
+  travelOtherDetails  String?              @map("travel_other_details")
+  stayLocation        String?              @map("stay_location")
+  additionalNotes     String?              @map("additional_notes")
+  holdReason          String?              @map("hold_reason")
+  priority            String               @default("MEDIUM") @map("priority") // "HIGH" | "MEDIUM" | "LOW"
+  queuePosition       Int                  @default(1) @map("queue_position")
+  status              String               @default("ON_HOLD") @map("status") // "CONFIRMED" | "ON_HOLD" | "CANCELLED"
+  confirmedAt         DateTime?            @map("confirmed_at")
+  cancelledAt         DateTime?            @map("cancelled_at")
+  cancelledReason     String?              @map("cancelled_reason")
+  createdById         String?              @map("created_by_id")
+  createdBy           User?                @relation("CreatedBookings", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+
+  auditLogs           MeetingBookingAudit[]
+
+  @@index([meetingDateStr])
+  @@index([status])
+  @@index([meetingSession])
+  @@index([verificationSheetId])
+  @@map("meeting_bookings")
+}
+
+model MeetingBookingAudit {
+  id               String          @id @default(uuid())
+  meetingBookingId String          @map("meeting_booking_id")
+  meetingBooking   MeetingBooking  @relation(fields: [meetingBookingId], references: [id], onDelete: Cascade)
+  previousStatus   String?         @map("previous_status")
+  newStatus        String          @map("new_status")
+  changedById      String?         @map("changed_by_id")
+  changedBy        User?           @relation(fields: [changedById], references: [id], onDelete: SetNull)
+  reason           String?         @map("reason")
+  createdAt        DateTime        @default(now()) @map("created_at")
+
+  @@index([meetingBookingId])
+  @@index([createdAt])
+  @@map("meeting_booking_audits")
+}
+
+model VerificationMedia {
+  id                  String             @id @default(uuid())
+  verificationSheetId String             @map("verification_sheet_id")
+  verificationSheet   VerificationSheet  @relation(fields: [verificationSheetId], references: [id], onDelete: Cascade)
+  mediaType           String             @default("IMAGE") @map("media_type") // "IMAGE"
+  fileName            String             @map("file_name")
+  storagePath         String             @map("storage_path")
+  fileUrl             String             @map("file_url")
+  fileSize            Int                @map("file_size")
+  mimeType            String             @map("mime_type")
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
+
+  @@index([verificationSheetId])
+  @@map("verification_media")
+}
+
+model EvaluationMedia {
+  id                   String              @id @default(uuid())
+  afterMeetingReportId String              @map("after_meeting_report_id")
+  afterMeetingReport   AfterMeetingReport  @relation(fields: [afterMeetingReportId], references: [id], onDelete: Cascade)
+  mediaType            String              @map("media_type") // "IMAGE" | "VIDEO"
+  fileName             String              @map("file_name")
+  storagePath          String              @map("storage_path")
+  fileUrl              String              @map("file_url")
+  fileSize             Int                 @map("file_size")
+  mimeType             String              @map("mime_type")
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+
+  @@index([afterMeetingReportId])
+  @@index([mediaType])
+  @@map("evaluation_media")
+}
+
+
 

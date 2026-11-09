@@ -27,12 +27,20 @@ export async function POST(
 
     const formType = (body.formType || "").toUpperCase();
 
-    const report = await prisma.meetingReport.findUnique({
+    const report: any = await (prisma as any).meetingReport.findUnique({
       where: { id: reportId },
       include: {
-        verificationSheet: true,
+        verificationSheet: {
+          include: {
+            media: true,
+          },
+        },
         attendanceRecord: true,
-        afterMeetingReport: true,
+        afterMeetingReport: {
+          include: {
+            media: true,
+          },
+        },
       },
     });
 
@@ -110,6 +118,10 @@ export async function POST(
         if (!v.meetingDates?.trim()) errors.push("Meeting Dates is required.");
         if (v.numberOfDays <= 0) errors.push("Number of Days must be greater than 0.");
         if (v.expectedAttendance <= 0) errors.push("Expected Attendance must be greater than 0.");
+        const vImages = (v as any).media?.filter((m: any) => m.mediaType === "IMAGE") || [];
+        if (vImages.length < 1) {
+          errors.push("Verification Images required: Please upload at least 1 image (up to 5).");
+        }
       }
     }
 
@@ -143,6 +155,14 @@ export async function POST(
         if (!r.strengthsObserved?.trim()) errors.push("Strengths Observed is required.");
         if (!r.challengesObserved?.trim()) errors.push("Challenges Observed is required.");
         if (!r.opportunityForWcm?.trim()) errors.push("Opportunity for WCM is required.");
+        const rImages = (r as any).media?.filter((m: any) => m.mediaType === "IMAGE") || [];
+        const rVideos = (r as any).media?.filter((m: any) => m.mediaType === "VIDEO") || [];
+        if (rImages.length < 1) {
+          errors.push("Evaluation Images required: Please upload at least 1 image (up to 5).");
+        }
+        if (rVideos.length < 1) {
+          errors.push("Evaluation Video required: Please upload at least 1 video.");
+        }
       }
     }
 
@@ -152,7 +172,7 @@ export async function POST(
 
     const now = new Date();
 
-    await prisma.$transaction(async (tx) => {
+    await (prisma as any).$transaction(async (tx: any) => {
       // Transition submitted forms
       if (targetForms.includes("VERIFICATION") && report.verificationSheet) {
         await tx.verificationSheet.update({

@@ -1,5 +1,25 @@
 export const translations: Record<string, Record<"en" | "hi" | "te", string>> = {
   // Navigation & Layout
+  "Previous Meeting Preview": {
+    en: "Previous Meeting Preview",
+    hi: "पिछली बैठक पूर्वावलोकन",
+    te: "మునుపటి సమావేశం ప్రివ్యూ"
+  },
+  "History & Tracking": {
+    en: "History & Tracking",
+    hi: "इतिहास और ट्रैकिंग",
+    te: "చరిత్ర మరియు ట్రాకింగ్"
+  },
+  "Calendar": {
+    en: "Calendar",
+    hi: "कैलेंडर",
+    te: "క్యాలెండర్"
+  },
+  "Schedule & Bookings": {
+    en: "Schedule & Bookings",
+    hi: "शेड्यूल और बुकिंग",
+    te: "షెడ్యూల్ మరియు బుకింగ్‌లు"
+  },
   "Dashboard": {
     en: "Dashboard",
     hi: "डैशबोर्ड",
