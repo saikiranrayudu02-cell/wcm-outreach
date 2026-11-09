@@ -52,8 +52,8 @@ export async function GET(request: Request) {
 
     return NextResponse.json(notifications);
   } catch (err) {
-    console.error("GET /api/notifications error:", err);
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+    console.warn("GET /api/notifications error:", err);
+    return NextResponse.json([], { status: 200 });
   }
 }
 
