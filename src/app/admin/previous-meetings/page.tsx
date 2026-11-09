@@ -570,10 +570,10 @@ export default function PreviousMeetingsPage() {
               </div>
 
               {/* Form Navigation Tabs */}
-              <div className="flex border-b border-border/40 px-4 sm:px-6 bg-accent/10 shrink-0">
+              <div className="flex border-b border-border/40 px-3 sm:px-6 bg-accent/10 shrink-0 overflow-x-auto no-scrollbar gap-1 sm:gap-2">
                 <button
                   onClick={() => setActiveFormTab("verification")}
-                  className={`flex items-center gap-2 py-3 px-4 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 py-3 px-3 sm:px-4 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap shrink-0 min-h-11 ${
                     activeFormTab === "verification"
                       ? "border-primary text-primary font-black"
                       : "border-transparent text-foreground/50 hover:text-foreground"
@@ -584,7 +584,7 @@ export default function PreviousMeetingsPage() {
                 </button>
                 <button
                   onClick={() => setActiveFormTab("attendance")}
-                  className={`flex items-center gap-2 py-3 px-4 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 py-3 px-3 sm:px-4 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap shrink-0 min-h-11 ${
                     activeFormTab === "attendance"
                       ? "border-primary text-primary font-black"
                       : "border-transparent text-foreground/50 hover:text-foreground"
@@ -595,7 +595,7 @@ export default function PreviousMeetingsPage() {
                 </button>
                 <button
                   onClick={() => setActiveFormTab("evaluation")}
-                  className={`flex items-center gap-2 py-3 px-4 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 py-3 px-3 sm:px-4 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap shrink-0 min-h-11 ${
                     activeFormTab === "evaluation"
                       ? "border-primary text-primary font-black"
                       : "border-transparent text-foreground/50 hover:text-foreground"

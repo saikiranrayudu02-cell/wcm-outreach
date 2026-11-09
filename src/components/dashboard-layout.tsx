@@ -596,15 +596,15 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             {/* Mobile Collapsible Features Trigger Button */}
             <button
               onClick={() => setMobileFeaturesOpen((prev) => !prev)}
-              className={`md:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer active:scale-95 ${
+              className={`md:hidden flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl border text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer active:scale-95 shrink-0 min-h-9 ${
                 mobileFeaturesOpen
                   ? "bg-indigo-600 text-white border-indigo-500 shadow-sm shadow-indigo-500/25 font-black"
                   : "bg-card/90 border-border/70 text-foreground/80 hover:bg-accent"
               }`}
               title="Toggle Features Panel"
             >
-              <LayoutGrid className="h-3.5 w-3.5 text-indigo-400" />
-              <span>Features</span>
+              <LayoutGrid className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+              <span className="hidden sm:inline">Features</span>
               <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${mobileFeaturesOpen ? "rotate-180" : ""}`} />
             </button>
           </div>

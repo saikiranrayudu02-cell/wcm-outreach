@@ -294,11 +294,11 @@ export default function CoordinatorDashboardPage() {
         </div>
 
         {/* Section View Switcher */}
-        <div className="flex border border-slate-200/80 dark:border-slate-800 bg-slate-100 dark:bg-slate-900/90 p-1.5 rounded-2xl gap-2 w-fit shadow-xs">
+        <div className="flex flex-wrap sm:flex-nowrap overflow-x-auto no-scrollbar border border-slate-200/80 dark:border-slate-800 bg-slate-100 dark:bg-slate-900/90 p-1.5 rounded-2xl gap-1.5 sm:gap-2 w-full sm:w-fit shadow-xs">
           <button
             type="button"
             onClick={() => setDashboardTab("reports")}
-            className={`flex items-center gap-2 px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer whitespace-nowrap min-h-11 ${
               dashboardTab === "reports"
                 ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-xs font-black border border-slate-200 dark:border-indigo-500"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -310,7 +310,7 @@ export default function CoordinatorDashboardPage() {
           <button
             type="button"
             onClick={() => setDashboardTab("calendar")}
-            className={`flex items-center gap-2 px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer whitespace-nowrap min-h-11 ${
               dashboardTab === "calendar"
                 ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-xs font-black border border-slate-200 dark:border-indigo-500"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -322,7 +322,7 @@ export default function CoordinatorDashboardPage() {
           <button
             type="button"
             onClick={() => setDashboardTab("analytics")}
-            className={`flex items-center gap-2 px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer whitespace-nowrap min-h-11 ${
               dashboardTab === "analytics"
                 ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-xs font-black border border-slate-200 dark:border-indigo-500"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"

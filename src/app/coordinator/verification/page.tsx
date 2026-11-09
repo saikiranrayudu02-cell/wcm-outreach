@@ -362,7 +362,7 @@ export default function VerificationPage() {
                   <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
                     Meeting Session / Time of Day *
                   </label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
                     {[
                       { value: "Morning", label: "Morning", icon: Sunrise, desc: "09:00 AM – 12:00 PM" },
                       { value: "Afternoon", label: "Afternoon", icon: Sun, desc: "01:00 PM – 04:00 PM" },
@@ -399,7 +399,7 @@ export default function VerificationPage() {
                   <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
                     Travel Mode to Location *
                   </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-2.5">
                     {[
                       { value: "Car", label: "Car", icon: Car },
                       { value: "Flight", label: "Flight", icon: Plane },

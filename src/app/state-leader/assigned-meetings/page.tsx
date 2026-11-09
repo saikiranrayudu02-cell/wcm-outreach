@@ -116,116 +116,213 @@ function StateLeaderAssignedMeetingsContent() {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 text-slate-400 uppercase tracking-wider text-[10px] font-black">
-                    <th className="px-6 py-4">Reference ID</th>
-                    <th className="px-6 py-4">Person Arranging (Name)</th>
-                    <th className="px-6 py-4">Meeting Date</th>
-                    <th className="px-6 py-4">Location</th>
-                    <th className="px-6 py-4">Assigned By</th>
-                    <th className="px-6 py-4">Assignment Date</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-                  {meetings.map((m) => {
-                    const isPendingDecision = m.status === "ASSIGNED_TO_LEADER" || m.status === "ACCEPTED_BY_LEADER";
-                    const isSelfHandled = m.status === "SELF_HANDLED_BY_LEADER";
-                    const isForwarded = m.status === "FORWARDED_TO_COORDINATOR";
+            <>
+              {/* Mobile Card View (< md) */}
+              <div className="md:hidden space-y-3.5 p-3">
+                {meetings.map((m) => {
+                  const isPendingDecision = m.status === "ASSIGNED_TO_LEADER" || m.status === "ACCEPTED_BY_LEADER";
+                  const isSelfHandled = m.status === "SELF_HANDLED_BY_LEADER";
+                  const isForwarded = m.status === "FORWARDED_TO_COORDINATOR";
 
-                    return (
-                      <tr key={m.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
-                        <td className="px-6 py-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                  return (
+                    <div
+                      key={m.id}
+                      className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-3 text-left"
+                    >
+                      <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                        <span className="font-mono font-bold text-xs text-indigo-600 dark:text-indigo-400">
                           {m.referenceId}
-                        </td>
-                        <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">
+                        </span>
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${getStatusBadge(m.status)}`}>
+                          {m.status?.replace(/_/g, " ")}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1">
+                        <h4 className="font-bold text-sm text-slate-900 dark:text-white">
                           {m.organizerName}
-                        </td>
-                        <td className="px-6 py-4">
-                          {new Date(m.meetingDate).toLocaleDateString([], {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
-                        </td>
-                        <td className="px-6 py-4 font-medium">
+                        </h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
                           {m.district}, {m.state}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="font-semibold text-slate-800 dark:text-white block">
-                            {m.createdBy?.name || "Admin"}
-                          </span>
-                          <span className="text-[10px] text-slate-400 block">Administrator</span>
-                        </td>
-                        <td className="px-6 py-4 text-slate-400 font-mono text-[11px]">
-                          {new Date(m.createdAt).toLocaleDateString([], {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${getStatusBadge(m.status)}`}>
-                            {m.status?.replace(/_/g, " ")}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            {isPendingDecision && (
-                              <button
-                                onClick={() => setSelectedMeetingForAction(m)}
-                                className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider transition-colors shadow-sm cursor-pointer"
-                              >
-                                Take Action
-                              </button>
-                            )}
+                        </p>
+                      </div>
 
-                            {isSelfHandled && (
-                              <button
-                                onClick={async () => {
-                                  if (m.meetingReportId) {
-                                    router.push(`/coordinator/report/${m.meetingReportId}`);
-                                  } else {
-                                    const res = await fetch(`/api/meetings/${m.id}/start-workflow`, { method: "POST" });
-                                    const data = await res.json();
-                                    if (res.ok && data.meetingReportId) {
-                                      router.push(`/coordinator/report/${data.meetingReportId}`);
+                      <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600 dark:text-slate-300 pt-1 border-t border-slate-100 dark:border-slate-800">
+                        <div>
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Meeting Date</span>
+                          <span className="font-semibold">
+                            {new Date(m.meetingDate).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Assigned By</span>
+                          <span className="font-semibold">{m.createdBy?.name || "Admin"}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                        {isPendingDecision && (
+                          <button
+                            onClick={() => setSelectedMeetingForAction(m)}
+                            className="flex-1 inline-flex items-center justify-center py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider transition-colors shadow-sm cursor-pointer min-h-11"
+                          >
+                            Take Action
+                          </button>
+                        )}
+
+                        {isSelfHandled && (
+                          <button
+                            onClick={async () => {
+                              if (m.meetingReportId) {
+                                router.push(`/coordinator/report/${m.meetingReportId}`);
+                              } else {
+                                const res = await fetch(`/api/meetings/${m.id}/start-workflow`, { method: "POST" });
+                                const data = await res.json();
+                                if (res.ok && data.meetingReportId) {
+                                  router.push(`/coordinator/report/${data.meetingReportId}`);
+                                } else {
+                                  toast.error("Failed to open report");
+                                }
+                              }
+                            }}
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase tracking-wider transition-colors shadow-sm cursor-pointer min-h-11"
+                          >
+                            <FileCheck className="h-3.5 w-3.5" />
+                            Open Form
+                          </button>
+                        )}
+
+                        {isForwarded && (
+                          <span className="flex-1 text-[11px] font-bold text-amber-500 bg-amber-500/10 px-2.5 py-2 rounded-xl border border-amber-500/20 text-center">
+                            Assigned to {m.currentAssignee?.name}
+                          </span>
+                        )}
+
+                        <button
+                          onClick={() => setSelectedMeetingForHistory(m)}
+                          className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer min-h-11 min-w-11 flex items-center justify-center shrink-0"
+                          title="View History"
+                        >
+                          <History className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop / Tablet Table View (>= md) */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 text-slate-400 uppercase tracking-wider text-[10px] font-black">
+                      <th className="px-6 py-4">Reference ID</th>
+                      <th className="px-6 py-4">Person Arranging (Name)</th>
+                      <th className="px-6 py-4">Meeting Date</th>
+                      <th className="px-6 py-4">Location</th>
+                      <th className="px-6 py-4">Assigned By</th>
+                      <th className="px-6 py-4">Assignment Date</th>
+                      <th className="px-6 py-4">Status</th>
+                      <th className="px-6 py-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                    {meetings.map((m) => {
+                      const isPendingDecision = m.status === "ASSIGNED_TO_LEADER" || m.status === "ACCEPTED_BY_LEADER";
+                      const isSelfHandled = m.status === "SELF_HANDLED_BY_LEADER";
+                      const isForwarded = m.status === "FORWARDED_TO_COORDINATOR";
+
+                      return (
+                        <tr key={m.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
+                          <td className="px-6 py-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                            {m.referenceId}
+                          </td>
+                          <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">
+                            {m.organizerName}
+                          </td>
+                          <td className="px-6 py-4">
+                            {new Date(m.meetingDate).toLocaleDateString([], {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </td>
+                          <td className="px-6 py-4 font-medium">
+                            {m.district}, {m.state}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="font-semibold text-slate-800 dark:text-white block">
+                              {m.createdBy?.name || "Admin"}
+                            </span>
+                            <span className="text-[10px] text-slate-400 block">Administrator</span>
+                          </td>
+                          <td className="px-6 py-4 text-slate-400 font-mono text-[11px]">
+                            {new Date(m.createdAt).toLocaleDateString([], {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${getStatusBadge(m.status)}`}>
+                              {m.status?.replace(/_/g, " ")}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {isPendingDecision && (
+                                <button
+                                  onClick={() => setSelectedMeetingForAction(m)}
+                                  className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider transition-colors shadow-sm cursor-pointer min-h-9"
+                                >
+                                  Take Action
+                                </button>
+                              )}
+
+                              {isSelfHandled && (
+                                <button
+                                  onClick={async () => {
+                                    if (m.meetingReportId) {
+                                      router.push(`/coordinator/report/${m.meetingReportId}`);
                                     } else {
-                                      toast.error("Failed to open report");
+                                      const res = await fetch(`/api/meetings/${m.id}/start-workflow`, { method: "POST" });
+                                      const data = await res.json();
+                                      if (res.ok && data.meetingReportId) {
+                                        router.push(`/coordinator/report/${data.meetingReportId}`);
+                                      } else {
+                                        toast.error("Failed to open report");
+                                      }
                                     }
-                                  }
-                                }}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase tracking-wider transition-colors shadow-sm cursor-pointer"
+                                  }}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase tracking-wider transition-colors shadow-sm cursor-pointer min-h-9"
+                                >
+                                  <FileCheck className="h-3.5 w-3.5" />
+                                  Open Form
+                                </button>
+                              )}
+
+                              {isForwarded && (
+                                <span className="text-[11px] font-bold text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">
+                                  Assigned to {m.currentAssignee?.name}
+                                </span>
+                              )}
+
+                              <button
+                                onClick={() => setSelectedMeetingForHistory(m)}
+                                className="px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer min-h-9"
+                                title="View History"
                               >
-                                <FileCheck className="h-3.5 w-3.5" />
-                                Open Form
+                                <History className="h-3.5 w-3.5" />
                               </button>
-                            )}
-
-                            {isForwarded && (
-                              <span className="text-[11px] font-bold text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">
-                                Assigned to {m.currentAssignee?.name}
-                              </span>
-                            )}
-
-                            <button
-                              onClick={() => setSelectedMeetingForHistory(m)}
-                              className="px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
-                              title="View History"
-                            >
-                              <History className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
 

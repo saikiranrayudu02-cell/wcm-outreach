@@ -387,15 +387,15 @@ export function MediaUploader({
                     #{idx + 1}
                   </div>
 
-                  {/* Actions overlay */}
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 p-2 backdrop-blur-xs">
+                  {/* Desktop Actions overlay (>= sm) */}
+                  <div className="absolute inset-0 bg-black/60 hidden sm:flex opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center gap-1.5 p-2 backdrop-blur-xs">
                     <button
                       type="button"
                       title="Enlarge Preview"
                       onClick={() => setPreviewItem(img)}
-                      className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer"
+                      className="p-2 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer min-h-9 min-w-9 flex items-center justify-center"
                     >
-                      <Eye className="h-3.5 w-3.5" />
+                      <Eye className="h-4 w-4" />
                     </button>
 
                     {!disabled && (
@@ -405,16 +405,50 @@ export function MediaUploader({
                           title="Replace Image"
                           onClick={() => triggerReplace(idx)}
                           disabled={uploading}
-                          className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer"
+                          className="p-2 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer min-h-9 min-w-9 flex items-center justify-center"
                         >
-                          <RefreshCw className="h-3.5 w-3.5" />
+                          <RefreshCw className="h-4 w-4" />
                         </button>
                         <button
                           type="button"
                           title="Remove Image"
                           onClick={() => handleRemoveItem(idx)}
                           disabled={uploading}
-                          className="p-1.5 rounded-lg bg-rose-500/80 hover:bg-rose-500 text-white transition-colors cursor-pointer"
+                          className="p-2 rounded-lg bg-rose-500/80 hover:bg-rose-500 text-white transition-colors cursor-pointer min-h-9 min-w-9 flex items-center justify-center"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Mobile Direct Touch Actions Bar (< sm) */}
+                  <div className="sm:hidden absolute inset-x-0 bottom-0 bg-black/75 backdrop-blur-xs p-1.5 flex items-center justify-around gap-1 border-t border-white/10 z-10">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewItem(img)}
+                      className="p-1.5 rounded-md bg-white/20 text-white active:bg-white/30 cursor-pointer"
+                      title="Preview"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                    </button>
+                    {!disabled && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => triggerReplace(idx)}
+                          disabled={uploading}
+                          className="p-1.5 rounded-md bg-white/20 text-white active:bg-white/30 cursor-pointer"
+                          title="Replace"
+                        >
+                          <RefreshCw className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveItem(idx)}
+                          disabled={uploading}
+                          className="p-1.5 rounded-md bg-rose-500/80 text-white active:bg-rose-600 cursor-pointer"
+                          title="Delete"
                         >
                           <X className="h-3.5 w-3.5" />
                         </button>

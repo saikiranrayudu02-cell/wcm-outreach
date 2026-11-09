@@ -647,43 +647,43 @@ export function CompletedVerificationsCalendar({
       </div>
 
       {/* 3. CALENDAR HEADER BAR (Section 2) */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 p-4 rounded-2xl border border-border/50 glass-card">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl border border-border/50 glass-card">
         {/* Navigation & Month Title */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1 bg-accent/40 rounded-xl p-1 border border-border/40">
+        <div className="flex flex-wrap items-center justify-between sm:justify-start gap-2.5 sm:gap-3">
+          <div className="flex items-center gap-1 bg-accent/40 rounded-xl p-1 border border-border/40 shrink-0">
             <button
               onClick={handlePrev}
               aria-label="Previous Month"
-              className="p-1.5 rounded-lg hover:bg-card text-foreground/70 hover:text-foreground transition-all cursor-pointer"
+              className="p-1.5 rounded-lg hover:bg-card text-foreground/70 hover:text-foreground transition-all cursor-pointer min-h-9 min-w-9 flex items-center justify-center"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               onClick={handleToday}
-              className="px-2.5 py-1 rounded-lg text-xs font-bold hover:bg-card text-foreground transition-all cursor-pointer"
+              className="px-2.5 py-1 rounded-lg text-xs font-bold hover:bg-card text-foreground transition-all cursor-pointer min-h-9 flex items-center justify-center"
             >
               Today
             </button>
             <button
               onClick={handleNext}
               aria-label="Next Month"
-              className="p-1.5 rounded-lg hover:bg-card text-foreground/70 hover:text-foreground transition-all cursor-pointer"
+              className="p-1.5 rounded-lg hover:bg-card text-foreground/70 hover:text-foreground transition-all cursor-pointer min-h-9 min-w-9 flex items-center justify-center"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
 
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
-              <CalendarIcon className="h-5 w-5" />
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20 shrink-0">
+              <CalendarIcon className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-black text-foreground tracking-tight">
+              <h2 className="text-base sm:text-lg md:text-xl font-black text-foreground tracking-tight">
                 {calendarView === "month" && `${MONTH_NAMES[month]} ${year}`}
                 {calendarView === "week" && `Week of ${MONTH_NAMES[currentWeekDays[0].date.getMonth()]} ${currentWeekDays[0].dayNum}, ${currentWeekDays[0].date.getFullYear()}`}
                 {calendarView === "agenda" && `${MONTH_NAMES[month]} ${year} Agenda`}
               </h2>
-              <p className="text-[11px] text-foreground/50 font-semibold">
+              <p className="text-[10px] sm:text-[11px] text-foreground/50 font-semibold truncate max-w-[280px] sm:max-w-none">
                 {monthlyStats.confirmed} confirmed • {monthlyStats.onHold} on hold • {monthlyStats.totalTravelDays} active days
               </p>
             </div>
@@ -691,21 +691,21 @@ export function CompletedVerificationsCalendar({
         </div>
 
         {/* Controls, Filters & Actions */}
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full xl:w-auto">
           {/* Quick Search */}
-          <div className="relative min-w-44 max-w-56">
+          <div className="relative w-full sm:w-auto sm:min-w-44 sm:max-w-56 flex-1 sm:flex-initial">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground/40" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search client, city, hotel..."
-              className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-border/50 bg-background/80 text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40 font-medium"
+              className="w-full pl-8 pr-3 py-2 sm:py-1.5 text-xs rounded-xl border border-border/50 bg-background/80 text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40 font-medium min-h-10 sm:min-h-9"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground p-1 cursor-pointer"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -713,10 +713,10 @@ export function CompletedVerificationsCalendar({
           </div>
 
           {/* View Switcher: Month | Week | Agenda */}
-          <div className="flex items-center p-1 rounded-xl bg-card border border-border/50 text-xs font-bold shadow-2xs">
+          <div className="flex items-center p-1 rounded-xl bg-card border border-border/50 text-xs font-bold shadow-2xs w-full sm:w-auto justify-between sm:justify-start">
             <button
               onClick={() => setCalendarView("month")}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg transition-all cursor-pointer text-center min-h-9 flex items-center justify-center ${
                 calendarView === "month"
                   ? "bg-primary text-primary-foreground shadow-xs"
                   : "text-foreground/60 hover:text-foreground"
@@ -726,7 +726,7 @@ export function CompletedVerificationsCalendar({
             </button>
             <button
               onClick={() => setCalendarView("week")}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg transition-all cursor-pointer text-center min-h-9 flex items-center justify-center ${
                 calendarView === "week"
                   ? "bg-primary text-primary-foreground shadow-xs"
                   : "text-foreground/60 hover:text-foreground"
@@ -736,7 +736,7 @@ export function CompletedVerificationsCalendar({
             </button>
             <button
               onClick={() => setCalendarView("agenda")}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg transition-all cursor-pointer text-center min-h-9 flex items-center justify-center ${
                 calendarView === "agenda"
                   ? "bg-primary text-primary-foreground shadow-xs"
                   : "text-foreground/60 hover:text-foreground"
@@ -746,37 +746,40 @@ export function CompletedVerificationsCalendar({
             </button>
           </div>
 
-          {/* Status Filter */}
-          <div className="flex items-center gap-1 bg-accent/40 rounded-xl px-2.5 py-1.5 border border-border/40 text-xs">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="bg-transparent text-foreground font-bold focus:outline-none cursor-pointer"
-            >
-              <option value="ALL">All Statuses</option>
-              <option value="CONFIRMED">🟢 Confirmed Only</option>
-              <option value="ON_HOLD">🟠 On Hold Only</option>
-            </select>
-          </div>
+          {/* Status & Session Filters row on mobile */}
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
+            {/* Status Filter */}
+            <div className="flex items-center gap-1 bg-accent/40 rounded-xl px-2.5 py-1.5 border border-border/40 text-xs min-h-10 sm:min-h-9">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="bg-transparent text-foreground font-bold focus:outline-none cursor-pointer w-full text-xs"
+              >
+                <option value="ALL">All Statuses</option>
+                <option value="CONFIRMED">🟢 Confirmed</option>
+                <option value="ON_HOLD">🟠 On Hold</option>
+              </select>
+            </div>
 
-          {/* Session Filter */}
-          <div className="flex items-center gap-1 bg-accent/40 rounded-xl px-2.5 py-1.5 border border-border/40 text-xs">
-            <select
-              value={sessionFilter}
-              onChange={(e) => setSessionFilter(e.target.value as any)}
-              className="bg-transparent text-foreground font-bold focus:outline-none cursor-pointer"
-            >
-              <option value="ALL">All Sessions</option>
-              <option value="Morning">🌅 Morning</option>
-              <option value="Afternoon">☀️ Afternoon</option>
-              <option value="Evening">🌙 Evening</option>
-            </select>
+            {/* Session Filter */}
+            <div className="flex items-center gap-1 bg-accent/40 rounded-xl px-2.5 py-1.5 border border-border/40 text-xs min-h-10 sm:min-h-9">
+              <select
+                value={sessionFilter}
+                onChange={(e) => setSessionFilter(e.target.value as any)}
+                className="bg-transparent text-foreground font-bold focus:outline-none cursor-pointer w-full text-xs"
+              >
+                <option value="ALL">All Sessions</option>
+                <option value="Morning">🌅 Morning</option>
+                <option value="Afternoon">☀️ Afternoon</option>
+                <option value="Evening">🌙 Evening</option>
+              </select>
+            </div>
           </div>
 
           {/* Add to Hold Button */}
           <button
             onClick={() => openAddHoldModal()}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+            className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3.5 py-2 sm:py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs transition-all cursor-pointer min-h-10 sm:min-h-9"
           >
             <Plus className="h-3.5 w-3.5" />
             <span>Add to Hold</span>
@@ -862,26 +865,26 @@ export function CompletedVerificationsCalendar({
                 <div
                   key={dayItem.key}
                   onClick={() => handleDateClick(dayItem.key)}
-                  className={`relative min-h-36 sm:min-h-44 p-1.5 sm:p-2 transition-all group flex flex-col justify-between ${
+                  className={`relative min-h-18 sm:min-h-28 md:min-h-44 p-1 sm:p-2 transition-all group flex flex-col justify-between ${
                     !dayItem.isCurrentMonth
                       ? "bg-accent/5 opacity-40 text-foreground/40"
                       : "text-foreground"
                   } hover:bg-primary/5 cursor-pointer`}
                 >
                   {/* Date Header Row */}
-                  <div className="flex items-center justify-between gap-1 mb-1">
+                  <div className="flex items-center justify-between gap-1 mb-0.5 sm:mb-1">
                     <span
                       className={`inline-flex items-center justify-center text-xs font-black rounded-lg transition-all ${
                         isToday
-                          ? "h-6 w-6 bg-primary text-primary-foreground shadow-xs"
+                          ? "h-5 w-5 sm:h-6 sm:w-6 bg-primary text-primary-foreground shadow-xs"
                           : "h-5 w-5 text-foreground/80 group-hover:text-foreground font-black"
                       }`}
                     >
                       {dayItem.dayNum}
                     </span>
 
-                    {/* Confirmed & Hold Pill Indicators (Section 5) */}
-                    <div className="flex items-center gap-1">
+                    {/* Confirmed & Hold Pill Indicators (Desktop / Tablet) */}
+                    <div className="hidden sm:flex items-center gap-1">
                       {dayData.confirmed.length > 0 && (
                         <span 
                           className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-2xs" 
@@ -903,8 +906,25 @@ export function CompletedVerificationsCalendar({
                     </div>
                   </div>
 
-                  {/* Meeting Cards Preview (Structured for readability - Section 3) */}
-                  <div className="space-y-1.5 flex-1 overflow-hidden">
+                  {/* Mobile Compact Day Indicators (< md) */}
+                  <div className="sm:hidden flex flex-col items-center justify-center gap-1 my-auto py-0.5">
+                    <div className="flex items-center gap-1">
+                      {dayData.confirmed.length > 0 && (
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-2xs" title={`${dayData.confirmed.length} Confirmed`} />
+                      )}
+                      {dayData.hold.length > 0 && (
+                        <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse shadow-2xs" title={`${dayData.hold.length} On Hold`} />
+                      )}
+                    </div>
+                    {totalMeetings > 0 && (
+                      <span className="text-[8px] font-black text-foreground/80 leading-none bg-accent/70 px-1 py-0.5 rounded">
+                        {totalMeetings}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Desktop Meeting Cards Preview (Structured for readability - Section 3) */}
+                  <div className="hidden sm:block space-y-1.5 flex-1 overflow-hidden">
                     {/* Confirmed Meetings (Green themed) */}
                     {dayData.confirmed.slice(0, 2).map((m: any) => (
                       <div
@@ -1284,33 +1304,33 @@ export function CompletedVerificationsCalendar({
             </div>
 
             {/* Modal Tabs */}
-            <div className="flex border-b border-border/40 px-4 sm:px-6 bg-accent/10 shrink-0">
+            <div className="flex border-b border-border/40 px-3 sm:px-6 bg-accent/10 shrink-0 overflow-x-auto no-scrollbar gap-1 sm:gap-2">
               <button
                 onClick={() => setActiveDateModalTab("confirmed")}
-                className={`flex items-center gap-2 py-3 px-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+                className={`flex items-center gap-2 py-3 px-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap shrink-0 min-h-11 ${
                   activeDateModalTab === "confirmed"
                     ? "border-emerald-500 text-emerald-600 dark:text-emerald-400"
                     : "border-transparent text-foreground/50 hover:text-foreground"
                 }`}
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                <span>Confirmed Meetings ({selectedDateData.confirmed.length})</span>
+                <span>Confirmed ({selectedDateData.confirmed.length})</span>
               </button>
               <button
                 onClick={() => setActiveDateModalTab("hold")}
-                className={`flex items-center gap-2 py-3 px-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+                className={`flex items-center gap-2 py-3 px-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap shrink-0 min-h-11 ${
                   activeDateModalTab === "hold"
                     ? "border-amber-500 text-amber-600 dark:text-amber-400"
                     : "border-transparent text-foreground/50 hover:text-foreground"
                 }`}
               >
                 <Clock className="h-3.5 w-3.5" />
-                <span>Hold List / Waitlist ({selectedDateData.hold.length})</span>
+                <span>On Hold / Waitlist ({selectedDateData.hold.length})</span>
               </button>
               {selectedDateData.cancelled.length > 0 && (
                 <button
                   onClick={() => setActiveDateModalTab("cancelled")}
-                  className={`flex items-center gap-2 py-3 px-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 py-3 px-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap shrink-0 min-h-11 ${
                     activeDateModalTab === "cancelled"
                       ? "border-slate-500 text-slate-600 dark:text-slate-400"
                       : "border-transparent text-foreground/50 hover:text-foreground"

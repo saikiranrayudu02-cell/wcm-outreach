@@ -147,96 +147,166 @@ function CoordinatorReceivedMeetingsContent() {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 text-slate-400 uppercase tracking-wider text-[10px] font-black">
-                    <th className="px-6 py-4">Reference ID</th>
-                    <th className="px-6 py-4">Person Arranging (Name)</th>
-                    <th className="px-6 py-4">Meeting Date</th>
-                    <th className="px-6 py-4">Territory</th>
-                    <th className="px-6 py-4">Forwarded By</th>
-                    <th className="px-6 py-4">Received Date</th>
-                    <th className="px-6 py-4">Current Status</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-                  {meetings.map((m) => {
-                    const latestForward = m.assignmentHistory?.find(
-                      (h: any) => h.assignmentAction === "FORWARDED_TO_COORDINATOR"
-                    );
-                    const forwarder = latestForward?.assignedBy || m.originalLeader;
-                    const isStarting = startingMeetingId === m.id;
+            <>
+              {/* Mobile Card View (< md) */}
+              <div className="md:hidden space-y-3.5 p-3">
+                {meetings.map((m) => {
+                  const latestForward = m.assignmentHistory?.find(
+                    (h: any) => h.assignmentAction === "FORWARDED_TO_COORDINATOR"
+                  );
+                  const forwarder = latestForward?.assignedBy || m.originalLeader;
+                  const isStarting = startingMeetingId === m.id;
 
-                    return (
-                      <tr key={m.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
-                        <td className="px-6 py-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                  return (
+                    <div
+                      key={m.id}
+                      className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-3 text-left"
+                    >
+                      <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                        <span className="font-mono font-bold text-xs text-indigo-600 dark:text-indigo-400">
                           {m.referenceId}
-                        </td>
-                        <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">
-                          {m.organizerName}
-                        </td>
-                        <td className="px-6 py-4">
-                          {new Date(m.meetingDate).toLocaleDateString([], {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
-                        </td>
-                        <td className="px-6 py-4 font-medium">
-                          {m.district}, {m.state}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="font-bold text-slate-800 dark:text-white block">
-                            {forwarder?.name || "Regional Leader"}
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-semibold uppercase block">
-                            {formatRoleBadge(forwarder?.role)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-slate-400 font-mono text-[11px]">
-                          {new Date(latestForward?.createdAt || m.updatedAt).toLocaleDateString([], {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${getStatusBadge(m.status)}`}>
-                            {m.status?.replace(/_/g, " ")}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleStartOrOpenMeeting(m)}
-                              disabled={isStarting}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider transition-colors shadow-sm cursor-pointer"
-                            >
-                              {isStarting ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              ) : (
-                                <FileCheck className="h-3.5 w-3.5" />
-                              )}
-                              {m.meetingReportId ? "Open Verification" : "Start Meeting"}
-                            </button>
+                        </span>
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${getStatusBadge(m.status)}`}>
+                          {m.status?.replace(/_/g, " ")}
+                        </span>
+                      </div>
 
-                            <button
-                              onClick={() => setSelectedMeetingForHistory(m)}
-                              className="px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
-                              title="View History"
-                            >
-                              <History className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                      <div className="space-y-1">
+                        <h4 className="font-bold text-sm text-slate-900 dark:text-white">
+                          {m.organizerName}
+                        </h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {m.district}, {m.state}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600 dark:text-slate-300 pt-1 border-t border-slate-100 dark:border-slate-800">
+                        <div>
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Meeting Date</span>
+                          <span className="font-semibold">
+                            {new Date(m.meetingDate).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Forwarded By</span>
+                          <span className="font-semibold truncate block">{forwarder?.name || "Regional Leader"}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <button
+                          onClick={() => handleStartOrOpenMeeting(m)}
+                          disabled={isStarting}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider transition-colors shadow-sm cursor-pointer min-h-11 disabled:opacity-50"
+                        >
+                          {isStarting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileCheck className="h-3.5 w-3.5" />}
+                          <span>{m.meetingReportId ? "Open Verification" : "Start Meeting"}</span>
+                        </button>
+                        <button
+                          onClick={() => setSelectedMeetingForHistory(m)}
+                          className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer min-h-11 min-w-11 flex items-center justify-center shrink-0"
+                          title="View History"
+                        >
+                          <History className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop / Tablet Table View (>= md) */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 text-slate-400 uppercase tracking-wider text-[10px] font-black">
+                      <th className="px-6 py-4">Reference ID</th>
+                      <th className="px-6 py-4">Person Arranging (Name)</th>
+                      <th className="px-6 py-4">Meeting Date</th>
+                      <th className="px-6 py-4">Territory</th>
+                      <th className="px-6 py-4">Forwarded By</th>
+                      <th className="px-6 py-4">Received Date</th>
+                      <th className="px-6 py-4">Current Status</th>
+                      <th className="px-6 py-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                    {meetings.map((m) => {
+                      const latestForward = m.assignmentHistory?.find(
+                        (h: any) => h.assignmentAction === "FORWARDED_TO_COORDINATOR"
+                      );
+                      const forwarder = latestForward?.assignedBy || m.originalLeader;
+                      const isStarting = startingMeetingId === m.id;
+
+                      return (
+                        <tr key={m.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
+                          <td className="px-6 py-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                            {m.referenceId}
+                          </td>
+                          <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">
+                            {m.organizerName}
+                          </td>
+                          <td className="px-6 py-4">
+                            {new Date(m.meetingDate).toLocaleDateString([], {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </td>
+                          <td className="px-6 py-4 font-medium">
+                            {m.district}, {m.state}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="font-bold text-slate-800 dark:text-white block">
+                              {forwarder?.name || "Regional Leader"}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-semibold uppercase block">
+                              {formatRoleBadge(forwarder?.role)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-slate-400 font-mono text-[11px]">
+                            {new Date(latestForward?.createdAt || m.updatedAt).toLocaleDateString([], {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${getStatusBadge(m.status)}`}>
+                              {m.status?.replace(/_/g, " ")}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleStartOrOpenMeeting(m)}
+                                disabled={isStarting}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider transition-colors shadow-sm cursor-pointer min-h-9"
+                              >
+                                {isStarting ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <FileCheck className="h-3.5 w-3.5" />
+                                )}
+                                {m.meetingReportId ? "Open Verification" : "Start Meeting"}
+                              </button>
+
+                              <button
+                                onClick={() => setSelectedMeetingForHistory(m)}
+                                className="px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer min-h-9"
+                                title="View History"
+                              >
+                                <History className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
 
