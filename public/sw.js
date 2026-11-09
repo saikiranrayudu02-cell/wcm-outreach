@@ -1,9 +1,11 @@
-const CACHE_NAME = 'wcm-outreach-pwa-v3';
+const CACHE_NAME = 'wcm-outreach-pwa-v4';
 const OFFLINE_URL = '/offline.html';
 
 const PRECACHE_ASSETS = [
   OFFLINE_URL,
   '/manifest.json',
+  '/wcm-brand-banner.jpg',
+  '/wcm-logo.png',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
   '/icons/icon-maskable-192x192.png',

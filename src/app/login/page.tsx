@@ -103,21 +103,24 @@ export default function LoginPage() {
       {/* Login Card */}
       <div className="relative w-full max-w-105 space-y-6 animate-slideUp z-10">
         {/* Logo section */}
-        <div className="flex flex-col items-center text-center mb-2">
-          <div className="relative animate-float">
-            <div className="absolute -inset-3 rounded-3xl opacity-30" 
-              style={{ background: "radial-gradient(circle, rgba(129,140,248,0.3) 0%, transparent 70%)", filter: "blur(16px)" }} 
+        <div className="flex flex-col items-center text-center mb-3">
+          <div className="relative animate-float w-full max-w-72 sm:max-w-80">
+            <div className="absolute -inset-2 rounded-2xl opacity-40" 
+              style={{ background: "radial-gradient(circle, rgba(129,140,248,0.35) 0%, transparent 70%)", filter: "blur(16px)" }} 
             />
-            <div className="relative rounded-3xl p-4 backdrop-blur-sm border border-white/10"
-              style={{ background: "rgba(255,255,255,0.05)" }}
-            >
-              <img src="/wcm-logo.png" alt="WCM Logo" className="h-16 w-auto object-contain" style={{ filter: "drop-shadow(0 4px 12px rgba(129,140,248,0.3))" }} />
+            <div className="relative rounded-2xl p-2 backdrop-blur-md border border-white/15 bg-black/60 shadow-2xl overflow-hidden">
+              <img 
+                src="/wcm-brand-banner.jpg" 
+                alt="WCM Ministry Outreach" 
+                className="w-full h-auto object-contain rounded-xl" 
+                style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.5))" }} 
+              />
             </div>
           </div>
-          <h2 className="mt-6 text-2xl font-black tracking-wider text-white uppercase">
+          <h2 className="mt-4 text-xl sm:text-2xl font-black tracking-wider text-white uppercase">
             WCM Ministry
           </h2>
-          <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-300/50">
+          <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-300/60">
             Reporting & Outreach Platform
           </p>
         </div>
