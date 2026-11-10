@@ -25,7 +25,7 @@ function getOptimizedDatabaseUrl(): string | undefined {
     url = url.replace(".pooler.supabase.com:5432", ".pooler.supabase.com:6543");
   }
 
-  // Ensure essential query parameters for PgBouncer & Serverless
+  // Ensure essential query parameters for PgBouncer & Serverless/Local dev resilience
   if (url.includes(".pooler.supabase.com")) {
     const [base, query = ""] = url.split("?");
     const params = new URLSearchParams(query);
@@ -35,8 +35,17 @@ function getOptimizedDatabaseUrl(): string | undefined {
     if (!params.has("pgbouncer")) {
       params.set("pgbouncer", "true");
     }
-    if (!params.has("connection_limit")) {
-      params.set("connection_limit", "1");
+    // Allow up to 10 connections to prevent queuing bottlenecks in dev and concurrent serverless routes
+    if (!params.has("connection_limit") || params.get("connection_limit") === "1") {
+      params.set("connection_limit", "10");
+    }
+    // Increase connect_timeout from default 5s to 30s so network latency/TLS negotiation never aborts prematurely
+    if (!params.has("connect_timeout")) {
+      params.set("connect_timeout", "30");
+    }
+    // Set pool_timeout to 30s to allow graceful waiting during brief network bursts
+    if (!params.has("pool_timeout")) {
+      params.set("pool_timeout", "30");
     }
     url = `${base}?${params.toString()}`;
   }
