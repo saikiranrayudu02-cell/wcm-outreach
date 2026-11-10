@@ -11,6 +11,11 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: true,
   },
+  plugins: {
+    SystemBars: {
+      insetsHandling: 'css',
+    },
+  },
   ios: {
     allowsLinkPreview: false,
     scrollEnabled: true,

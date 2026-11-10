@@ -220,7 +220,7 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
 
       {/* Installation Success Notification Toast */}
       {installedSuccess && (
-        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-2xl text-xs font-bold animate-fadeIn">
+        <div className="fixed top-[max(1.25rem,calc(0.75rem+env(safe-area-inset-top,0px)))] left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-2xl text-xs font-bold animate-fadeIn">
           <CheckCircle2 className="h-5 w-5 shrink-0" />
           <span>WCM Outreach installed successfully to your home screen!</span>
         </div>
@@ -228,7 +228,7 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
 
       {/* Floating App Download / Install Prompt Box (Mobile & Desktop) */}
       {!isStandalone && showBanner && (
-        <div className="fixed bottom-4 left-3 right-3 sm:bottom-6 sm:left-auto sm:right-6 sm:w-96 z-50 bg-white dark:bg-slate-900 border border-slate-200/95 dark:border-slate-800 rounded-2xl p-4 shadow-[0_16px_50px_rgba(0,0,0,0.28)] animate-sheetSlideUp backdrop-blur-md">
+        <div className="fixed bottom-[max(1rem,calc(0.5rem+env(safe-area-inset-bottom,0px)))] left-3 right-3 sm:bottom-6 sm:left-auto sm:right-6 sm:w-96 z-50 bg-white dark:bg-slate-900 border border-slate-200/95 dark:border-slate-800 rounded-2xl p-4 shadow-[0_16px_50px_rgba(0,0,0,0.28)] animate-sheetSlideUp backdrop-blur-md">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
               <img

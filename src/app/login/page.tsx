@@ -87,7 +87,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center px-4 py-8 sm:px-6 font-sans bg-background text-foreground overflow-hidden">
+    <div className="relative flex min-h-screen items-center justify-center px-4 sm:px-6 pt-[max(2rem,calc(1.5rem+env(safe-area-inset-top,0px)))] pb-[max(2rem,calc(1.5rem+env(safe-area-inset-bottom,0px)))] pl-[max(1rem,calc(1rem+env(safe-area-inset-left,0px)))] pr-[max(1rem,calc(1rem+env(safe-area-inset-right,0px)))] font-sans bg-background text-foreground overflow-x-hidden">
       {/* Subtle decorative background pattern */}
       <div className="absolute inset-0 dot-pattern opacity-40 pointer-events-none" />
 

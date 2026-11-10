@@ -9,7 +9,9 @@ export interface RoleBadgeProps {
 export function RoleBadge({ role, className = "", size = "sm" }: RoleBadgeProps) {
   if (!role) return null;
 
-  const norm = role.toUpperCase();
+  const raw = String(role).trim();
+  const clean = raw.toUpperCase().replace(/[\s_-]+/g, "");
+
   const sizeClasses =
     size === "xs"
       ? "px-2 py-0.5 text-[8.5px]"
@@ -17,34 +19,34 @@ export function RoleBadge({ role, className = "", size = "sm" }: RoleBadgeProps)
       ? "px-3 py-1 text-xs"
       : "px-2.5 py-0.5 text-[10px]";
 
-  if (norm === "ADMIN") {
+  if (clean === "ADMIN") {
     return (
       <span
-        className={`inline-flex items-center gap-1.5 rounded-full font-black uppercase tracking-wider bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 ${sizeClasses} ${className}`}
+        className={`inline-flex items-center gap-1.5 rounded-full font-black uppercase tracking-wider bg-purple-500/15 dark:bg-purple-500/25 text-purple-700 dark:text-purple-200 border border-purple-500/30 dark:border-purple-400/40 ${sizeClasses} ${className}`}
       >
-        <span className="h-1.5 w-1.5 rounded-full bg-purple-500 shrink-0" />
+        <span className="h-1.5 w-1.5 rounded-full bg-purple-500 dark:bg-purple-400 shrink-0 shadow-xs" />
         Admin
       </span>
     );
   }
 
-  if (norm === "STATE_LEADER") {
+  if (clean === "STATELEADER") {
     return (
       <span
-        className={`inline-flex items-center gap-1.5 rounded-full font-black uppercase tracking-wider bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30 ${sizeClasses} ${className}`}
+        className={`inline-flex items-center gap-1.5 rounded-full font-black uppercase tracking-wider bg-blue-500/15 dark:bg-blue-500/25 text-blue-700 dark:text-blue-200 border border-blue-500/30 dark:border-blue-400/40 ${sizeClasses} ${className}`}
       >
-        <span className="h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
+        <span className="h-1.5 w-1.5 rounded-full bg-blue-500 dark:bg-blue-400 shrink-0 shadow-xs" />
         State Leader
       </span>
     );
   }
 
-  if (norm === "ZONE_LEADER") {
+  if (clean === "ZONELEADER" || clean === "ZONALLEADER") {
     return (
       <span
-        className={`inline-flex items-center gap-1.5 rounded-full font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 ${sizeClasses} ${className}`}
+        className={`inline-flex items-center gap-1.5 rounded-full font-black uppercase tracking-wider bg-emerald-500/15 dark:bg-emerald-500/25 text-emerald-700 dark:text-emerald-200 border border-emerald-500/30 dark:border-emerald-400/40 ${sizeClasses} ${className}`}
       >
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 shrink-0 shadow-xs" />
         Zonal Leader
       </span>
     );
@@ -53,11 +55,10 @@ export function RoleBadge({ role, className = "", size = "sm" }: RoleBadgeProps)
   // COORDINATOR or other roles
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full font-black uppercase tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 ${sizeClasses} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-full font-black uppercase tracking-wider bg-amber-500/15 dark:bg-amber-500/25 text-amber-800 dark:text-amber-200 border border-amber-500/30 dark:border-amber-400/40 ${sizeClasses} ${className}`}
     >
-      <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
-      {norm === "COORDINATOR" ? "Coordinator" : norm.replace(/_/g, " ")}
+      <span className="h-1.5 w-1.5 rounded-full bg-amber-500 dark:bg-amber-400 shrink-0 shadow-xs" />
+      {clean === "COORDINATOR" ? "Coordinator" : raw.toUpperCase().replace(/_/g, " ")}
     </span>
   );
 }
-

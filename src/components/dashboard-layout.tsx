@@ -391,7 +391,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       {/* Mobile Drawer Sidebar */}
       <div className={`fixed inset-0 z-30 md:hidden transition-opacity duration-300 ${mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}>
         <div className="absolute inset-0 bg-black/60 backdrop-blur-xs" onClick={() => setMobileOpen(false)} />
-        <aside className={`absolute inset-y-0 left-0 w-70 max-w-[85vw] bg-sidebar text-sidebar-foreground border-r border-border p-4 transition-transform duration-300 ${mobileOpen ? "translate-x-0" : "-translate-x-full"} flex flex-col justify-between`}>
+        <aside className={`absolute inset-y-0 left-0 w-70 max-w-[85vw] bg-sidebar text-sidebar-foreground border-r border-border pt-[max(1rem,env(safe-area-inset-top,0px),var(--safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px),var(--safe-area-inset-bottom,0px))] pl-[max(1rem,env(safe-area-inset-left,0px),var(--safe-area-inset-left,0px))] pr-4 transition-transform duration-300 ${mobileOpen ? "translate-x-0" : "-translate-x-full"} flex flex-col justify-between`}>
           <div className="flex flex-col flex-1 min-h-0">
             <div className="flex h-12 items-center justify-between mb-4 px-2 shrink-0">
               <div className="flex items-center gap-2.5">
@@ -554,9 +554,11 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
       {/* Main Container */}
       <div className={`flex flex-col flex-1 min-w-0 max-w-full w-full transition-all duration-300 ${sidebarOpen ? "md:pl-65" : ""}`}>
-        {/* Top Navbar */}
-        <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-border bg-background/85 backdrop-blur-md px-3 sm:px-6">
-          <div className="flex items-center gap-2 sm:gap-3">
+        {/* Top Navbar with Native Safe-Area Support */}
+        <header className="sticky top-0 z-20 flex flex-col justify-end border-b border-border bg-background/90 backdrop-blur-md transition-all duration-200">
+          <div className="w-full shrink-0 h-[max(env(safe-area-inset-top,0px),var(--safe-area-inset-top,0px))]" aria-hidden="true" />
+          <div className="flex h-14 w-full items-center justify-between px-3 sm:px-6">
+            <div className="flex items-center gap-2 sm:gap-3">
             <button 
               onClick={() => {
                 if (window.innerWidth < 768) {
@@ -800,6 +802,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
               )}
             </div>
           </div>
+          </div>
         </header>
 
         {/* Mobile Collapsible Top Features Panel */}
@@ -1014,12 +1017,12 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Main Content Area */}
-        <main className="flex-1 p-3 sm:p-5 md:p-8 max-w-7xl w-full mx-auto animate-slideUp pb-8 min-w-0">
+        <main className="flex-1 p-3 sm:p-5 md:p-8 max-w-7xl w-full mx-auto animate-slideUp pb-[max(2rem,calc(1.5rem+env(safe-area-inset-bottom,0px)))] min-w-0">
           {children}
         </main>
 
         {/* Footer */}
-        <footer className="py-4 border-t border-border text-center text-[11px] font-medium text-muted-foreground mb-0">
+        <footer className="py-4 pb-[max(1rem,calc(0.75rem+env(safe-area-inset-bottom,0px)))] border-t border-border text-center text-[11px] font-medium text-muted-foreground mb-0">
           &copy; {new Date().getFullYear()} WCM Outreach Platform. All rights reserved.
         </footer>
       </div>

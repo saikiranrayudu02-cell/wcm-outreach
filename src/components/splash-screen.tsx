@@ -1,3 +1,4 @@
+/* cspell:disable */
 "use client";
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
@@ -173,11 +174,11 @@ export function SplashScreen() {
             <img
               src="/wcm-logo.png"
               alt="The War of Carmel Ministries Logo"
-              width={240}
-              height={160}
+              width={280}
+              height={190}
               loading="eager"
               decoding="async"
-              className="h-28 sm:h-40 md:h-44 w-auto max-w-[190px] sm:max-w-[260px] object-contain drop-shadow-2xl relative z-10 transition-transform duration-300 group-hover:scale-105"
+              className="h-36 sm:h-48 md:h-52 w-auto max-w-[230px] sm:max-w-[300px] object-contain drop-shadow-2xl relative z-10 transition-transform duration-300 group-hover:scale-105"
               onError={(e) => {
                 // Fallback to PWA high-res icon
                 (e.target as HTMLImageElement).src = "/icons/icon-512x512.png";
@@ -192,7 +193,7 @@ export function SplashScreen() {
           <h2
             className="text-xs sm:text-sm font-black tracking-[0.22em] text-amber-300 uppercase leading-snug"
             style={{
-              textShadow: "0 0 20px rgba(252, 211, 77, 0.7), 0 1px 3px rgba(0, 0, 0, 0.9)",
+              textShadow: "0 0 20px rgba(252, 211, 77, 0.8), 0 1px 3px rgba(0, 0, 0, 0.9)",
             }}
           >
             The War of Carmel Ministries
@@ -200,9 +201,10 @@ export function SplashScreen() {
 
           {/* Program Platform Heading - High Saturation, Fully Opaque & Crisp White with Radiant Illumination */}
           <h1
-            className="text-3xl sm:text-4xl md:text-5xl font-black tracking-[0.16em] text-white uppercase"
+            className="text-3xl sm:text-4xl md:text-5xl font-black tracking-[0.18em] text-white uppercase drop-shadow-[0_4px_20px_rgba(255,255,255,0.45)]"
             style={{
-              textShadow: "0 0 35px rgba(255, 255, 255, 0.9), 0 0 65px rgba(186, 230, 253, 0.5), 0 3px 6px rgba(0, 0, 0, 0.95)",
+              textShadow: "0 0 25px rgba(255, 255, 255, 1), 0 0 55px rgba(56, 189, 248, 0.75), 0 2px 5px rgba(0, 0, 0, 1)",
+              filter: "contrast(1.2) saturate(1.4)",
             }}
           >
             WCM OUTREACH

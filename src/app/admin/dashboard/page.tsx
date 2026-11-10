@@ -555,7 +555,7 @@ function AdminDashboardContent() {
                       placeholder="Search name, username, phone..."
                       value={userSearch}
                       onChange={(e) => setUserSearch(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950 pl-9 pr-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 pl-9 pr-3 py-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                     />
                   </div>
 
@@ -563,24 +563,24 @@ function AdminDashboardContent() {
                   <select
                     value={userRoleFilter}
                     onChange={(e) => setUserRoleFilter(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950 px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer"
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-1.5 text-xs font-bold text-slate-900 dark:text-slate-100 cursor-pointer"
                   >
-                    <option value="ALL">All Roles</option>
-                    <option value="STATE_LEADER">State Leader</option>
-                    <option value="ZONE_LEADER">Zonal Leader</option>
-                    <option value="COORDINATOR">Coordinator</option>
-                    <option value="ADMIN">Admin</option>
+                    <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">All Roles</option>
+                    <option value="STATE_LEADER" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">State Leader</option>
+                    <option value="ZONE_LEADER" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Zonal Leader</option>
+                    <option value="COORDINATOR" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Coordinator</option>
+                    <option value="ADMIN" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Admin</option>
                   </select>
 
                   {/* Status Filter */}
                   <select
                     value={userStatusFilter}
                     onChange={(e) => setUserStatusFilter(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950 px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer"
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-1.5 text-xs font-bold text-slate-900 dark:text-slate-100 cursor-pointer"
                   >
-                    <option value="ALL">All Statuses</option>
-                    <option value="ACTIVE">Active Accounts</option>
-                    <option value="INACTIVE">Deactivated Accounts</option>
+                    <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">All Statuses</option>
+                    <option value="ACTIVE" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Active Accounts</option>
+                    <option value="INACTIVE" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Deactivated Accounts</option>
                   </select>
 
                   {/* State Filter */}
@@ -590,11 +590,11 @@ function AdminDashboardContent() {
                       setUserStateFilter(e.target.value);
                       setUserZoneFilter("ALL");
                     }}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950 px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer"
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-1.5 text-xs font-bold text-slate-900 dark:text-slate-100 cursor-pointer"
                   >
-                    <option value="ALL">All States</option>
+                    <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">All States</option>
                     {availableStates.map((s) => (
-                      <option key={s.id} value={s.name}>{s.name}</option>
+                      <option key={s.id} value={s.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{s.name}</option>
                     ))}
                   </select>
 
@@ -603,11 +603,11 @@ function AdminDashboardContent() {
                     value={userZoneFilter}
                     onChange={(e) => setUserZoneFilter(e.target.value)}
                     disabled={!userStateFilter || userStateFilter === "ALL" || availableZones.length === 0}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950 px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer disabled:opacity-50"
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-3 py-1.5 text-xs font-bold text-slate-900 dark:text-slate-100 cursor-pointer disabled:opacity-50"
                   >
-                    <option value="ALL">All Zones</option>
+                    <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">All Zones</option>
                     {availableZones.map((z) => (
-                      <option key={z.id} value={z.name}>{z.name}</option>
+                      <option key={z.id} value={z.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{z.name}</option>
                     ))}
                   </select>
                 </div>
@@ -716,7 +716,7 @@ function AdminDashboardContent() {
                       <div className="hidden md:block overflow-x-auto">
                         <table className="w-full text-left border-collapse text-sm">
                           <thead>
-                            <tr className="bg-slate-100/90 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-black uppercase tracking-wider text-[11px]">
+                            <tr className="bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 font-black uppercase tracking-wider text-[11px]">
                               <th className="px-6 py-4">User Details</th>
                               <th className="px-6 py-4">Role</th>
                               <th className="px-6 py-4">Hierarchy Assignment</th>
@@ -725,7 +725,7 @@ function AdminDashboardContent() {
                               <th className="px-6 py-4 text-right">Actions</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-slate-700 dark:text-slate-200">
+                          <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-100">
                             {usersList.map((u) => (
                               <tr
                                 key={u.id}

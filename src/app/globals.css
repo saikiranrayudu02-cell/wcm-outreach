@@ -466,12 +466,53 @@ img, svg, video, canvas {
   transform: scale(0.97);
 }
 
-/* Safe Area Inset Helpers */
-.pb-safe {
-  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+/* Safe Area Inset Helpers & Architecture */
+:root {
+  --sat: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  --sab: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+  --sal: max(env(safe-area-inset-left, 0px), var(--safe-area-inset-left, 0px));
+  --sar: max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px));
 }
+
 .pt-safe {
-  padding-top: max(0.75rem, env(safe-area-inset-top));
+  padding-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+}
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+}
+.pl-safe {
+  padding-left: max(env(safe-area-inset-left, 0px), var(--safe-area-inset-left, 0px));
+}
+.pr-safe {
+  padding-right: max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px));
+}
+.px-safe {
+  padding-left: max(env(safe-area-inset-left, 0px), var(--safe-area-inset-left, 0px));
+  padding-right: max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px));
+}
+.py-safe {
+  padding-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+}
+.mt-safe {
+  margin-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+}
+.mb-safe {
+  margin-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+}
+
+/* Modal and Dialog Safe Area Inset Overlay */
+.modal-safe-area {
+  padding-top: max(1rem, env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+  padding-left: max(0.75rem, env(safe-area-inset-left, 0px), var(--safe-area-inset-left, 0px));
+  padding-right: max(0.75rem, env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px));
+}
+
+/* Ensure Sonner toast notifications never collide with Android status bar */
+[data-sonner-toaster] {
+  top: max(16px, calc(12px + max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)))) !important;
+  bottom: max(16px, calc(12px + max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)))) !important;
 }
 
 /* Prevent auto-zoom on mobile safari */
