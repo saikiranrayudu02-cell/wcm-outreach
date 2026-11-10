@@ -29,24 +29,14 @@ function getOptimizedDatabaseUrl(): string | undefined {
   if (url.includes(".pooler.supabase.com")) {
     const [base, query = ""] = url.split("?");
     const params = new URLSearchParams(query);
-    if (!params.has("sslmode")) {
-      params.set("sslmode", "require");
-    }
-    if (!params.has("pgbouncer")) {
-      params.set("pgbouncer", "true");
-    }
-    // Allow up to 10 connections to prevent queuing bottlenecks in dev and concurrent serverless routes
-    if (!params.has("connection_limit") || params.get("connection_limit") === "1") {
-      params.set("connection_limit", "10");
-    }
-    // Increase connect_timeout from default 5s to 30s so network latency/TLS negotiation never aborts prematurely
-    if (!params.has("connect_timeout")) {
-      params.set("connect_timeout", "30");
-    }
-    // Set pool_timeout to 30s to allow graceful waiting during brief network bursts
-    if (!params.has("pool_timeout")) {
-      params.set("pool_timeout", "30");
-    }
+    params.set("sslmode", "require");
+    params.set("pgbouncer", "true");
+    // Ensure generous connection pool (20) so parallel dashboard queries never queue or time out
+    params.set("connection_limit", "20");
+    // Set connect_timeout to 30s to allow reliable TLS negotiation across internet hops
+    params.set("connect_timeout", "30");
+    // Set pool_timeout to 30s to allow smooth concurrency during burst loads
+    params.set("pool_timeout", "30");
     url = `${base}?${params.toString()}`;
   }
 
