@@ -242,7 +242,7 @@ function AdminMeetingsContent() {
       case "ASSIGNED_TO_LEADER":
         return "bg-blue-500/10 text-blue-400 border-blue-500/30";
       case "SELF_HANDLED_BY_LEADER":
-        return "bg-purple-500/10 text-purple-400 border-purple-500/30";
+        return "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-500/20";
       case "FORWARDED_TO_COORDINATOR":
         return "bg-amber-500/10 text-amber-400 border-amber-500/30";
       case "IN_PROGRESS":
@@ -641,9 +641,9 @@ function AdminMeetingsContent() {
                   <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 block">Assigned</span>
                   <span className="text-xl font-black text-blue-700 dark:text-blue-300 mt-1 block">{stats.assignedToLeaders}</span>
                 </div>
-                <div className="p-4 rounded-2xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 block">Self-Handled</span>
-                  <span className="text-xl font-black text-purple-700 dark:text-purple-300 mt-1 block">{stats.selfHandled}</span>
+                <div className="p-4 rounded-2xl bg-card border border-border">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Self-Handled</span>
+                  <span className="text-xl font-black text-foreground mt-1 block">{stats.selfHandled}</span>
                 </div>
                 <div className="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 block">Forwarded</span>

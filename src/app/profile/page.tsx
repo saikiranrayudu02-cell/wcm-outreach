@@ -349,27 +349,27 @@ export default function ProfilePage() {
     switch (roleName) {
       case "ADMIN":
         return {
-          banner: "from-purple-700 via-indigo-700 to-slate-900",
-          badge: "bg-purple-500/20 text-purple-300 border-purple-400/30",
-          accent: "text-purple-400",
+          banner: "from-blue-700 via-blue-800 to-slate-900",
+          badge: "bg-blue-500/20 text-blue-300 border-blue-400/30",
+          accent: "text-blue-400",
         };
       case "STATE_LEADER":
         return {
-          banner: "from-blue-700 via-cyan-700 to-slate-900",
+          banner: "from-blue-600 via-blue-700 to-slate-900",
           badge: "bg-blue-500/20 text-blue-300 border-blue-400/30",
           accent: "text-blue-400",
         };
       case "ZONE_LEADER":
         return {
-          banner: "from-indigo-700 via-blue-700 to-slate-900",
-          badge: "bg-indigo-500/20 text-indigo-300 border-indigo-400/30",
-          accent: "text-indigo-400",
+          banner: "from-blue-700 via-blue-800 to-slate-900",
+          badge: "bg-blue-500/20 text-blue-300 border-blue-400/30",
+          accent: "text-blue-400",
         };
       default:
         return {
-          banner: "from-sky-700 via-blue-700 to-slate-900",
-          badge: "bg-sky-500/20 text-sky-300 border-sky-400/30",
-          accent: "text-sky-400",
+          banner: "from-blue-600 via-blue-700 to-slate-900",
+          badge: "bg-blue-500/20 text-blue-300 border-blue-400/30",
+          accent: "text-blue-400",
         };
     }
   };

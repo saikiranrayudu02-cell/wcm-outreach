@@ -22,7 +22,7 @@ export function MeetingAssignmentHistoryModal({ meeting, onClose }: HistoryModal
       case "ASSIGNED_TO_LEADER":
         return "bg-blue-500/10 text-blue-400 border-blue-500/30";
       case "SELF_HANDLED_BY_LEADER":
-        return "bg-purple-500/10 text-purple-400 border-purple-500/30";
+        return "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-500/20";
       case "FORWARDED_TO_COORDINATOR":
         return "bg-amber-500/10 text-amber-400 border-amber-500/30";
       case "IN_PROGRESS":

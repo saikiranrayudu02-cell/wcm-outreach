@@ -472,7 +472,7 @@ export default function FindPeoplePage() {
               ) : candidateProfile ? (
                 <>
                   {/* Modal Header Banner */}
-                  <div className="relative bg-linear-to-r from-blue-600 via-indigo-600 to-purple-600 p-4 sm:p-6 text-white shrink-0">
+                  <div className="relative bg-primary p-4 sm:p-6 text-white shrink-0">
                     <button
                       onClick={() => {
                         setSelectedCandidateId(null);

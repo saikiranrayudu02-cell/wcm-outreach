@@ -7,12 +7,10 @@ import { useUIStore } from "@/store/ui-store";
 import { 
   ShieldCheck, PhoneCall, Search, RefreshCw, Eye, 
   MapPin, Calendar, Users, Phone, Building, CheckCircle2, 
-  Clock, AlertCircle, X, ArrowUpRight, Sparkles, Filter, ChevronRight,
-  LayoutList
+  Clock, AlertCircle, X, ArrowUpRight, Sparkles, Filter, ChevronRight
 } from "lucide-react";
 import { toast } from "sonner";
 import { CallAudioPlayer } from "@/components/call-audio-player";
-import { CompletedVerificationsCalendar } from "@/components/completed-verifications-calendar";
 
 export default function CompletedVerificationsPage() {
   const router = useRouter();
@@ -22,7 +20,6 @@ export default function CompletedVerificationsPage() {
   const [verifications, setVerifications] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [callStatusFilter, setCallStatusFilter] = useState("ALL");
-  const [viewMode, setViewMode] = useState<"calendar" | "table">("calendar");
 
   // Record detail modal
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
@@ -192,66 +189,27 @@ export default function CompletedVerificationsPage() {
             />
           </form>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {/* View Mode Switcher */}
-            <div className="flex items-center p-1 rounded-xl bg-card border border-border/50 text-xs font-bold shadow-2xs">
-              <button
-                type="button"
-                onClick={() => setViewMode("calendar")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  viewMode === "calendar"
-                    ? "bg-primary text-primary-foreground shadow-xs"
-                    : "text-foreground/60 hover:text-foreground"
-                }`}
-              >
-                <Calendar className="h-3.5 w-3.5" />
-                <span>Calendar View</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("table")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  viewMode === "table"
-                    ? "bg-primary text-primary-foreground shadow-xs"
-                    : "text-foreground/60 hover:text-foreground"
-                }`}
-              >
-                <LayoutList className="h-3.5 w-3.5" />
-                <span>Table View</span>
-              </button>
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-bold text-foreground/50 uppercase tracking-wider shrink-0 flex items-center gap-1">
-                <Filter className="h-3.5 w-3.5" />
-                Status:
-              </span>
-              <select
-                value={callStatusFilter}
-                onChange={(e) => setCallStatusFilter(e.target.value)}
-                className="px-2.5 py-1.5 text-xs font-bold rounded-xl border border-border/50 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
-              >
-                <option value="ALL">All Records</option>
-                <option value="NOT_CALLED">Not Called Yet</option>
-                <option value="COMPLETED">Call Completed</option>
-                <option value="DISPATCHED">In Progress / Dispatched</option>
-                <option value="FAILED_OR_BUSY">Failed / Busy / No Answer</option>
-              </select>
-            </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-foreground/50 uppercase tracking-wider shrink-0 flex items-center gap-1">
+              <Filter className="h-3.5 w-3.5" />
+              Status:
+            </span>
+            <select
+              value={callStatusFilter}
+              onChange={(e) => setCallStatusFilter(e.target.value)}
+              className="px-2.5 py-1.5 text-xs font-bold rounded-xl border border-border/50 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
+            >
+              <option value="ALL">All Records</option>
+              <option value="NOT_CALLED">Not Called Yet</option>
+              <option value="COMPLETED">Call Completed</option>
+              <option value="DISPATCHED">In Progress / Dispatched</option>
+              <option value="FAILED_OR_BUSY">Failed / Busy / No Answer</option>
+            </select>
           </div>
         </div>
 
-        {/* View Mode Display: Calendar or Table */}
-        {viewMode === "calendar" ? (
-          <CompletedVerificationsCalendar
-            verifications={verifications}
-            onSelectRecord={(rec) => setSelectedRecord(rec)}
-            onInitiateCall={(rec) => setCallModalRecord(rec)}
-            loading={loading}
-          />
-        ) : (
-          /* Records Table and Mobile Cards */
-          <div className="rounded-2xl border border-border/50 glass-card overflow-hidden shadow-xs">
+        {/* Records Table and Mobile Cards */}
+        <div className="rounded-2xl border border-border/50 glass-card overflow-hidden shadow-xs">
           {loading ? (
             <div className="py-16 text-center text-foreground/40 font-medium">
               <div className="flex flex-col items-center gap-3">
@@ -510,7 +468,6 @@ export default function CompletedVerificationsPage() {
             </>
           )}
         </div>
-        )}
 
         {/* Modal 1: Full Verification Details */}
         {selectedRecord && (

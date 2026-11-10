@@ -18,15 +18,11 @@ export default function AdminCalendarPage() {
 
   const [loading, setLoading] = useState(true);
   const [verifications, setVerifications] = useState<any[]>([]);
-  const [search, setSearch] = useState("");
 
   const fetchVerifications = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (search.trim()) params.set("search", search.trim());
-
-      const res = await fetch(`/api/admin/verifications/completed?${params.toString()}`);
+      const res = await fetch("/api/admin/verifications/completed");
       if (!res.ok) {
         if (res.status === 403) {
           toast.error("Unauthorized: Admin access required.");
@@ -47,11 +43,6 @@ export default function AdminCalendarPage() {
   useEffect(() => {
     fetchVerifications();
   }, []);
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetchVerifications();
-  };
 
   return (
     <DashboardLayout>
@@ -106,21 +97,7 @@ export default function AdminCalendarPage() {
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="p-3 sm:p-4 rounded-2xl border border-border/50 glass-card">
-          <form onSubmit={handleSearchSubmit} className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/40" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search bookings by client name, church, city, travel mode, or stay location..."
-              className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-border/50 bg-background/80 text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
-            />
-          </form>
-        </div>
-
-        {/* Interactive Calendar Component */}
+        {/* Interactive Calendar Component - Appears 1st! */}
         <CompletedVerificationsCalendar
           verifications={verifications}
           loading={loading}

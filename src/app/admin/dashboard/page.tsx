@@ -23,6 +23,7 @@ import { CreateUserModal } from "@/components/create-user-modal";
 import { EditUserModal } from "@/components/edit-user-modal";
 import { ResetPasswordModal } from "@/components/reset-password-modal";
 import { AdminHierarchyTree } from "@/components/admin-hierarchy-tree";
+import { RoleBadge } from "@/components/role-badge";
 
 export default function AdminDashboardPage() {
   return (
@@ -398,7 +399,7 @@ function AdminDashboardContent() {
           <div className="flex flex-wrap items-center gap-2">
             <a
               href="/find-people"
-              className="inline-flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-3.5 py-2 text-xs font-bold uppercase tracking-wider transition-all shadow-sm cursor-pointer active:scale-[0.96]"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card hover:bg-accent text-foreground px-3.5 py-2 text-xs font-semibold uppercase tracking-wider transition-all shadow-xs cursor-pointer active:scale-[0.98]"
             >
               <Users className="h-4 w-4" />
               Find People
@@ -432,13 +433,13 @@ function AdminDashboardContent() {
 
         {/* Tab switcher */}
         <div className="overflow-x-auto pb-1 max-w-full no-scrollbar">
-          <div className="flex border border-slate-200 dark:border-slate-700/80 bg-slate-100 dark:bg-slate-900/90 p-1.5 rounded-2xl gap-1.5 w-max sm:w-fit shadow-xs">
+          <div className="flex border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-1.5 rounded-2xl gap-1.5 w-max sm:w-fit shadow-xs">
             <button
               onClick={() => handleTabChange("users")}
-              className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === "users"
-                  ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-sm border border-slate-200 dark:border-indigo-500 font-black"
-                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800/60"
+                  ? "bg-blue-600 text-white shadow-sm font-black"
+                  : "text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80"
               }`}
             >
               <Users className="h-4 w-4" />
@@ -446,10 +447,10 @@ function AdminDashboardContent() {
             </button>
             <button
               onClick={() => handleTabChange("reports")}
-              className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === "reports"
-                  ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-sm border border-slate-200 dark:border-indigo-500 font-black"
-                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800/60"
+                  ? "bg-blue-600 text-white shadow-sm font-black"
+                  : "text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80"
               }`}
             >
               <FileSpreadsheet className="h-4 w-4" />
@@ -457,10 +458,10 @@ function AdminDashboardContent() {
             </button>
             <button
               onClick={() => handleTabChange("analytics")}
-              className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === "analytics"
-                  ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-sm border border-slate-200 dark:border-indigo-500 font-black"
-                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800/60"
+                  ? "bg-blue-600 text-white shadow-sm font-black"
+                  : "text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80"
               }`}
             >
               <BarChart3 className="h-4 w-4" />
@@ -468,10 +469,10 @@ function AdminDashboardContent() {
             </button>
             <button
               onClick={() => handleTabChange("messages")}
-              className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === "messages"
-                  ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-sm border border-slate-200 dark:border-indigo-500 font-black"
-                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800/60"
+                  ? "bg-blue-600 text-white shadow-sm font-black"
+                  : "text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80"
               }`}
             >
               <Mail className="h-4 w-4" />
@@ -479,10 +480,10 @@ function AdminDashboardContent() {
             </button>
             <button
               onClick={() => handleTabChange("confirmations")}
-              className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === "confirmations"
-                  ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-sm border border-slate-200 dark:border-indigo-500 font-black"
-                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800/60"
+                  ? "bg-blue-600 text-white shadow-sm font-black"
+                  : "text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80"
               }`}
             >
               <CalendarCheck className="h-4 w-4" />
@@ -500,10 +501,10 @@ function AdminDashboardContent() {
                 <button
                   type="button"
                   onClick={() => setUserViewMode("directory")}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
                     userViewMode === "directory"
-                      ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-xs font-black"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      ? "bg-primary text-white shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   <Users className="h-3.5 w-3.5" />
@@ -512,10 +513,10 @@ function AdminDashboardContent() {
                 <button
                   type="button"
                   onClick={() => setUserViewMode("tree")}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
                     userViewMode === "tree"
-                      ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-xs font-black"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      ? "bg-primary text-white shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   <GitFork className="h-3.5 w-3.5" />
@@ -643,9 +644,7 @@ function AdminDashboardContent() {
                                 </span>
                               </div>
                               <div className="flex items-center gap-1.5">
-                                <span className="inline-flex rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/60 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider">
-                                  {formatRoleBadge(u.role)}
-                                </span>
+                                <RoleBadge role={u.role} size="xs" />
                                 {u.isActive ? (
                                   <span className="text-[9px] font-black uppercase text-emerald-600 dark:text-emerald-400">Active</span>
                                 ) : (
@@ -747,9 +746,7 @@ function AdminDashboardContent() {
                                   )}
                                 </td>
                                 <td className="px-6 py-4">
-                                  <span className="inline-flex rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/60 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider">
-                                    {formatRoleBadge(u.role)}
-                                  </span>
+                                  <RoleBadge role={u.role} size="sm" />
                                 </td>
                                 <td className="px-6 py-4 text-xs font-semibold text-slate-600 dark:text-slate-300">
                                   {u.role === "ADMIN" ? (
@@ -846,7 +843,7 @@ function AdminDashboardContent() {
           {/* Hierarchical Geographic Dependent Filter Bar */}
           <GeographicFilterBar onFilterChange={handleGeoFilterChange} />
 
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-sm overflow-hidden text-left">
+          <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden text-left">
             {reportsLoading ? (
               <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
@@ -876,59 +873,59 @@ function AdminDashboardContent() {
                           {r.title || `Outreach Meeting ${r.reportId}`}
                         </h4>
                         <div className="flex flex-wrap items-center gap-1 mt-1">
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
                             {r.state}
                           </span>
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
                             {r.district}
                           </span>
                           {r.isCallLocked && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-1">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 inline-flex items-center gap-1">
                               <Lock className="h-2.5 w-2.5" /> Answered
                             </span>
                           )}
                         </div>
-                        <span className="text-[10px] text-slate-500 dark:text-slate-300 font-semibold block mt-1">
+                        <span className="text-[11px] text-slate-600 dark:text-slate-300 font-bold block mt-1">
                           Coordinator: {r.coordinatorName || r.leader?.username || "Leader"}
                         </span>
                       </div>
                     </div>
 
                     {/* 3 Form Status Badges */}
-                    <div className="grid grid-cols-3 gap-1.5 py-2 border-y border-slate-200 dark:border-slate-800 text-center">
+                    <div className="grid grid-cols-3 gap-1.5 py-2.5 border-y border-slate-200 dark:border-slate-800 text-center">
                       <div>
-                        <span className="text-[9px] uppercase font-bold text-slate-500 dark:text-slate-400 block mb-1">1. Verify</span>
+                        <span className="text-[9px] uppercase font-black text-slate-600 dark:text-slate-400 block mb-1">1. Verify</span>
                         <FormStatusBadge status={r.verificationStatus} size="sm" />
                       </div>
                       <div>
-                        <span className="text-[9px] uppercase font-bold text-slate-500 dark:text-slate-400 block mb-1">2. Attend</span>
+                        <span className="text-[9px] uppercase font-black text-slate-600 dark:text-slate-400 block mb-1">2. Attend</span>
                         <FormStatusBadge status={r.attendanceStatus} isLocked={r.isAttendanceLocked} size="sm" />
                       </div>
                       <div>
-                        <span className="text-[9px] uppercase font-bold text-slate-500 dark:text-slate-400 block mb-1">3. Eval</span>
+                        <span className="text-[9px] uppercase font-black text-slate-600 dark:text-slate-400 block mb-1">3. Eval</span>
                         <FormStatusBadge status={r.evaluationStatus} isLocked={r.isEvaluationLocked} size="sm" />
                       </div>
                     </div>
 
-                    <div className="text-xs space-y-1 text-slate-700 dark:text-slate-300">
+                    <div className="text-xs space-y-1.5 text-slate-700 dark:text-slate-300">
                       <div className="flex justify-between">
-                        <span className="text-slate-500 dark:text-slate-400 font-semibold">Dates:</span>
-                        <span className="font-bold">{r.meetingDates || "N/A"}</span>
+                        <span className="text-slate-600 dark:text-slate-400 font-bold">Dates:</span>
+                        <span className="font-bold text-slate-900 dark:text-white">{r.meetingDates || "N/A"}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-500 dark:text-slate-400 font-semibold">Location:</span>
-                        <span className="font-bold truncate max-w-50 text-right">{r.location || "N/A"}</span>
+                        <span className="text-slate-600 dark:text-slate-400 font-bold">Location:</span>
+                        <span className="font-bold text-slate-900 dark:text-white truncate max-w-50 text-right">{r.location || "N/A"}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-500 dark:text-slate-400 font-semibold">Zone:</span>
-                        <span className="font-bold">{r.leader?.zone || "N/A"}</span>
+                        <span className="text-slate-600 dark:text-slate-400 font-bold">Zone:</span>
+                        <span className="font-bold text-slate-900 dark:text-white">{r.leader?.zone || "N/A"}</span>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-end gap-2 pt-1">
                       <button
                         onClick={() => setSelectedReportId(r.id)}
-                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 text-white px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-indigo-500 transition-colors shadow-sm cursor-pointer"
+                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 text-white px-4 py-2.5 text-xs font-black uppercase tracking-wider hover:bg-blue-700 transition-colors shadow-sm cursor-pointer"
                       >
                         <Eye className="h-4 w-4" />
                         Open Forms & Review
@@ -942,7 +939,7 @@ function AdminDashboardContent() {
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr className="bg-slate-100/90 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-black uppercase tracking-wider text-[11px]">
+                    <tr className="bg-slate-100 dark:bg-slate-800/90 border-b border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-black uppercase tracking-wider text-[11px]">
                       <th className="px-5 py-4">Meeting Details</th>
                       <th className="px-5 py-4">Coordinator</th>
                       <th className="px-4 py-4 text-center">1. Verification</th>
@@ -951,28 +948,28 @@ function AdminDashboardContent() {
                       <th className="px-5 py-4 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-slate-700 dark:text-slate-200">
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800/80 text-slate-700 dark:text-slate-200">
                     {reportsList.map((r) => (
-                      <tr key={r.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/60 transition-colors">
+                      <tr key={r.id} className="hover:bg-slate-100/60 dark:hover:bg-slate-800/60 transition-colors">
                         <td className="px-5 py-4">
-                          <div className="font-mono text-xs font-black text-indigo-600 dark:text-indigo-400">{r.reportId}</div>
+                          <div className="font-mono text-xs font-black text-blue-600 dark:text-blue-400">{r.reportId}</div>
                           <div className="font-bold text-xs text-slate-900 dark:text-white mt-0.5">{r.title || `Outreach Meeting ${r.reportId}`}</div>
-                          <div className="text-[11px] text-slate-500 dark:text-slate-300 font-medium mt-0.5">{r.meetingDates || "N/A"} • {r.location || "N/A"}</div>
+                          <div className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold mt-0.5">{r.meetingDates || "N/A"} • {r.location || "N/A"}</div>
                         </td>
                         <td className="px-5 py-4">
                           <span className="font-bold block text-xs text-slate-900 dark:text-white">{r.coordinatorName || r.leader?.username}</span>
                           <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
                               {r.state}
                             </span>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
                               {r.zone} Zone
                             </span>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
                               {r.district}
                             </span>
                             {r.isCallLocked && (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-1">
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 inline-flex items-center gap-1">
                                 <Lock className="h-2.5 w-2.5" /> Answered & Locked
                               </span>
                             )}
@@ -990,7 +987,7 @@ function AdminDashboardContent() {
                         <td className="px-5 py-4 text-right">
                           <button
                             onClick={() => setSelectedReportId(r.id)}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider shadow-sm transition-all cursor-pointer active:scale-[0.96]"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer active:scale-[0.96]"
                           >
                             <Eye className="h-3.5 w-3.5" />
                             Review Forms

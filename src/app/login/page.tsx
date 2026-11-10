@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import { Eye, EyeOff, KeyRound, UserCheck, ArrowRight, Sparkles } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 export default function LoginPage() {
@@ -87,54 +87,37 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center px-4 sm:px-6 font-sans overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0" style={{ background: "var(--gradient-hero)" }} />
-      
-      {/* Decorative elements */}
-      <div className="absolute inset-0 dot-pattern opacity-30" />
-      <div className="absolute top-1/4 -left-32 w-96 h-96 rounded-full opacity-10" 
-        style={{ background: "radial-gradient(circle, rgba(129,140,248,0.4) 0%, transparent 70%)", filter: "blur(60px)" }} 
-      />
-      <div className="absolute bottom-1/4 -right-32 w-80 h-80 rounded-full opacity-10" 
-        style={{ background: "radial-gradient(circle, rgba(167,139,250,0.4) 0%, transparent 70%)", filter: "blur(60px)" }} 
-      />
+    <div className="relative flex min-h-screen items-center justify-center px-4 py-8 sm:px-6 font-sans bg-background text-foreground overflow-hidden">
+      {/* Subtle decorative background pattern */}
+      <div className="absolute inset-0 dot-pattern opacity-40 pointer-events-none" />
 
-      {/* Login Card */}
-      <div className="relative w-full max-w-105 space-y-6 animate-slideUp z-10">
-        {/* Logo section */}
-        <div className="flex flex-col items-center text-center mb-3">
-          <div className="relative animate-float w-full max-w-72 sm:max-w-80">
-            <div className="absolute -inset-2 rounded-2xl opacity-40" 
-              style={{ background: "radial-gradient(circle, rgba(129,140,248,0.35) 0%, transparent 70%)", filter: "blur(16px)" }} 
+      {/* Login Card Container */}
+      <div className="relative w-full max-w-100 space-y-5 animate-slideUp z-10">
+        {/* Brand header */}
+        <div className="flex flex-col items-center text-center">
+          <div className="w-full max-w-72 sm:max-w-80 rounded-2xl p-2 border border-border bg-card shadow-lg overflow-hidden">
+            <img 
+              src="/wcm-brand-banner.jpg" 
+              alt="WCM Ministry Outreach" 
+              className="w-full h-auto object-contain rounded-xl" 
             />
-            <div className="relative rounded-2xl p-2 backdrop-blur-md border border-white/15 bg-black/60 shadow-2xl overflow-hidden">
-              <img 
-                src="/wcm-brand-banner.jpg" 
-                alt="WCM Ministry Outreach" 
-                className="w-full h-auto object-contain rounded-xl" 
-                style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.5))" }} 
-              />
-            </div>
           </div>
-          <h2 className="mt-4 text-xl sm:text-2xl font-black tracking-wider text-white uppercase">
+          <h2 className="mt-4 text-xl sm:text-2xl font-black tracking-tight text-foreground uppercase">
             WCM Ministry
           </h2>
-          <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-300/60">
+          <p className="mt-1 text-xs font-medium text-muted-foreground uppercase tracking-widest">
             Reporting & Outreach Platform
           </p>
         </div>
 
-        {/* Form Card */}
-        <div className="rounded-3xl p-5 sm:p-8 border border-white/10 backdrop-blur-xl"
-          style={{ background: "rgba(255,255,255,0.06)" }}
-        >
-          <form className="space-y-5" onSubmit={handleSubmit}>
-            <div className="space-y-4">
+        {/* Credentials Form Card */}
+        <div className="rounded-2xl p-6 sm:p-7 border border-border bg-card shadow-xl">
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div className="space-y-3.5">
               <div>
                 <label 
                   htmlFor="username" 
-                  className="block text-[10px] font-bold uppercase tracking-widest text-indigo-200/50 mb-2"
+                  className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5"
                 >
                   Username or Email
                 </label>
@@ -148,7 +131,7 @@ export default function LoginPage() {
                   spellCheck="false"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base sm:text-sm text-white placeholder-indigo-300/25 focus:border-indigo-400/40 focus:ring-2 focus:ring-indigo-400/10 focus:outline-none transition-all duration-200 backdrop-blur-sm"
+                  className="w-full rounded-xl border border-border bg-input px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
                   placeholder="Enter username (e.g. admin)"
                 />
               </div>
@@ -156,7 +139,7 @@ export default function LoginPage() {
               <div>
                 <label 
                   htmlFor="password" 
-                  className="block text-[10px] font-bold uppercase tracking-widest text-indigo-200/50 mb-2"
+                  className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5"
                 >
                   Password
                 </label>
@@ -168,36 +151,33 @@ export default function LoginPage() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 pl-4 pr-10 py-3 text-base sm:text-sm text-white placeholder-indigo-300/25 focus:border-indigo-400/40 focus:ring-2 focus:ring-indigo-400/10 focus:outline-none transition-all duration-200 backdrop-blur-sm"
+                    className="w-full rounded-xl border border-border bg-input pl-3.5 pr-10 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
                     placeholder="Enter your password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-indigo-300/30 hover:text-indigo-200 cursor-pointer transition-colors"
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
             </div>
 
-            <div>
+            <div className="pt-2">
               <button
                 type="submit"
                 disabled={loading}
-                className="flex min-h-12 items-center w-full justify-center gap-2 rounded-xl text-white px-4 py-3.5 text-xs font-bold uppercase tracking-wider shadow-lg active:scale-[0.97] transition-all duration-200 disabled:opacity-50 cursor-pointer group"
-                style={{ 
-                  background: "var(--gradient-accent)",
-                  boxShadow: "0 4px 20px rgba(99,102,241,0.35), 0 1px 3px rgba(0,0,0,0.1)" 
-                }}
+                className="flex min-h-11 items-center w-full justify-center gap-2 rounded-xl bg-primary hover:bg-primary-hover text-white px-4 py-2.5 text-xs font-semibold uppercase tracking-wider shadow-sm transition-all duration-150 disabled:opacity-50 cursor-pointer active:scale-[0.98]"
               >
                 {loading ? (
                   <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
                   <>
                     Sign In
-                    <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                    <ArrowRight className="h-4 w-4" />
                   </>
                 )}
               </button>
@@ -206,11 +186,9 @@ export default function LoginPage() {
         </div>
 
         {/* Quick Demo Accounts */}
-        <div className="rounded-3xl p-5 border border-white/8 backdrop-blur-xl"
-          style={{ background: "rgba(255,255,255,0.03)" }}
-        >
-          <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-300/30 mb-3 flex items-center gap-1.5">
-            <Sparkles className="h-3 w-3 text-indigo-400/40" />
+        <div className="rounded-2xl p-4 sm:p-5 border border-border bg-card/60 shadow-xs">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+            <ShieldCheck className="h-3.5 w-3.5 text-primary" />
             Quick Demo Accounts
           </p>
           <div className="grid grid-cols-2 gap-2">
@@ -224,12 +202,12 @@ export default function LoginPage() {
                 key={acct.uname}
                 type="button"
                 onClick={() => fillCredentials(acct.uname, "Password@123")}
-                className="flex flex-col p-3 rounded-xl border border-white/5 bg-white/3 hover:bg-white/8 hover:border-indigo-400/20 transition-all text-left cursor-pointer group"
+                className="flex flex-col p-2.5 rounded-xl border border-border bg-card hover:bg-accent hover:border-border-elevated transition-all text-left cursor-pointer active:scale-98"
               >
-                <span className="font-bold text-white/80 group-hover:text-indigo-300 text-xs transition-colors">
+                <span className="font-semibold text-foreground text-xs">
                   {acct.label}
                 </span>
-                <span className="text-[10px] text-indigo-300/25 font-mono">{acct.uname}</span>
+                <span className="text-[10px] text-muted-foreground font-mono">{acct.uname}</span>
               </button>
             ))}
           </div>
