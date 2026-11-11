@@ -192,7 +192,7 @@ export default function CoordinatorConfirmationsPage() {
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr className="bg-slate-50/50 dark:bg-slate-800/10 border-b border-slate-200 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-widest text-[10px]">
+                    <tr className="bg-slate-100 dark:bg-[#202024] border-b border-slate-200 dark:border-[#38383e] text-slate-900 dark:text-white font-black uppercase tracking-widest text-[10px]">
                       <th className="px-6 py-4">{translate("Meeting Details", language)}</th>
                       <th className="px-6 py-4">{translate("Proposal Description", language)}</th>
                       <th className="px-6 py-4">{translate("Status", language)}</th>

@@ -215,7 +215,7 @@ function ZoneLeaderAssignedMeetingsContent() {
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 text-slate-400 uppercase tracking-wider text-[10px] font-black">
+                    <tr className="border-b border-slate-200 dark:border-[#38383e] bg-slate-100 dark:bg-[#202024] text-slate-900 dark:text-white uppercase tracking-wider text-[10px] font-black">
                       <th className="px-6 py-4">Reference ID</th>
                       <th className="px-6 py-4">Person Arranging (Name)</th>
                       <th className="px-6 py-4">Meeting Date</th>

@@ -314,7 +314,7 @@ export default function CompletedVerificationsPage() {
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-border/50 bg-accent/30 text-[10px] font-extrabold uppercase tracking-widest text-foreground/50">
+                    <tr className="border-b border-border/80 bg-slate-100 dark:bg-[#202024] text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-white">
                       <th className="py-3.5 px-4">Report / Church</th>
                       <th className="py-3.5 px-4">Convener & Phone</th>
                       <th className="py-3.5 px-4">Location & Dates</th>

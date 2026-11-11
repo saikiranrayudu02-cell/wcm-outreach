@@ -31,6 +31,7 @@ export async function GET(request: Request) {
           { senderId: session.user.id },
         ],
       },
+      take: 40,
       orderBy: { createdAt: "desc" },
       include: {
         sender: {

@@ -457,63 +457,63 @@ export default function StateLeaderDashboardPage() {
           </div>
         </div>
 
-        {/* Tab switcher */}
+        {/* App-Style Segmented Navigation Switcher */}
         <div className="overflow-x-auto pb-1 max-w-full no-scrollbar">
-          <div className="flex border border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-950 p-1 rounded-2xl gap-1 w-max sm:w-fit">
+          <div className="flex border border-border bg-card p-1 rounded-2xl gap-1 w-max sm:w-fit shadow-xs">
             <button
               onClick={() => setActiveTab("users")}
-              className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap active:scale-95 ${
                 activeTab === "users"
-                  ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-100 dark:border-slate-800"
-                  : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-300"
+                  ? "bg-primary text-white shadow-xs font-black"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Users className="h-4 w-4" />
-              User Management
+              <Users className="h-3.5 w-3.5" />
+              <span>Users</span>
             </button>
             <button
               onClick={() => setActiveTab("reports")}
-              className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap active:scale-95 ${
                 activeTab === "reports"
-                  ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-100 dark:border-slate-800"
-                  : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-300"
+                  ? "bg-primary text-white shadow-xs font-black"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <FileSpreadsheet className="h-4 w-4" />
-              Submitted Reports
+              <FileSpreadsheet className="h-3.5 w-3.5" />
+              <span>Reports</span>
             </button>
             <button
               onClick={() => setActiveTab("messages")}
-              className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap active:scale-95 ${
                 activeTab === "messages"
-                  ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-100 dark:border-slate-800"
-                  : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-300"
+                  ? "bg-primary text-white shadow-xs font-black"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Mail className="h-4 w-4" />
-              Send Messages
+              <Mail className="h-3.5 w-3.5" />
+              <span>Messages</span>
             </button>
             <button
               onClick={() => setActiveTab("confirmations")}
-              className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap active:scale-95 ${
                 activeTab === "confirmations"
-                  ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-100 dark:border-slate-800"
-                  : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-300"
+                  ? "bg-primary text-white shadow-xs font-black"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <CalendarCheck className="h-4 w-4" />
-              Confirmations
+              <CalendarCheck className="h-3.5 w-3.5" />
+              <span>Confirmations</span>
             </button>
             <button
               onClick={() => setActiveTab("analytics")}
-              className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap active:scale-95 ${
                 activeTab === "analytics"
-                  ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-100 dark:border-slate-800"
-                  : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-300"
+                  ? "bg-primary text-white shadow-xs font-black"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <BarChart3 className="h-4 w-4" />
-              {translate("Monthly Summary", language)}
+              <BarChart3 className="h-3.5 w-3.5" />
+              <span>Monthly Summary</span>
             </button>
           </div>
         </div>

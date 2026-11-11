@@ -1,3 +1,4 @@
+// cspell:disable
 /* cspell:disable */
 "use client";
 

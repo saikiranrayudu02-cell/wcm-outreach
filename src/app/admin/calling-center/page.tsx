@@ -587,21 +587,31 @@ export default function CallingCenterPage() {
                     <p className="text-[11px] text-foreground/50">{selectedCall.churchName}</p>
                   </div>
 
-                  <span
-                    className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
-                      selectedCall.status === "COMPLETED"
-                        ? "bg-emerald-500/15 text-emerald-500 border-emerald-500/30"
-                        : selectedCall.status === "DISPATCHED" || selectedCall.status === "IN_PROGRESS"
-                        ? "bg-blue-500/15 text-blue-500 border-blue-500/30 animate-pulse"
-                        : selectedCall.status === "NO_ANSWER"
-                        ? "bg-amber-500/15 text-amber-500 border-amber-500/30"
-                        : selectedCall.status === "BUSY"
-                        ? "bg-amber-500/15 text-amber-500 border-amber-500/30"
-                        : "bg-red-500/15 text-red-500 border-red-500/30"
-                    }`}
-                  >
-                    {selectedCall.status === "NO_ANSWER" ? "NO ANSWER" : selectedCall.status}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                        selectedCall.status === "COMPLETED"
+                          ? "bg-emerald-500/15 text-emerald-500 border-emerald-500/30"
+                          : selectedCall.status === "DISPATCHED" || selectedCall.status === "IN_PROGRESS"
+                          ? "bg-blue-500/15 text-blue-500 border-blue-500/30 animate-pulse"
+                          : selectedCall.status === "NO_ANSWER"
+                          ? "bg-amber-500/15 text-amber-500 border-amber-500/30"
+                          : selectedCall.status === "BUSY"
+                          ? "bg-amber-500/15 text-amber-500 border-amber-500/30"
+                          : "bg-red-500/15 text-red-500 border-red-500/30"
+                      }`}
+                    >
+                      {selectedCall.status === "NO_ANSWER" ? "NO ANSWER" : selectedCall.status}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCall(null)}
+                      className="p-1 rounded-lg text-foreground/40 hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
+                      title="Close Details"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Duration & Numbers info */}

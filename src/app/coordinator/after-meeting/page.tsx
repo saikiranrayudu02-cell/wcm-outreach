@@ -284,16 +284,16 @@ function AfterMeetingFormContent() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.push("/coordinator/dashboard")}
-              className="rounded-xl p-2 text-slate-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+              className="rounded-xl p-2 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div>
-              <h2 className="text-xl font-black text-white uppercase tracking-wider flex items-center gap-2">
-                <ClipboardList className="h-5 w-5 text-indigo-400" />
+              <h2 className="text-lg sm:text-xl font-black text-foreground uppercase tracking-wider flex items-center gap-2">
+                <ClipboardList className="h-5 w-5 text-primary" />
                 After-Meeting Evaluation Form
               </h2>
-              <p className="text-xs text-indigo-200/60 font-medium">
+              <p className="text-xs text-muted-foreground font-medium">
                 Record ministry outcomes linked to an approved meeting.
               </p>
             </div>
@@ -301,16 +301,16 @@ function AfterMeetingFormContent() {
         </div>
 
         {/* Meeting Selector Card */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-3">
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+        <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 space-y-3 shadow-xs">
+          <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
             Select Linked Meeting ID *
           </label>
           {meetings.length === 0 ? (
-            <div className="p-4 rounded-xl bg-white/5 border border-white/5 text-center space-y-2">
-              <p className="text-xs text-indigo-200/70">No meetings found. Create a meeting and complete verification first.</p>
+            <div className="p-4 rounded-xl bg-accent/40 border border-border text-center space-y-2">
+              <p className="text-xs text-muted-foreground">No meetings found. Create a meeting and complete verification first.</p>
               <button
                 onClick={() => router.push("/coordinator/verification")}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors shadow-xs"
               >
                 <PlusCircle className="h-4 w-4" /> Go to Verification Form
               </button>
@@ -320,18 +320,18 @@ function AfterMeetingFormContent() {
               <select
                 value={selectedMeetingId}
                 onChange={(e) => setSelectedMeetingId(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-xs font-bold"
+                className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs font-bold"
               >
                 {meetings.map((m) => (
-                  <option key={m.id} value={m.id}>
+                  <option key={m.id} value={m.id} className="bg-card text-foreground">
                     {m.reportId} — {m.title || "Meeting"} ({m.verificationStatus})
                   </option>
                 ))}
               </select>
 
               {selectedMeeting && (
-                <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/5 border border-white/5 text-xs">
-                  <span className="text-slate-400 font-bold uppercase text-[9px]">Verification Status:</span>
+                <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-accent/40 border border-border text-xs">
+                  <span className="text-muted-foreground font-bold uppercase text-[9px]">Verification Status:</span>
                   <FormStatusBadge status={selectedMeeting.verificationStatus} size="sm" />
                 </div>
               )}
@@ -341,24 +341,24 @@ function AfterMeetingFormContent() {
 
         {/* Locked Warning or Form */}
         {selectedMeeting && isLocked ? (
-          <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-8 text-center space-y-4">
-            <div className="h-16 w-16 mx-auto rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center">
-              <Lock className="h-8 w-8" />
+          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 dark:bg-amber-500/5 p-6 sm:p-8 text-center space-y-4">
+            <div className="h-14 w-14 sm:h-16 sm:w-16 mx-auto rounded-2xl bg-amber-500/15 text-amber-500 border border-amber-500/30 flex items-center justify-center">
+              <Lock className="h-7 w-7 sm:h-8 sm:w-8" />
             </div>
             <div>
-              <h4 className="text-base font-bold text-white uppercase tracking-wider">Evaluation Form Locked</h4>
-              <p className="text-xs text-indigo-200/70 mt-1 max-w-md mx-auto">
-                Meeting <span className="font-mono text-amber-300 font-bold">{selectedMeeting.reportId}</span> Verification Form must complete the approval sequence (Coordinator → Zonal Leader → State Leader → Admin) and receive final Admin approval before Evaluation can be submitted.
+              <h4 className="text-base font-bold text-foreground uppercase tracking-wider">Evaluation Form Locked</h4>
+              <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
+                Meeting <span className="font-mono text-amber-600 dark:text-amber-400 font-bold">{selectedMeeting.reportId}</span> Verification Form must complete the approval sequence (Coordinator → Zonal Leader → State Leader → Admin) and receive final Admin approval before Evaluation can be submitted.
               </p>
             </div>
             <div className="inline-flex items-center gap-2 pt-2">
-              <span className="text-xs text-indigo-200/50">Current Verification Status:</span>
+              <span className="text-xs text-muted-foreground">Current Verification Status:</span>
               <FormStatusBadge status={selectedMeeting.verificationStatus} />
             </div>
             <div>
               <button
                 onClick={() => router.push(`/coordinator/report/${selectedMeeting.id}`)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-xs"
               >
                 View Meeting Lifecycle Details
               </button>
@@ -366,130 +366,130 @@ function AfterMeetingFormContent() {
           </div>
         ) : selectedMeeting ? (
           <form className="space-y-6">
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 sm:p-8 space-y-6">
-              <div className="flex items-center justify-between pb-4 border-b border-white/10">
-                <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider">
+            <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 md:p-8 space-y-6 shadow-xs">
+              <div className="flex items-center justify-between pb-4 border-b border-border">
+                <span className="text-xs font-bold text-primary uppercase tracking-wider">
                   Linked to Meeting: {selectedMeeting.reportId}
                 </span>
                 <FormStatusBadge status={selectedMeeting.evaluationStatus || "PENDING"} />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                     Overall Meeting Outcome *
                   </label>
                   <select
                     {...register("overallMeetingOutcome", { required: true })}
-                    className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs sm:text-sm font-semibold"
                   >
-                    <option value="Exceptional">Exceptional</option>
-                    <option value="Very Good">Very Good</option>
-                    <option value="Good">Good</option>
-                    <option value="Satisfactory">Satisfactory</option>
-                    <option value="Challenging">Challenging</option>
+                    <option value="Exceptional" className="bg-card text-foreground">Exceptional</option>
+                    <option value="Very Good" className="bg-card text-foreground">Very Good</option>
+                    <option value="Good" className="bg-card text-foreground">Good</option>
+                    <option value="Satisfactory" className="bg-card text-foreground">Satisfactory</option>
+                    <option value="Challenging" className="bg-card text-foreground">Challenging</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                     Congregation Response *
                   </label>
                   <select
                     {...register("congregationResponse", { required: true })}
-                    className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs sm:text-sm font-semibold"
                   >
-                    <option value="Highly Receptive">Highly Receptive</option>
-                    <option value="Positive & Engaged">Positive & Engaged</option>
-                    <option value="Moderate">Moderate</option>
-                    <option value="Reserved">Reserved</option>
+                    <option value="Highly Receptive" className="bg-card text-foreground">Highly Receptive</option>
+                    <option value="Positive & Engaged" className="bg-card text-foreground">Positive & Engaged</option>
+                    <option value="Moderate" className="bg-card text-foreground">Moderate</option>
+                    <option value="Reserved" className="bg-card text-foreground">Reserved</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                     Strengths Observed *
                   </label>
                   <textarea
                     rows={3}
                     {...register("strengthsObserved", { required: true })}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs sm:text-sm font-semibold"
                     placeholder="Observed strengths..."
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                     Challenges Observed *
                   </label>
                   <textarea
                     rows={3}
                     {...register("challengesObserved", { required: true })}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs sm:text-sm font-semibold"
                     placeholder="Observed challenges..."
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                     Opportunity for WCM *
                   </label>
                   <textarea
                     rows={2}
                     {...register("opportunityForWcm", { required: true })}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs sm:text-sm font-semibold"
                     placeholder="Future outreach opportunities with this church..."
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                     Coordinator Name *
                   </label>
                   <input
                     type="text"
                     {...register("coordinatorName", { required: true })}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs sm:text-sm font-semibold"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                     Designation *
                   </label>
                   <input
                     type="text"
                     {...register("designation", { required: true })}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs sm:text-sm font-semibold"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                     Signature / Consent *
                   </label>
                   <input
                     type="text"
                     {...register("signature", { required: true })}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold font-serif"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs sm:text-sm font-semibold font-serif"
                     placeholder="Type name as digital signature"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                     Submission Date
                   </label>
                   <input
                     type="date"
                     {...register("submissionDate")}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs sm:text-sm font-semibold"
                   />
                 </div>
               </div>
 
               {/* Media Upload Sections: Evaluation Images & Evaluation Video */}
-              <div className="space-y-5 pt-4 border-t border-white/10">
+              <div className="space-y-5 pt-4 border-t border-border">
                 <MediaUploader
                   category="EVALUATION_IMAGE"
                   value={evaluationImages}
@@ -512,11 +512,11 @@ function AfterMeetingFormContent() {
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="pt-4 border-t border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                 <button
                   type="button"
                   onClick={() => router.push(`/coordinator/report/${selectedMeeting.id}`)}
-                  className="text-xs text-indigo-300 hover:text-white font-bold uppercase tracking-wider transition-colors text-center sm:text-left py-2 cursor-pointer"
+                  className="text-xs text-primary hover:underline font-bold uppercase tracking-wider transition-colors text-center sm:text-left py-2 cursor-pointer"
                 >
                   View All 3 Forms
                 </button>
@@ -525,7 +525,7 @@ function AfterMeetingFormContent() {
                     type="button"
                     onClick={handleSubmit(handleSaveDraft)}
                     disabled={saving || submitting}
-                    className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50 min-h-11"
+                    className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-border bg-card hover:bg-accent text-foreground text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50 min-h-11 shadow-xs"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Draft"}
                   </button>
@@ -533,7 +533,7 @@ function AfterMeetingFormContent() {
                     type="button"
                     onClick={handleSubmit(handleSubmitEvaluation)}
                     disabled={saving || submitting}
-                    className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black uppercase tracking-wider transition-colors cursor-pointer shadow-md disabled:opacity-50 min-h-11"
+                    className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-black uppercase tracking-wider transition-colors cursor-pointer shadow-md disabled:opacity-50 min-h-11 active:scale-[0.97]"
                   >
                     {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit Evaluation"}
                   </button>

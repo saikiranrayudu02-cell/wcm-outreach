@@ -431,63 +431,63 @@ function AdminDashboardContent() {
           </div>
         </div>
 
-        {/* Tab switcher */}
+        {/* App-Style Segmented Navigation Switcher */}
         <div className="overflow-x-auto pb-1 max-w-full no-scrollbar">
-          <div className="flex border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 p-1.5 rounded-2xl gap-1.5 w-max sm:w-fit shadow-xs">
+          <div className="flex border border-border bg-card p-1 rounded-2xl gap-1 w-max sm:w-fit shadow-xs">
             <button
               onClick={() => handleTabChange("users")}
-              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap active:scale-95 ${
                 activeTab === "users"
-                  ? "bg-blue-600 text-white shadow-sm font-black"
-                  : "text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80"
+                  ? "bg-primary text-white shadow-xs font-black"
+                  : "text-slate-600 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
-              <Users className="h-4 w-4" />
-              User Management
+              <Users className="h-3.5 w-3.5" />
+              <span>Users</span>
             </button>
             <button
               onClick={() => handleTabChange("reports")}
-              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap active:scale-95 ${
                 activeTab === "reports"
-                  ? "bg-blue-600 text-white shadow-sm font-black"
-                  : "text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80"
+                  ? "bg-primary text-white shadow-xs font-black"
+                  : "text-slate-600 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
-              <FileSpreadsheet className="h-4 w-4" />
-              Submitted Reports
+              <FileSpreadsheet className="h-3.5 w-3.5" />
+              <span>Reports</span>
             </button>
             <button
               onClick={() => handleTabChange("analytics")}
-              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap active:scale-95 ${
                 activeTab === "analytics"
-                  ? "bg-blue-600 text-white shadow-sm font-black"
-                  : "text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80"
+                  ? "bg-primary text-white shadow-xs font-black"
+                  : "text-slate-600 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
-              <BarChart3 className="h-4 w-4" />
-              Monthly Summary
+              <BarChart3 className="h-3.5 w-3.5" />
+              <span>Monthly Summary</span>
             </button>
             <button
               onClick={() => handleTabChange("messages")}
-              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap active:scale-95 ${
                 activeTab === "messages"
-                  ? "bg-blue-600 text-white shadow-sm font-black"
-                  : "text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80"
+                  ? "bg-primary text-white shadow-xs font-black"
+                  : "text-slate-600 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
-              <Mail className="h-4 w-4" />
-              Send Messages
+              <Mail className="h-3.5 w-3.5" />
+              <span>Messages</span>
             </button>
             <button
               onClick={() => handleTabChange("confirmations")}
-              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0 whitespace-nowrap active:scale-95 ${
                 activeTab === "confirmations"
-                  ? "bg-blue-600 text-white shadow-sm font-black"
-                  : "text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80"
+                  ? "bg-primary text-white shadow-xs font-black"
+                  : "text-slate-600 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
-              <CalendarCheck className="h-4 w-4" />
-              Confirmations
+              <CalendarCheck className="h-3.5 w-3.5" />
+              <span>Confirmations</span>
             </button>
           </div>
         </div>
@@ -504,7 +504,7 @@ function AdminDashboardContent() {
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
                     userViewMode === "directory"
                       ? "bg-primary text-white shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
+                      : "text-slate-600 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
                   <Users className="h-3.5 w-3.5" />
@@ -516,7 +516,7 @@ function AdminDashboardContent() {
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
                     userViewMode === "tree"
                       ? "bg-primary text-white shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
+                      : "text-slate-600 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
                   <GitFork className="h-3.5 w-3.5" />
@@ -716,13 +716,13 @@ function AdminDashboardContent() {
                       <div className="hidden md:block overflow-x-auto">
                         <table className="w-full text-left border-collapse text-sm">
                           <thead>
-                            <tr className="bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 font-black uppercase tracking-wider text-[11px]">
-                              <th className="px-6 py-4">User Details</th>
-                              <th className="px-6 py-4">Role</th>
-                              <th className="px-6 py-4">Hierarchy Assignment</th>
-                              <th className="px-6 py-4">Parent Zonal Leader</th>
-                              <th className="px-6 py-4 text-center">Status</th>
-                              <th className="px-6 py-4 text-right">Actions</th>
+                            <tr className="bg-slate-100 dark:bg-[#202024] border-b border-slate-200 dark:border-[#38383e] text-slate-900 dark:text-white font-black uppercase tracking-wider text-[11px]">
+                              <th className="px-6 py-4 text-slate-900 dark:text-white">User Details</th>
+                              <th className="px-6 py-4 text-slate-900 dark:text-white">Role</th>
+                              <th className="px-6 py-4 text-slate-900 dark:text-white">Hierarchy Assignment</th>
+                              <th className="px-6 py-4 text-slate-900 dark:text-white">Parent Zonal Leader</th>
+                              <th className="px-6 py-4 text-center text-slate-900 dark:text-white">Status</th>
+                              <th className="px-6 py-4 text-right text-slate-900 dark:text-white">Actions</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-100">
@@ -766,7 +766,7 @@ function AdminDashboardContent() {
                                 <td className="px-6 py-4 text-xs">
                                   {u.role === "COORDINATOR" ? (
                                     u.parentZonalLeader ? (
-                                      <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/50 text-emerald-800 dark:text-emerald-300">
+                                      <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/50 dark:border-emerald-700/50 text-emerald-800 dark:text-emerald-300">
                                         <span className="font-black block text-[11px]">{u.parentZonalLeader.name}</span>
                                         <span className="text-[10px] text-emerald-600/80 dark:text-emerald-400 font-medium block">@{u.parentZonalLeader.username}</span>
                                       </div>
@@ -779,11 +779,11 @@ function AdminDashboardContent() {
                                 </td>
                                 <td className="px-6 py-4 text-center">
                                   {u.isActive ? (
-                                    <span className="inline-flex rounded-full bg-emerald-50 dark:bg-emerald-950/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300 border border-emerald-200/40">
+                                    <span className="inline-flex rounded-full bg-emerald-500/15 dark:bg-emerald-500/25 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 dark:border-emerald-400/40">
                                       Active
                                     </span>
                                   ) : (
-                                    <span className="inline-flex rounded-full bg-red-50 dark:bg-red-950/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-red-600 dark:text-red-400 border border-red-200/40">
+                                    <span className="inline-flex rounded-full bg-red-500/15 dark:bg-red-500/25 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-red-600 dark:text-red-300 border border-red-500/30 dark:border-red-400/40">
                                       Deactivated
                                     </span>
                                   )}
@@ -939,13 +939,13 @@ function AdminDashboardContent() {
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr className="bg-slate-100 dark:bg-slate-800/90 border-b border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-black uppercase tracking-wider text-[11px]">
-                      <th className="px-5 py-4">Meeting Details</th>
-                      <th className="px-5 py-4">Coordinator</th>
-                      <th className="px-4 py-4 text-center">1. Verification</th>
-                      <th className="px-4 py-4 text-center">2. Attendance</th>
-                      <th className="px-4 py-4 text-center">3. Evaluation</th>
-                      <th className="px-5 py-4 text-right">Actions</th>
+                    <tr className="bg-slate-100 dark:bg-[#202024] border-b border-slate-200 dark:border-[#38383e] text-slate-900 dark:text-white font-black uppercase tracking-wider text-[11px]">
+                      <th className="px-5 py-4 text-slate-900 dark:text-white">Meeting Details</th>
+                      <th className="px-5 py-4 text-slate-900 dark:text-white">Coordinator</th>
+                      <th className="px-4 py-4 text-center text-slate-900 dark:text-white">1. Verification</th>
+                      <th className="px-4 py-4 text-center text-slate-900 dark:text-white">2. Attendance</th>
+                      <th className="px-4 py-4 text-center text-slate-900 dark:text-white">3. Evaluation</th>
+                      <th className="px-5 py-4 text-right text-slate-900 dark:text-white">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-800/80 text-slate-700 dark:text-slate-200">
@@ -1105,11 +1105,11 @@ function AdminDashboardContent() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse text-sm">
                     <thead>
-                      <tr className="bg-slate-50/50 dark:bg-slate-800/10 border-b border-slate-200 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-widest text-[10px]">
-                        <th className="px-6 py-4">Recipient</th>
-                        <th className="px-6 py-4">Title & Message</th>
-                        <th className="px-6 py-4">Date Sent</th>
-                        <th className="px-6 py-4 text-center">Status</th>
+                      <tr className="bg-slate-100 dark:bg-[#202024] border-b border-slate-200 dark:border-[#38383e] text-slate-900 dark:text-white font-black uppercase tracking-wider text-[10px]">
+                        <th className="px-6 py-4 text-slate-900 dark:text-white">Recipient</th>
+                        <th className="px-6 py-4 text-slate-900 dark:text-white">Title & Message</th>
+                        <th className="px-6 py-4 text-slate-900 dark:text-white">Date Sent</th>
+                        <th className="px-6 py-4 text-center text-slate-900 dark:text-white">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
@@ -1167,12 +1167,12 @@ function AdminDashboardContent() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr className="bg-slate-50/50 dark:bg-slate-800/10 border-b border-slate-200 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-widest text-[10px]">
-                      <th className="px-6 py-4">Coordinator</th>
-                      <th className="px-6 py-4">Details</th>
-                      <th className="px-6 py-4">Message</th>
-                      <th className="px-6 py-4">Status</th>
-                      <th className="px-6 py-4 text-right">Action</th>
+                    <tr className="bg-slate-100 dark:bg-[#202024] border-b border-slate-200 dark:border-[#38383e] text-slate-900 dark:text-white font-black uppercase tracking-wider text-[10px]">
+                      <th className="px-6 py-4 text-slate-900 dark:text-white">Coordinator</th>
+                      <th className="px-6 py-4 text-slate-900 dark:text-white">Details</th>
+                      <th className="px-6 py-4 text-slate-900 dark:text-white">Message</th>
+                      <th className="px-6 py-4 text-slate-900 dark:text-white">Status</th>
+                      <th className="px-6 py-4 text-right text-slate-900 dark:text-white">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">

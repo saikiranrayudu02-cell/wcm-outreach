@@ -7,17 +7,26 @@ export interface RoleBadgeProps {
 }
 
 export function RoleBadge({ role, className = "", size = "sm" }: RoleBadgeProps) {
-  if (!role) return null;
-
-  const raw = String(role).trim();
-  const clean = raw.toUpperCase().replace(/[\s_-]+/g, "");
-
   const sizeClasses =
     size === "xs"
       ? "px-2 py-0.5 text-[8.5px]"
       : size === "md"
       ? "px-3 py-1 text-xs"
       : "px-2.5 py-0.5 text-[10px]";
+
+  if (!role) {
+    return (
+      <span
+        className={`inline-flex items-center gap-1.5 rounded-full font-bold uppercase tracking-wider bg-slate-500/15 dark:bg-slate-500/25 text-slate-700 dark:text-slate-200 border border-slate-500/30 ${sizeClasses} ${className}`}
+      >
+        <span className="h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+        Unassigned
+      </span>
+    );
+  }
+
+  const raw = String(role).trim();
+  const clean = raw.toUpperCase().replace(/[\s_-]+/g, "");
 
   if (clean === "ADMIN") {
     return (

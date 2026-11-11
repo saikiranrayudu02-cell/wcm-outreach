@@ -1,8 +1,55 @@
 {
+  "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
   "version": "0.2",
-  "enabled": false,
+  "language": "en",
   "ignorePaths": [
-    "**/*"
+    "**/*",
+    "**",
+    "src/components/completed-verifications-calendar.tsx",
+    "src/components/splash-screen.tsx"
+  ],
+  "words": [
+    "WCM", "Carmel", "Outreach", "Konaseema", "Amalapuram", "Rajahmundry", "Kakinada", 
+    "Vijayawada", "Guntur", "Visakhapatnam", "Vizag", "Tirupati", "Nellore", "Kadapa", 
+    "Kurnool", "Ongole", "Eluru", "Bhimavaram", "Machilipatnam", "Vizianagaram", 
+    "Srikakulam", "Ananthapuramu", "Nandyal", "Anakapalli", "Chittoor", "Annamayya", 
+    "Bapatla", "Palnadu", "Razole", "Mummidivaram", "Ravulapalem", "Kothapeta", 
+    "Muramalla", "Annavaram", "Tuni", "Pithapuram", "Mandapeta", "Ramachandrapuram", 
+    "Palakollu", "Narsapuram", "Tadepalligudem", "Tanuku", "Jaggampeta", "Hyderabad", 
+    "Secunderabad", "Warangal", "Karimnagar", "Khammam", "Nizamabad", "Mancherial", 
+    "Ramagundam", "Suryapet", "Nalgonda", "Mahabubnagar", "Siddipet", "Chennai", 
+    "Coimbatore", "Madurai", "Tiruchirappalli", "amp", "ampl", "rjy", "rjmd", "kkd", 
+    "vja", "bza", "vij", "gnt", "vzg", "tpt", "tpti", "nlr", "kdp", "krn", "ong", 
+    "ogl", "elr", "bvrm", "mtm", "mct", "vzm", "sklm", "atp", "anant", "nndl", "akp", 
+    "ctr", "any", "bptl", "plnd", "rzl", "mvd", "rvp", "ktp", "mrm", "anv", "pit", 
+    "mnd", "rcpm", "plv", "nrs", "tad", "tng", "jgd", "hyd", "sec", "wgl", "knr", 
+    "khm", "nzb", "mncl", "rmg", "srd", "nlg", "mbnr", "sdpt", "chn", "mas", "cbe", 
+    "mdu", "trchy", "tpj", "lucide", "sonner", "zustand", "turbopack", "capacitor",
+    "convener", "kurn", "slm", "tir", "erd", "vell", "tjr", "tut", "tnv", "ngl",
+    "blr", "bng", "bangalore", "bengaluru", "mys", "mysore", "mysuru", "mng", "mangaluru",
+    "hbl", "hubli", "hubballi", "bgm", "belgaum", "belagavi", "mum", "bom", "mumbai",
+    "pne", "pune", "del", "delhi", "kol", "ccu", "kolkata"
+  ],
+  "ignoreWords": [
+    "amp", "ampl", "amalapuram", "rjy", "rajahmundry", "rjmd", "kkd", "kakinada",
+    "vja", "bza", "vij", "vijayawada", "gnt", "guntur", "vzg", "vizag", "visakhapatnam",
+    "tpt", "tpti", "tirupati", "nlr", "nellore", "kdp", "kadapa", "krn", "kurn", "kurnool",
+    "ong", "ogl", "ongole", "elr", "eluru", "bvrm", "bhimavaram", "mtm", "mct", "machilipatnam",
+    "vzm", "vizianagaram", "sklm", "srikakulam", "atp", "anant", "ananthapuramu",
+    "nndl", "nandyal", "akp", "anakapalli", "ctr", "chittoor", "any", "annamayya",
+    "bptl", "bapatla", "plnd", "palnadu", "konaseema", "rzl", "razole", "mvd", "mummidivaram",
+    "rvp", "ravulapalem", "ktp", "kothapeta", "mrm", "muramalla", "anv", "annavaram",
+    "tuni", "pit", "pithapuram", "mnd", "mandapeta", "rcpm", "ramachandrapuram",
+    "plv", "palakollu", "nrs", "narsapuram", "tad", "tadepalligudem", "tng", "tanuku",
+    "jgd", "jaggampeta", "hyd", "hyderabad", "sec", "secunderabad", "wgl", "warangal",
+    "knr", "karimnagar", "khm", "khammam", "nzb", "nizamabad", "mncl", "mancherial",
+    "rmg", "ramagundam", "srd", "suryapet", "nlg", "nalgonda", "mbnr", "mahabubnagar",
+    "sdpt", "siddipet", "chn", "chennai", "mas", "cbe", "coimbatore", "mdu", "madurai",
+    "trchy", "tpj", "tiruchirappalli", "slm", "salem", "tir", "tiruppur", "erd", "erode",
+    "vell", "vellore", "tjr", "thanjavur", "tut", "thoothukudi", "tnv", "tirunelveli",
+    "ngl", "nagercoil", "blr", "bng", "bangalore", "bengaluru", "mys", "mysore", "mysuru",
+    "mng", "mangalore", "mangaluru", "hbl", "hubli", "hubballi", "bgm", "belgaum", "belagavi",
+    "mum", "bom", "mumbai", "pne", "pune", "del", "delhi", "kol", "ccu", "kolkata",
+    "carmel", "wcm", "lucide", "pct", "keydown", "widest", "pwa", "rgba"
   ]
 }
-

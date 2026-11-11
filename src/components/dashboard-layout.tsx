@@ -1,15 +1,17 @@
 "use client";
 
 import React, { Suspense, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { useUIStore } from "@/store/ui-store";
 import { translate, formatRoleName, formatRoleBadge } from "@/lib/translations";
+import { RoleBadge } from "@/components/role-badge";
 import { 
   Menu, X, LogOut, LayoutDashboard, FileCheck, Users, 
   FileSpreadsheet, ClipboardList, Sun, Moon,
   Bell, CheckCheck, CalendarCheck, Calendar, Inbox, User as UserIcon, ChevronRight, ChevronDown,
-  ShieldCheck, PhoneCall, Mail, BarChart3, LayoutGrid, Layers, Download, History
+  ShieldCheck, PhoneCall, Mail, BarChart3, LayoutGrid, Layers, Download, History, ArrowLeft, Globe
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
@@ -42,7 +44,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showLogoutConfirmModal, setShowLogoutConfirmModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [loading, setLoading] = useState(true);
+  // Instant non-blocking loading: if user is cached in UI store, render immediately with 0 delay!
+  const [loading, setLoading] = useState(!user);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const [afterMeetingOpen, setAfterMeetingOpen] = useState(
@@ -96,20 +99,32 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Fetch session on load
+  // Non-blocking background session verification
   useEffect(() => {
+    let isMounted = true;
     const checkSession = async () => {
-      const { data: session } = await authClient.getSession();
-      if (!session) {
-        toast.error("Please login to access the system");
-        router.push("/login");
-      } else {
-        setUser(session.user);
-        setLoading(false);
+      try {
+        const { data: session } = await authClient.getSession();
+        if (!isMounted) return;
+        if (!session) {
+          if (!user) {
+            toast.error("Please login to access the system");
+            router.push("/login");
+          }
+        } else {
+          setUser(session.user);
+        }
+      } catch (err) {
+        console.warn("Session check error:", err);
+      } finally {
+        if (isMounted) setLoading(false);
       }
     };
     checkSession();
-  }, [router, setUser]);
+    return () => {
+      isMounted = false;
+    };
+  }, [router, setUser, user]);
 
   // Fetch notifications on load or when user changes
   useEffect(() => {
@@ -202,6 +217,76 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
   const links = getSidebarLinks();
 
+  const getPageTitle = () => {
+    if (pathname === "/admin/calendar") return "Outreach Schedule";
+    if (pathname === "/admin/calling-center") return "AI Calling Center";
+    if (pathname === "/admin/meetings") return "Meeting Management";
+    if (pathname === "/admin/previous-meetings") return "Previous Meetings";
+    if (pathname === "/admin/completed-verifications") return "Completed Verifications";
+    if (pathname === "/admin/dashboard") {
+      const tab = searchParams?.get("tab");
+      if (tab === "reports") return "Submitted Reports";
+      if (tab === "analytics") return "Monthly Summary";
+      if (tab === "messages") return "Send Messages";
+      if (tab === "confirmations") return "Confirmations";
+      return "User Management";
+    }
+    if (pathname === "/coordinator/dashboard") return "Field Operations";
+    if (pathname === "/coordinator/verification") return "Verification Form";
+    if (pathname === "/coordinator/attendance") return "Attendance Sheet";
+    if (pathname === "/coordinator/after-meeting") return "Evaluation Form";
+    if (pathname === "/coordinator/received-meetings") return "Assigned Meetings";
+    if (pathname === "/coordinator/confirmations") return "Meeting Confirmations";
+    if (pathname?.startsWith("/coordinator/report/")) return "Meeting Report";
+    if (pathname === "/state-leader/dashboard") return "State Dashboard";
+    if (pathname === "/state-leader/assigned-meetings") return "Assigned Meetings";
+    if (pathname === "/zone-leader/dashboard") return "Zonal Dashboard";
+    if (pathname === "/zone-leader/assigned-meetings") return "Assigned Meetings";
+    if (pathname === "/find-people") return "Find People";
+    if (pathname === "/profile") return "My Profile";
+    return "WCM Outreach";
+  };
+
+  const getBottomNavTabs = () => {
+    if (role === "ADMIN") {
+      return [
+        { name: "Schedule", href: "/admin/calendar", icon: Calendar },
+        { name: "Meetings", href: "/admin/meetings", icon: Layers },
+        { name: "Reports", href: "/admin/dashboard?tab=reports", icon: FileSpreadsheet },
+        { name: "AI Calls", href: "/admin/calling-center", icon: PhoneCall, badge: "AI" },
+        { name: "More", isMore: true, icon: Menu },
+      ];
+    }
+    if (role === "COORDINATOR" || role === "LEADER") {
+      return [
+        { name: "Home", href: "/coordinator/dashboard", icon: LayoutDashboard },
+        { name: "Meetings", href: "/coordinator/received-meetings", icon: Inbox },
+        { name: "Verify", href: "/coordinator/verification", icon: FileCheck },
+        { name: "Attendance", href: "/coordinator/attendance", icon: FileSpreadsheet },
+        { name: "More", isMore: true, icon: Menu },
+      ];
+    }
+    if (role === "STATE_LEADER") {
+      return [
+        { name: "Home", href: "/state-leader/dashboard", icon: LayoutDashboard },
+        { name: "Meetings", href: "/state-leader/assigned-meetings", icon: CalendarCheck },
+        { name: "People", href: "/find-people", icon: Users },
+        { name: "Profile", href: "/profile", icon: UserIcon },
+        { name: "More", isMore: true, icon: Menu },
+      ];
+    }
+    // ZONE_LEADER
+    return [
+      { name: "Home", href: "/zone-leader/dashboard", icon: LayoutDashboard },
+      { name: "Meetings", href: "/zone-leader/assigned-meetings", icon: CalendarCheck },
+      { name: "People", href: "/find-people", icon: Users },
+      { name: "Profile", href: "/profile", icon: UserIcon },
+      { name: "More", isMore: true, icon: Menu },
+    ];
+  };
+
+  const bottomTabs = getBottomNavTabs();
+
   const isLinkActive = (linkHref: string) => {
     const [linkPath, linkQuery] = linkHref.split("?");
     if (linkQuery) {
@@ -280,13 +365,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                             const subActive = isLinkActive(sub.href);
                             const SubIcon = sub.icon;
                             return (
-                              <a
+                              <Link
                                 key={sub.name}
                                 href={sub.href}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  router.push(sub.href);
-                                }}
+                                prefetch={true}
                                 className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all ${
                                   subActive
                                     ? "bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary font-semibold"
@@ -295,7 +377,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                               >
                                 <SubIcon className={`h-3.5 w-3.5 ${subActive ? "text-primary" : "text-muted-foreground"}`} />
                                 <span className="truncate">{translate(sub.name, language)}</span>
-                              </a>
+                              </Link>
                             );
                           })}
                         </div>
@@ -314,12 +396,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                         </p>
                       </div>
                     )}
-                    <a
+                    <Link
                       href={link.href}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        router.push(link.href);
-                      }}
+                      prefetch={true}
                       className={`relative flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium tracking-wide transition-all duration-150 group ${
                         active 
                           ? "bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary font-semibold" 
@@ -337,7 +416,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                         </span>
                       )}
                       {active && !link.badge && <ChevronRight className="h-3 w-3 ml-auto text-primary/70 shrink-0" />}
-                    </a>
+                    </Link>
                   </div>
                 );
               })}
@@ -441,14 +520,11 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                             const subActive = isLinkActive(sub.href);
                             const SubIcon = sub.icon;
                             return (
-                              <a
+                              <Link
                                 key={sub.name}
                                 href={sub.href}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  setMobileOpen(false);
-                                  router.push(sub.href);
-                                }}
+                                prefetch={true}
+                                onClick={() => setMobileOpen(false)}
                                 className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all ${
                                   subActive
                                     ? "bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary font-semibold"
@@ -457,7 +533,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                               >
                                 <SubIcon className={`h-3.5 w-3.5 ${subActive ? "text-primary" : "text-muted-foreground"}`} />
                                 <span className="truncate">{translate(sub.name, language)}</span>
-                              </a>
+                              </Link>
                             );
                           })}
                         </div>
@@ -476,13 +552,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                         </p>
                       </div>
                     )}
-                    <a
+                    <Link
                       href={link.href}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setMobileOpen(false);
-                        router.push(link.href);
-                      }}
+                      prefetch={true}
+                      onClick={() => setMobileOpen(false)}
                       className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium tracking-wide transition-all ${
                         active ? "bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary font-semibold" : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
                       }`}
@@ -494,38 +567,42 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                           {link.badge}
                         </span>
                       )}
-                    </a>
+                    </Link>
                   </div>
                 );
               })}
             </nav>
           </div>
           
-          <div className="border-t border-border pt-3 space-y-2 shrink-0">
-            <button
-              onClick={() => {
-                setMobileOpen(false);
-                router.push("/profile");
-              }}
-              className="flex w-full items-center gap-2.5 p-2 rounded-xl bg-accent/40 hover:bg-accent border border-border text-left cursor-pointer transition-all"
-              title="View and edit your profile"
-            >
-              {user?.image ? (
-                <img
-                  src={user.image}
-                  alt={user?.name || user?.username || "Avatar"}
-                  className="h-8 w-8 rounded-lg object-cover border border-border shrink-0"
-                />
-              ) : (
-                <div className="h-8 w-8 rounded-lg flex items-center justify-center font-bold text-xs uppercase shrink-0 bg-primary text-white">
-                  {user?.username?.[0] || "U"}
+          {/* Mobile Drawer Bottom User & Action Section */}
+          <div className="border-t border-border pt-3 space-y-2.5 shrink-0">
+            <div className="p-2.5 rounded-xl bg-accent/40 border border-border/80 flex items-center justify-between gap-2">
+              <button
+                onClick={() => {
+                  setMobileOpen(false);
+                  router.push("/profile");
+                }}
+                className="flex items-center gap-2.5 text-left flex-1 min-w-0 cursor-pointer active:opacity-75 transition-opacity"
+              >
+                {user?.image ? (
+                  <img
+                    src={user.image}
+                    alt={user?.name || user?.username || "Avatar"}
+                    className="h-8 w-8 rounded-lg object-cover border border-border shrink-0 shadow-2xs"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-lg flex items-center justify-center font-bold text-xs uppercase shrink-0 bg-primary text-white shadow-2xs">
+                    {user?.username?.[0]?.toUpperCase() || "U"}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-foreground truncate">{user?.name || user?.username}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">@{user?.username}</p>
                 </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-foreground truncate">{user?.name || user?.username}</p>
-                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">{formatRoleBadge(user?.role)}</p>
-              </div>
-            </button>
+              </button>
+              <RoleBadge role={user?.role} size="xs" />
+            </div>
+
             {!isStandalone && (
               <button
                 onClick={() => {
@@ -535,17 +612,18 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-hover text-white px-3 py-2 text-xs font-semibold cursor-pointer active:scale-98 transition-all shadow-xs min-h-10"
               >
                 <Download className="h-3.5 w-3.5" />
-                Download App
+                Install Mobile App
               </button>
             )}
+
             <button
               onClick={() => {
                 setMobileOpen(false);
                 setShowLogoutConfirmModal(true);
               }}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-3 py-2 text-xs font-semibold border border-red-500/20 cursor-pointer active:scale-98 transition-all min-h-10"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-500/10 hover:bg-red-500 text-red-600 dark:text-red-400 hover:text-white px-3 py-2.5 text-xs font-bold uppercase tracking-wider border border-red-500/20 cursor-pointer active:scale-95 transition-all min-h-10 shadow-2xs"
             >
-              <LogOut className="h-3.5 w-3.5" />
+              <LogOut className="h-4 w-4" />
               {translate("Logout", language)}
             </button>
           </div>
@@ -555,391 +633,277 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       {/* Main Container */}
       <div className={`flex flex-col flex-1 min-w-0 max-w-full w-full transition-all duration-300 ${sidebarOpen ? "md:pl-65" : ""}`}>
         {/* Top Navbar with Native Safe-Area Support */}
-        <header className="sticky top-0 z-20 flex flex-col justify-end border-b border-border bg-background/90 backdrop-blur-md transition-all duration-200">
+        <header className="sticky top-0 z-20 flex flex-col justify-end border-b border-border bg-background/95 dark:bg-[#111114]/95 backdrop-blur-xl transition-all duration-200">
           <div className="w-full shrink-0 h-[max(env(safe-area-inset-top,0px),var(--safe-area-inset-top,0px))]" aria-hidden="true" />
-          <div className="flex h-14 w-full items-center justify-between px-3 sm:px-6">
-            <div className="flex items-center gap-2 sm:gap-3">
-            <button 
-              onClick={() => {
-                if (window.innerWidth < 768) {
-                  setMobileOpen(true);
-                } else {
-                  toggleSidebar();
-                }
-              }}
-              className="text-muted-foreground hover:text-foreground rounded-lg p-1.5 hover:bg-accent transition-colors cursor-pointer"
-              aria-label="Toggle Navigation"
-            >
-              <Menu className="h-4.5 w-4.5" />
-            </button>
-            <div className="flex items-center gap-2">
-              <img src="/wcm-logo.png" alt="WCM Logo" className="h-6 w-auto object-contain rounded-md" />
-              <h1 className="text-xs font-bold tracking-wide text-foreground hidden sm:block">
-                WCM Reporting
-              </h1>
+          
+          {/* Mobile Native App Toolbar (< md) */}
+          <div className="flex md:hidden h-13 w-full items-center justify-between px-3.5">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <img src="/wcm-logo.png" alt="WCM" className="h-7 w-auto object-contain rounded-md shrink-0 shadow-2xs" />
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-black tracking-tight text-foreground truncate max-w-[170px] sm:max-w-xs">
+                  {getPageTitle()}
+                </span>
+                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider leading-none">
+                  {formatRoleName(role)}
+                </span>
+              </div>
             </div>
 
-            {/* Mobile Collapsible Features Trigger Button */}
-            <button
-              onClick={() => setMobileFeaturesOpen((prev) => !prev)}
-              className={`md:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer active:scale-95 shrink-0 ${
-                mobileFeaturesOpen
-                  ? "bg-primary text-white border-primary shadow-xs"
-                  : "bg-card border-border text-foreground hover:bg-accent"
-              }`}
-              title="Toggle Features Panel"
-            >
-              <LayoutGrid className="h-3.5 w-3.5 shrink-0" />
-              <span>Features</span>
-              <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${mobileFeaturesOpen ? "rotate-180" : ""}`} />
-            </button>
-          </div>
-          
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Notification Bell */}
-            <div className="relative">
+            <div className="flex items-center gap-1.5 shrink-0">
+              {/* Language Switcher */}
+              <button
+                onClick={() => setLanguage(language === "en" ? "te" : "en")}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg border border-border bg-card text-[11px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground active:scale-95 transition-all"
+                title="Toggle Language"
+              >
+                <Globe className="h-3 w-3 text-primary" />
+                <span>{language === "en" ? "TE" : "EN"}</span>
+              </button>
+
+              {/* Theme Toggle */}
+              <button
+                onClick={toggleTheme}
+                className="p-1.5 rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground active:scale-95 transition-all"
+                aria-label="Toggle Theme"
+              >
+                {theme === "dark" ? <Sun className="h-3.5 w-3.5 text-amber-400" /> : <Moon className="h-3.5 w-3.5 text-blue-600" />}
+              </button>
+
+              {/* Notification Bell */}
               <button
                 onClick={() => setShowNotifDropdown(!showNotifDropdown)}
-                className="relative rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors focus:outline-none cursor-pointer"
+                className="relative p-1.5 rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground active:scale-95 transition-all"
                 aria-label="Notifications"
               >
-                <Bell className="h-4 w-4" />
+                <Bell className="h-3.5 w-3.5" />
                 {notifications.filter(n => !n.read).length > 0 && (
                   <span className="absolute top-1 right-1 flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
                   </span>
                 )}
               </button>
 
-              {/* Notification Dropdown Panel */}
-              {showNotifDropdown && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-40" 
-                    onClick={() => setShowNotifDropdown(false)}
-                  />
-                  <div className="absolute -right-12 sm:right-0 mt-2 z-50 w-[calc(100vw-24px)] max-w-sm sm:w-88 rounded-xl border border-border bg-popover text-popover-foreground shadow-xl p-4 animate-slideDown text-left">
-                    <div className="flex items-center justify-between border-b border-border pb-3 mb-2">
-                      <span className="text-xs font-bold text-foreground">
-                        Notifications ({notifications.filter(n => !n.read).length} unread)
-                      </span>
-                      {notifications.filter(n => !n.read).length > 0 && (
-                        <button
-                          onClick={markAllAsRead}
-                          className="text-[10px] font-semibold text-primary hover:text-primary-hover flex items-center gap-1 cursor-pointer"
-                        >
-                          <CheckCheck className="h-3 w-3" />
-                          Mark all read
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="max-h-72 overflow-y-auto divide-y divide-border/50 space-y-1">
-                      {notifications.length === 0 ? (
-                        <div className="py-6 text-center text-xs text-muted-foreground font-medium italic">
-                          No notifications
-                        </div>
-                      ) : (
-                        notifications.map((n) => (
-                          <div 
-                            key={n.id} 
-                            onClick={() => {
-                              if (!n.read) markAsRead(n.id);
-                            }}
-                            className={`py-2.5 px-2 flex flex-col gap-1 rounded-lg transition-colors cursor-pointer text-left ${
-                              n.read 
-                                ? "hover:bg-accent/60" 
-                                : "bg-primary/5 hover:bg-primary/10 border-l-2 border-primary pl-2"
-                            }`}
-                          >
-                            <div className="flex justify-between items-start gap-2">
-                              <span className={`text-xs font-semibold ${!n.read ? "text-primary" : "text-foreground"}`}>
-                                {n.title}
-                              </span>
-                              <span className="text-[9px] text-muted-foreground font-mono whitespace-nowrap">
-                                {new Date(n.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-muted-foreground line-clamp-3">
-                              {n.message}
-                            </p>
-                            <span className="text-[10px] text-muted-foreground/80 font-medium mt-0.5">
-                              From: {n.sender?.username || "Admin"}
-                            </span>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Language Selector */}
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value as any)}
-              className="rounded-lg border border-border bg-card px-2 py-1 text-xs font-semibold text-foreground hover:bg-accent transition-colors focus:outline-none cursor-pointer"
-            >
-              <option value="en">EN</option>
-              <option value="hi">HI</option>
-              <option value="te">TE</option>
-            </select>
-
-            {/* Theme Toggle */}
-            <button 
-              onClick={toggleTheme} 
-              className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
-              aria-label="Toggle Theme"
-            >
-              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </button>
-
-            {/* User Profile & Actions Dropdown Menu on Navbar */}
-            <div className="relative sm:border-l sm:border-border sm:pl-2.5">
+              {/* User Avatar */}
               <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 p-1 rounded-lg hover:bg-accent transition-colors cursor-pointer text-left group"
-                title="Account menu"
-                aria-label="Account menu"
-                aria-expanded={showUserMenu}
+                onClick={() => router.push("/profile")}
+                className="h-7 w-7 rounded-lg overflow-hidden border border-border shrink-0 active:scale-95 transition-all cursor-pointer"
+                aria-label="Profile"
               >
                 {user?.image ? (
-                  <img
-                    src={user.image}
-                    alt={user?.name || user?.username || "Avatar"}
-                    className="h-7 w-7 rounded-lg object-cover border border-border shrink-0"
-                  />
+                  <img src={user.image} alt={user.username} className="h-full w-full object-cover" />
                 ) : (
-                  <div className="h-7 w-7 rounded-lg font-bold text-xs flex items-center justify-center shrink-0 bg-primary text-white">
+                  <div className="h-full w-full flex items-center justify-center font-black text-[11px] uppercase bg-primary text-white">
                     {user?.username?.[0]?.toUpperCase() || "U"}
                   </div>
                 )}
-                <div className="hidden sm:block">
-                  <span className="text-xs font-semibold text-foreground block leading-tight">
-                    {user?.name || user?.username}
-                  </span>
-                  <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-wider">
-                    {formatRoleName(user?.role)}
-                  </span>
-                </div>
-                <ChevronDown className={`h-3 w-3 text-muted-foreground transition-transform duration-200 hidden sm:block ${showUserMenu ? "rotate-180" : ""}`} />
+              </button>
+            </div>
+          </div>
+
+          {/* Desktop Toolbar (>= md) */}
+          <div className="hidden md:flex h-14 w-full items-center justify-between px-6">
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={toggleSidebar}
+                className="text-muted-foreground hover:text-foreground rounded-lg p-1.5 hover:bg-accent transition-colors cursor-pointer"
+                aria-label="Toggle Sidebar"
+              >
+                <Menu className="h-4.5 w-4.5" />
+              </button>
+              <div className="flex items-center gap-2">
+                <img src="/wcm-logo.png" alt="WCM Logo" className="h-6 w-auto object-contain rounded-md" />
+                <h1 className="text-xs font-bold tracking-wide text-foreground">
+                  WCM Outreach Ministry Platform
+                </h1>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Language Switcher */}
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as any)}
+                className="rounded-lg border border-border bg-card px-2 py-1 text-xs font-semibold text-foreground hover:bg-accent transition-colors focus:outline-none cursor-pointer"
+              >
+                <option value="en">English</option>
+                <option value="te">తెలుగు (Telugu)</option>
+                <option value="hi">हिंदी (Hindi)</option>
+              </select>
+
+              {/* Theme Toggle */}
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
+                aria-label="Toggle Theme"
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4 text-amber-400" /> : <Moon className="h-4 w-4 text-blue-600" />}
               </button>
 
-              {/* User Dropdown Popover */}
-              {showUserMenu && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-40" 
-                    onClick={() => setShowUserMenu(false)}
-                  />
-                  <div className="absolute right-0 mt-2 z-50 w-64 rounded-xl border border-border bg-popover text-popover-foreground shadow-xl p-3 animate-slideDown text-left">
-                    {/* User Info Header */}
-                    <div className="flex items-center gap-2.5 p-2 rounded-lg bg-accent/50 mb-2">
-                      {user?.image ? (
-                        <img
-                          src={user.image}
-                          alt={user?.name || user?.username || "Avatar"}
-                          className="h-8 w-8 rounded-lg object-cover border border-border shrink-0"
-                        />
-                      ) : (
-                        <div className="h-8 w-8 rounded-lg font-bold text-xs flex items-center justify-center shrink-0 bg-primary text-white">
-                          {user?.username?.[0]?.toUpperCase() || "U"}
-                        </div>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-foreground truncate">{user?.name || user?.username}</p>
-                        <p className="text-[10px] text-muted-foreground truncate">@{user?.username}</p>
-                        <span className="text-[9px] text-primary font-semibold uppercase tracking-wider inline-block">
-                          {formatRoleName(user?.role)}
+              {/* Notifications */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowNotifDropdown(!showNotifDropdown)}
+                  className="relative p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
+                  aria-label="Notifications"
+                >
+                  <Bell className="h-4 w-4" />
+                  {notifications.filter(n => !n.read).length > 0 && (
+                    <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+                    </span>
+                  )}
+                </button>
+
+                {/* Desktop Notification Dropdown */}
+                {showNotifDropdown && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowNotifDropdown(false)} />
+                    <div className="absolute right-0 mt-2 z-50 w-88 rounded-xl border border-border bg-popover text-popover-foreground shadow-xl p-4 animate-slideDown text-left">
+                      <div className="flex items-center justify-between border-b border-border pb-3 mb-2">
+                        <span className="text-xs font-bold text-foreground">
+                          Notifications ({notifications.filter(n => !n.read).length} unread)
                         </span>
+                        {notifications.filter(n => !n.read).length > 0 && (
+                          <button
+                            onClick={markAllAsRead}
+                            className="text-[10px] font-semibold text-primary hover:text-primary-hover flex items-center gap-1 cursor-pointer"
+                          >
+                            <CheckCheck className="h-3 w-3" />
+                            Mark all read
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="max-h-72 overflow-y-auto divide-y divide-border/50 space-y-1">
+                        {notifications.length === 0 ? (
+                          <div className="py-6 text-center text-xs text-muted-foreground font-medium italic">
+                            No notifications
+                          </div>
+                        ) : (
+                          notifications.map((n) => (
+                            <div 
+                              key={n.id} 
+                              onClick={() => {
+                                if (!n.read) markAsRead(n.id);
+                              }}
+                              className={`py-2.5 px-2 flex flex-col gap-1 rounded-lg transition-colors cursor-pointer text-left ${
+                                n.read 
+                                  ? "hover:bg-accent/60" 
+                                  : "bg-primary/5 hover:bg-primary/10 border-l-2 border-primary pl-2"
+                              }`}
+                            >
+                              <div className="flex justify-between items-start gap-2">
+                                <span className={`text-xs font-semibold ${!n.read ? "text-primary" : "text-foreground"}`}>
+                                  {n.title}
+                                </span>
+                                <span className="text-[9px] text-muted-foreground font-mono whitespace-nowrap">
+                                  {new Date(n.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-muted-foreground line-clamp-3">
+                                {n.message}
+                              </p>
+                              <span className="text-[10px] text-muted-foreground/80 font-medium mt-0.5">
+                                From: {n.sender?.username || "Admin"}
+                              </span>
+                            </div>
+                          ))
+                        )}
                       </div>
                     </div>
+                  </>
+                )}
+              </div>
 
-                    {/* Actions */}
-                    <div className="space-y-1">
-                      {!isStandalone && (
+              {/* Desktop User Menu Popover */}
+              <div className="relative sm:border-l sm:border-border sm:pl-2.5">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-2 p-1 rounded-lg hover:bg-accent transition-colors cursor-pointer text-left group"
+                >
+                  {user?.image ? (
+                    <img src={user.image} alt={user?.name || user?.username} className="h-7 w-7 rounded-lg object-cover border border-border shrink-0" />
+                  ) : (
+                    <div className="h-7 w-7 rounded-lg font-bold text-xs flex items-center justify-center shrink-0 bg-primary text-white">
+                      {user?.username?.[0]?.toUpperCase() || "U"}
+                    </div>
+                  )}
+                  <span className="text-xs font-bold text-foreground">
+                    {user?.name || user?.username}
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+
+                {showUserMenu && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
+                    <div className="absolute right-0 mt-2 z-50 w-64 rounded-xl border border-border bg-popover text-popover-foreground shadow-xl p-3 animate-slideDown text-left">
+                      <div className="flex items-center gap-2.5 p-2 rounded-lg bg-accent/50 mb-2">
+                        {user?.image ? (
+                          <img src={user.image} alt={user?.name || user?.username} className="h-8 w-8 rounded-lg object-cover border border-border shrink-0" />
+                        ) : (
+                          <div className="h-8 w-8 rounded-lg font-bold text-xs flex items-center justify-center shrink-0 bg-primary text-white">
+                            {user?.username?.[0]?.toUpperCase() || "U"}
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-foreground truncate">{user?.name || user?.username}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">@{user?.username}</p>
+                          <RoleBadge role={user?.role} size="xs" className="mt-1" />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        {!isStandalone && (
+                          <button
+                            onClick={() => {
+                              setShowUserMenu(false);
+                              installApp();
+                            }}
+                            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                          >
+                            <Download className="h-3.5 w-3.5 shrink-0" />
+                            <span>Install Mobile App</span>
+                          </button>
+                        )}
+
                         <button
                           onClick={() => {
                             setShowUserMenu(false);
-                            installApp();
+                            router.push("/profile");
                           }}
-                          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-foreground hover:bg-accent transition-colors cursor-pointer"
                         >
-                          <Download className="h-3.5 w-3.5 shrink-0" />
-                          <span>Download / Install App</span>
+                          <UserIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <span>{translate("My Profile", language)}</span>
+                          <ChevronRight className="h-3.5 w-3.5 ml-auto text-muted-foreground shrink-0" />
                         </button>
-                      )}
 
-                      <button
-                        onClick={() => {
-                          setShowUserMenu(false);
-                          router.push("/profile");
-                        }}
-                        className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-foreground hover:bg-accent transition-colors cursor-pointer"
-                      >
-                        <UserIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                        <span>{translate("My Profile", language)}</span>
-                        <ChevronRight className="h-3.5 w-3.5 ml-auto text-muted-foreground shrink-0" />
-                      </button>
+                        <div className="h-px bg-border my-1" />
 
-                      <div className="h-px bg-border my-1" />
-
-                      <button
-                        onClick={() => {
-                          setShowUserMenu(false);
-                          setShowLogoutConfirmModal(true);
-                        }}
-                        className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
-                      >
-                        <LogOut className="h-3.5 w-3.5 shrink-0" />
-                        <span>{translate("Logout", language)}</span>
-                      </button>
+                        <button
+                          onClick={() => {
+                            setShowUserMenu(false);
+                            setShowLogoutConfirmModal(true);
+                          }}
+                          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+                        >
+                          <LogOut className="h-3.5 w-3.5 shrink-0" />
+                          <span>{translate("Logout", language)}</span>
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </>
-              )}
+                  </>
+                )}
+              </div>
             </div>
-          </div>
           </div>
         </header>
 
-        {/* Mobile Collapsible Top Features Panel */}
-        <div
-          className={`md:hidden border-b border-border bg-card transition-all duration-300 ease-in-out ${
-            mobileFeaturesOpen
-              ? "max-h-[85vh] opacity-100 py-3.5 px-3 overflow-y-auto shadow-lg"
-              : "max-h-0 opacity-0 py-0 px-3 overflow-hidden pointer-events-none border-b-0"
-          }`}
-        >
-          <div className="flex items-center justify-between pb-2 mb-2 border-b border-border">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                {translate("Navigation & Features", language)}
-              </span>
-              <span className="text-[9px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
-                {formatRoleName(user?.role)}
-              </span>
-            </div>
-            <button
-              onClick={() => setMobileFeaturesOpen(false)}
-              className="text-muted-foreground hover:text-foreground p-1 rounded-lg cursor-pointer"
-              title="Close Panel"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {links.map((link: any) => {
-              const active = isLinkActive(link.href);
-              const Icon = link.icon;
-              if (link.subItems) {
-                return (
-                  <div key={link.name} className="col-span-2 sm:col-span-3 space-y-1.5 p-2 rounded-xl bg-accent/40 border border-border">
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground block px-1">
-                      {translate(link.name, language)}
-                    </span>
-                    <div className="grid grid-cols-2 gap-2">
-                      {link.subItems.map((sub: any) => {
-                        const subActive = isLinkActive(sub.href);
-                        const SubIcon = sub.icon;
-                        return (
-                          <button
-                            key={sub.name}
-                            onClick={() => {
-                              setMobileFeaturesOpen(false);
-                              router.push(sub.href);
-                            }}
-                            className={`flex items-center gap-2 p-2 rounded-lg border text-left transition-all cursor-pointer active:scale-95 ${
-                              subActive
-                                ? "bg-primary text-white border-primary shadow-xs font-semibold"
-                                : "bg-card border-border text-foreground hover:bg-accent"
-                            }`}
-                          >
-                            <SubIcon className={`h-3.5 w-3.5 shrink-0 ${subActive ? "text-white" : "text-primary"}`} />
-                            <span className="text-[11px] font-medium tracking-wide truncate">
-                              {translate(sub.name, language)}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              }
-
-              return (
-                <button
-                  key={link.name}
-                  onClick={() => {
-                    setMobileFeaturesOpen(false);
-                    router.push(link.href);
-                  }}
-                  className={`flex items-center gap-2 p-2 rounded-xl border text-left transition-all cursor-pointer active:scale-[0.98] ${
-                    active
-                      ? "bg-primary text-white border-primary shadow-xs font-semibold"
-                      : "bg-card border-border text-foreground hover:bg-accent"
-                  }`}
-                >
-                  <div className={`p-1.5 rounded-lg shrink-0 ${active ? "bg-white/20 text-white" : "bg-primary/10 text-primary"}`}>
-                    <Icon className="h-3.5 w-3.5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <span className="text-[11px] font-medium tracking-wide block truncate">
-                      {translate(link.name, language)}
-                    </span>
-                    {link.badge && (
-                      <span className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded mt-0.5 inline-block ${
-                        active ? "bg-white/20 text-white" : "bg-primary/10 text-primary"
-                      }`}>
-                        {link.badge}
-                      </span>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="mt-3 pt-3 border-t border-border space-y-2">
-            {!isStandalone && (
-              <button
-                onClick={() => {
-                  setMobileFeaturesOpen(false);
-                  installApp();
-                }}
-                className="w-full flex items-center justify-center gap-2 p-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-semibold transition-all min-h-10 shadow-xs cursor-pointer"
-              >
-                <Download className="h-3.5 w-3.5 shrink-0" />
-                <span>Download / Install App</span>
-              </button>
-            )}
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => {
-                  setMobileFeaturesOpen(false);
-                  router.push("/profile");
-                }}
-                className="flex items-center justify-center gap-2 p-2 rounded-xl border border-border bg-card hover:bg-accent text-foreground text-xs font-semibold transition-all min-h-10 cursor-pointer"
-              >
-                <UserIcon className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span>{translate("My Profile", language)}</span>
-              </button>
-              <button
-                onClick={() => {
-                  setMobileFeaturesOpen(false);
-                  setShowLogoutConfirmModal(true);
-                }}
-                className="flex items-center justify-center gap-2 p-2 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500 hover:text-white text-red-500 text-xs font-semibold transition-all min-h-10 cursor-pointer"
-              >
-                <LogOut className="h-3.5 w-3.5 shrink-0" />
-                <span>{translate("Logout", language)}</span>
-              </button>
-            </div>
-          </div>
-        </div>
 
         {/* Mobile Notification Bottom Sheet Modal */}
         {showNotifDropdown && (
@@ -1017,15 +981,79 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Main Content Area */}
-        <main className="flex-1 p-3 sm:p-5 md:p-8 max-w-7xl w-full mx-auto animate-slideUp pb-[max(2rem,calc(1.5rem+env(safe-area-inset-bottom,0px)))] min-w-0">
+        <main className="flex-1 p-3.5 sm:p-5 md:p-8 max-w-7xl w-full mx-auto animate-slideUp pb-[calc(5rem+max(env(safe-area-inset-bottom,0px),var(--safe-area-inset-bottom,0px)))] md:pb-10 min-w-0">
           {children}
         </main>
 
         {/* Footer */}
-        <footer className="py-4 pb-[max(1rem,calc(0.75rem+env(safe-area-inset-bottom,0px)))] border-t border-border text-center text-[11px] font-medium text-muted-foreground mb-0">
+        <footer className="hidden md:block py-4 border-t border-border text-center text-[11px] font-medium text-muted-foreground mb-0">
           &copy; {new Date().getFullYear()} WCM Outreach Platform. All rights reserved.
         </footer>
       </div>
+
+      {/* Role-Aware Mobile Bottom Navigation Bar */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-30 md:hidden bg-background/95 dark:bg-[#111114]/95 backdrop-blur-xl border-t border-border shadow-[0_-4px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_24px_rgba(0,0,0,0.5)] select-none"
+        aria-label="Mobile Bottom Navigation"
+      >
+        <div className="grid grid-cols-5 h-16 items-center px-1 pb-[max(env(safe-area-inset-bottom,0px),var(--safe-area-inset-bottom,0px))]">
+          {bottomTabs.map((tab: any) => {
+            const Icon = tab.icon;
+            const active = tab.isMore ? mobileOpen : isLinkActive(tab.href);
+            const tabContent = (
+              <>
+                <div className="relative">
+                  <Icon className={`h-5 w-5 transition-transform duration-150 ${active ? "scale-110" : ""}`} />
+                  {tab.badge && (
+                    <span className="absolute -top-1 -right-2 px-1 py-0.2 text-[8px] font-black rounded-full bg-primary text-white leading-none">
+                      {tab.badge}
+                    </span>
+                  )}
+                </div>
+                <span className={`text-[10px] tracking-tight leading-none truncate max-w-full ${active ? "font-bold text-foreground" : "font-medium"}`}>
+                  {tab.name}
+                </span>
+                {active ? (
+                  <span className="h-1 w-1 rounded-full bg-primary mt-0.5" />
+                ) : (
+                  <span className="h-1 w-1 rounded-full bg-transparent mt-0.5" />
+                )}
+              </>
+            );
+
+            if (tab.isMore) {
+              return (
+                <button
+                  key={tab.name}
+                  onClick={() => setMobileOpen(true)}
+                  className={`flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl transition-all cursor-pointer select-none active:scale-95 ${
+                    active
+                      ? "text-primary font-bold"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {tabContent}
+                </button>
+              );
+            }
+
+            return (
+              <Link
+                key={tab.name}
+                href={tab.href}
+                prefetch={true}
+                className={`flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl transition-all cursor-pointer select-none active:scale-95 ${
+                  active
+                    ? "text-primary font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {tabContent}
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirmModal && (

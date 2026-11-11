@@ -234,7 +234,7 @@ export function FormTrackingTable({
           <div className="hidden md:block overflow-x-auto rounded-xl border border-border/50">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border/50 bg-accent/40 text-[11px] font-black text-foreground/70 uppercase tracking-wider text-left">
+                <tr className="border-b border-border/80 bg-slate-100 dark:bg-[#202024] text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-wider text-left">
                   <th className="px-5 py-3.5">Meeting Details</th>
                   <th className="px-5 py-3.5">Dates & Venue</th>
                   <th className="px-5 py-3.5">Coordinator / Area</th>

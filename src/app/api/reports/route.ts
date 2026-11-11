@@ -161,15 +161,22 @@ export async function GET(request: Request) {
             submittedAt: true,
             approvedAt: true,
             rejectedAt: true,
-            media: true,
+            media: {
+              take: 2,
+              select: {
+                id: true,
+                fileUrl: true,
+                fileName: true,
+                mediaType: true,
+              },
+            },
             callAttempts: {
+              take: 1,
               select: {
                 id: true,
                 status: true,
                 duration: true,
                 durationFormatted: true,
-                recordingUrl: true,
-                transcript: true,
                 attemptNumber: true,
                 createdAt: true,
               },
@@ -195,10 +202,19 @@ export async function GET(request: Request) {
             submittedAt: true,
             approvedAt: true,
             rejectedAt: true,
-            media: true,
+            media: {
+              take: 2,
+              select: {
+                id: true,
+                fileUrl: true,
+                fileName: true,
+                mediaType: true,
+              },
+            },
           },
         },
         auditLogs: {
+          take: 2,
           include: {
             actor: {
               select: {
@@ -213,6 +229,7 @@ export async function GET(request: Request) {
           },
         },
       },
+      take: 150,
       orderBy: {
         createdAt: "desc",
       },

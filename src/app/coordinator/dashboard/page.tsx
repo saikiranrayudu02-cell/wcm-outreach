@@ -159,86 +159,77 @@ export default function CoordinatorDashboardPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 sm:space-y-8 animate-fadeIn">
-        {/* Welcome Header */}
-        <div className="relative rounded-3xl p-5 sm:p-8 md:p-10 text-white overflow-hidden text-left" style={{ background: "var(--gradient-hero)" }}>
-          <div className="absolute inset-0 dot-pattern opacity-20" />
-          <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full opacity-10" style={{ background: "radial-gradient(circle, rgba(167,139,250,0.6) 0%, transparent 70%)" }} />
-          <div className="relative z-10">
-            <h2 className="text-2xl md:text-3xl font-black tracking-tight uppercase">
-              {translate("Welcome", language)}, {username}!
-            </h2>
-            <p className="mt-3 text-xs md:text-sm text-indigo-200/60 max-w-xl font-semibold leading-relaxed">
-              Centralized portal to record details, attendance, and assess outcomes for WCM outreach meetings.
-            </p>
-          </div>
-        </div>
-
-        {/* Modules Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 text-left">
-          {/* Card 1: Create Meeting Report */}
-          <div className="glass-card rounded-2xl p-5 sm:p-6 flex flex-col justify-between group">
+      <div className="space-y-4 sm:space-y-6 animate-fadeIn">
+        {/* Compact App Welcome & KPI Summary Card */}
+        <div className="rounded-2xl p-4 sm:p-6 bg-card border border-border shadow-xs text-left relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
             <div>
-              <div className="inline-flex rounded-2xl p-3.5 text-white border border-indigo-400/10" style={{ background: "var(--gradient-accent)" }}>
-                <FileText className="h-6 w-6" />
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg sm:text-xl font-black tracking-tight text-foreground uppercase">
+                  {translate("Welcome", language)}, {username}!
+                </h2>
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30">
+                  Coordinator
+                </span>
               </div>
-              <h3 className="mt-4 text-base font-black text-foreground uppercase tracking-wider">
-                Outreach Meeting Reports
-              </h3>
-              <p className="mt-2 text-sm text-foreground/50 font-medium leading-relaxed">
-                Create a unified Meeting Report comprising the Verification, Attendance, and After Meeting sheets. Save drafts anytime and submit when complete.
+              <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                Field Operations & Verification Management Portal
               </p>
             </div>
-            <button
-              onClick={handleCreateReport}
-              disabled={creatingReport}
-              className="mt-6 inline-flex items-center gap-2 rounded-xl px-5 py-3 text-xs font-bold uppercase tracking-wider text-white transition-all duration-200 w-fit cursor-pointer disabled:opacity-50 active:scale-[0.97] btn-primary"
-            >
-              {creatingReport ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-              Create New Report
-            </button>
+
+            {/* Quick Action Buttons */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={handleCreateReport}
+                disabled={creatingReport}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-primary hover:bg-primary-hover px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white transition-all duration-150 cursor-pointer disabled:opacity-50 active:scale-95 shadow-2xs min-h-10"
+              >
+                {creatingReport ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                New Report
+              </button>
+              <button
+                onClick={() => router.push("/coordinator/received-meetings")}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-accent hover:bg-accent/80 border border-border px-3 py-2 text-xs font-bold uppercase tracking-wider text-foreground transition-all duration-150 cursor-pointer active:scale-95 min-h-10"
+              >
+                <Inbox className="h-3.5 w-3.5 text-primary" />
+                Received
+              </button>
+              <button
+                onClick={() => router.push("/coordinator/confirmations")}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-accent hover:bg-accent/80 border border-border px-3 py-2 text-xs font-bold uppercase tracking-wider text-foreground transition-all duration-150 cursor-pointer active:scale-95 min-h-10"
+              >
+                <CalendarCheck className="h-3.5 w-3.5 text-amber-500" />
+                Confirmations
+              </button>
+            </div>
           </div>
 
-          {/* Card 2: Upcoming Confirmations */}
-          <div className="glass-card rounded-2xl p-5 sm:p-6 flex flex-col justify-between group">
-            <div>
-              <div className="inline-flex rounded-2xl bg-amber-500/10 dark:bg-amber-500/10 p-3.5 text-amber-600 dark:text-amber-400 border border-amber-500/10">
-                <CalendarCheck className="h-6 w-6" />
-              </div>
-              <h3 className="mt-4 text-base font-black text-foreground uppercase tracking-wider">
-                Meeting Confirmations
-              </h3>
-              <p className="mt-2 text-sm text-foreground/50 font-medium leading-relaxed">
-                Propose upcoming outreach meeting dates and locations to admin. Track approval and view feedback.
-              </p>
+          {/* Quick Metrics Bar */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-3">
+            <div className="p-2.5 rounded-xl bg-accent/40 border border-border/50 text-left">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block truncate">
+                Total Reports
+              </span>
+              <span className="text-base sm:text-xl font-black text-foreground mt-0.5 block">
+                {reports.length}
+              </span>
             </div>
-            <button
-              onClick={() => router.push("/coordinator/confirmations")}
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-accent hover:bg-accent/80 px-5 py-3 text-xs font-bold uppercase tracking-wider text-accent-foreground border border-border/50 hover:border-primary/20 transition-all duration-200 w-fit cursor-pointer active:scale-[0.97]"
-            >
-              Manage Confirmations
-            </button>
-          </div>
-
-          {/* Card 3: Received Meetings */}
-          <div className="glass-card rounded-2xl p-5 sm:p-6 flex flex-col justify-between group md:col-span-2">
-            <div>
-              <div className="inline-flex rounded-2xl bg-indigo-500/10 dark:bg-indigo-500/10 p-3.5 text-indigo-600 dark:text-indigo-400 border border-indigo-500/10">
-                <Inbox className="h-6 w-6" />
-              </div>
-              <h3 className="mt-4 text-base font-black text-foreground uppercase tracking-wider">
-                Received Meetings
-              </h3>
-              <p className="mt-2 text-sm text-foreground/50 font-medium leading-relaxed">
-                Review and begin outreach meetings forwarded to you by regional leaders for local coordination and verification.
-              </p>
+            <div className="p-2.5 rounded-xl bg-accent/40 border border-border/50 text-left">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 block truncate">
+                In Review / Draft
+              </span>
+              <span className="text-base sm:text-xl font-black text-amber-600 dark:text-amber-400 mt-0.5 block">
+                {reports.filter((r) => r.status === "DRAFT" || r.status === "PENDING" || r.status === "IN_REVIEW").length}
+              </span>
             </div>
-            <button
-              onClick={() => router.push("/coordinator/received-meetings")}
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white transition-all duration-200 w-fit cursor-pointer active:scale-[0.97] shadow-md shadow-indigo-600/20"
-            >
-              View Received Meetings
-            </button>
+            <div className="p-2.5 rounded-xl bg-accent/40 border border-border/50 text-left">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block truncate">
+                Approved
+              </span>
+              <span className="text-base sm:text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5 block">
+                {reports.filter((r) => r.status === "APPROVED" || r.status === "CONFIRMED").length}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -293,43 +284,43 @@ export default function CoordinatorDashboardPage() {
           )}
         </div>
 
-        {/* Section View Switcher */}
-        <div className="flex flex-wrap sm:flex-nowrap overflow-x-auto no-scrollbar border border-slate-200/80 dark:border-slate-800 bg-slate-100 dark:bg-slate-900/90 p-1.5 rounded-2xl gap-1.5 sm:gap-2 w-full sm:w-fit shadow-xs">
+        {/* Mobile-Friendly Native Segmented Control */}
+        <div className="flex overflow-x-auto no-scrollbar border border-border bg-card p-1 rounded-2xl gap-1 w-full sm:w-fit shadow-xs">
           <button
             type="button"
             onClick={() => setDashboardTab("reports")}
-            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer whitespace-nowrap min-h-11 ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 sm:px-5 py-2 font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer whitespace-nowrap min-h-10 active:scale-95 ${
               dashboardTab === "reports"
-                ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-xs font-black border border-slate-200 dark:border-indigo-500"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                ? "bg-primary text-white shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <FileText className="h-4 w-4" />
-            My Meeting Reports
+            <span>Reports</span>
           </button>
           <button
             type="button"
             onClick={() => setDashboardTab("calendar")}
-            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer whitespace-nowrap min-h-11 ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 sm:px-5 py-2 font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer whitespace-nowrap min-h-10 active:scale-95 ${
               dashboardTab === "calendar"
-                ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-xs font-black border border-slate-200 dark:border-indigo-500"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                ? "bg-primary text-white shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <CalendarIcon className="h-4 w-4" />
-            Meetings Calendar
+            <span>Calendar</span>
           </button>
           <button
             type="button"
             onClick={() => setDashboardTab("analytics")}
-            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3 sm:px-4 py-2 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer whitespace-nowrap min-h-11 ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 sm:px-5 py-2 font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer whitespace-nowrap min-h-10 active:scale-95 ${
               dashboardTab === "analytics"
-                ? "bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-xs font-black border border-slate-200 dark:border-indigo-500"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                ? "bg-primary text-white shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <BarChart3 className="h-4 w-4" />
-            Monthly Summary & Charts
+            <span>Monthly Summary</span>
           </button>
         </div>
 

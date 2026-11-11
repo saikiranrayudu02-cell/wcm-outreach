@@ -488,7 +488,7 @@ export function MonthlySummary({ role, user, language }: MonthlySummaryProps) {
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-left">
                   <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/75 dark:bg-slate-950/60 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    <tr className="border-b border-slate-200 dark:border-[#38383e] bg-slate-100 dark:bg-[#202024] text-[10px] font-black uppercase tracking-wider text-slate-900 dark:text-white">
                       <th className="px-4 py-3">Meeting / Church</th>
                       <th className="px-4 py-3">Date & Venue</th>
                       <th className="px-4 py-3">Coordinator / Executer</th>

@@ -439,36 +439,36 @@ export default function MeetingReportWizardPage() {
         </div>
 
         {/* Meeting Overview Panel */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 sm:p-6 shadow-sm backdrop-blur-sm space-y-4">
+        <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 shadow-xs shadow-sm backdrop-blur-sm space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <div className="flex items-center gap-3 flex-wrap">
                 <span className="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 font-mono text-xs font-black tracking-wider border border-indigo-500/30">
                   {reportNumber}
                 </span>
-                <h2 className="text-lg font-black text-white uppercase tracking-wider">
+                <h2 className="text-base sm:text-lg font-black text-foreground uppercase tracking-wider">
                   {reportTitle}
                 </h2>
               </div>
-              <p className="text-xs text-indigo-200/60 font-medium mt-1">
+              <p className="text-xs text-muted-foreground font-medium mt-1">
                 One meeting with three linked lifecycle forms: Verification → Attendance → Evaluation
               </p>
             </div>
 
             {/* Quick Status Badges for all 3 forms */}
-            <div className="flex flex-wrap items-center gap-3 bg-white/5 border border-white/5 p-3 rounded-xl">
+            <div className="flex flex-wrap items-center gap-3 bg-accent/40 border border-border p-3 rounded-xl">
               <div className="flex flex-col gap-1">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">1. Verification</span>
+                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">1. Verification</span>
                 <FormStatusBadge status={vStatus} size="sm" />
               </div>
               <div className="h-6 w-px bg-white/10 hidden sm:block" />
               <div className="flex flex-col gap-1">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">2. Attendance</span>
+                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">2. Attendance</span>
                 <FormStatusBadge status={aStatus} isLocked={isAttendanceLocked} size="sm" />
               </div>
               <div className="h-6 w-px bg-white/10 hidden sm:block" />
               <div className="flex flex-col gap-1">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">3. Evaluation</span>
+                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">3. Evaluation</span>
                 <FormStatusBadge status={rStatus} isLocked={isEvaluationLocked} size="sm" />
               </div>
             </div>
@@ -476,16 +476,16 @@ export default function MeetingReportWizardPage() {
         </div>
 
         {/* Forms Navigation Tabs */}
-        <div className="grid grid-cols-3 border border-white/10 bg-white/5 p-1.5 rounded-2xl gap-2">
+        <div className="grid grid-cols-3 border border-border bg-card p-1 rounded-2xl gap-1 shadow-xs">
           <button
             onClick={() => setActiveStep(1)}
             className={`flex flex-col sm:flex-row items-center justify-center gap-2 py-3 px-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer min-h-12 ${
               activeStep === 1 
                 ? "bg-white/15 text-white shadow-sm border border-indigo-400/30" 
-                : "text-indigo-200/50 hover:text-white"
+                : "text-muted-foreground hover:text-white"
             }`}
           >
-            <FileCheck className={`h-4.5 w-4.5 ${activeStep === 1 ? "text-indigo-300" : "text-slate-400"}`} />
+            <FileCheck className={`h-4.5 w-4.5 ${activeStep === 1 ? "text-indigo-300" : "text-muted-foreground"}`} />
             <div className="flex flex-col items-center sm:items-start leading-tight">
               <span>1. Verification</span>
               <span className="text-[9px] opacity-70">({getVPercent()}%)</span>
@@ -497,13 +497,13 @@ export default function MeetingReportWizardPage() {
             className={`flex flex-col sm:flex-row items-center justify-center gap-2 py-3 px-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer min-h-12 ${
               activeStep === 2 
                 ? "bg-white/15 text-white shadow-sm border border-indigo-400/30" 
-                : "text-indigo-200/50 hover:text-white"
+                : "text-muted-foreground hover:text-white"
             }`}
           >
             {isAttendanceLocked ? (
               <Lock className="h-4.5 w-4.5 text-amber-400" />
             ) : (
-              <FileSpreadsheet className={`h-4.5 w-4.5 ${activeStep === 2 ? "text-indigo-300" : "text-slate-400"}`} />
+              <FileSpreadsheet className={`h-4.5 w-4.5 ${activeStep === 2 ? "text-indigo-300" : "text-muted-foreground"}`} />
             )}
             <div className="flex flex-col items-center sm:items-start leading-tight">
               <span>2. Attendance</span>
@@ -518,13 +518,13 @@ export default function MeetingReportWizardPage() {
             className={`flex flex-col sm:flex-row items-center justify-center gap-2 py-3 px-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer min-h-12 ${
               activeStep === 3 
                 ? "bg-white/15 text-white shadow-sm border border-indigo-400/30" 
-                : "text-indigo-200/50 hover:text-white"
+                : "text-muted-foreground hover:text-white"
             }`}
           >
             {isEvaluationLocked ? (
               <Lock className="h-4.5 w-4.5 text-amber-400" />
             ) : (
-              <ClipboardList className={`h-4.5 w-4.5 ${activeStep === 3 ? "text-indigo-300" : "text-slate-400"}`} />
+              <ClipboardList className={`h-4.5 w-4.5 ${activeStep === 3 ? "text-indigo-300" : "text-muted-foreground"}`} />
             )}
             <div className="flex flex-col items-center sm:items-start leading-tight">
               <span>3. Evaluation</span>
@@ -537,13 +537,13 @@ export default function MeetingReportWizardPage() {
 
         {/* STEP 1: VERIFICATION SHEET */}
         {activeStep === 1 && (
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 sm:p-8 space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-white/10">
+          <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 md:p-8 shadow-xs space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-border">
               <div>
                 <h3 className="text-base font-black text-white uppercase tracking-wider flex items-center gap-2">
                   1. Verification Form (Pre-Meeting Approval)
                 </h3>
-                <p className="text-xs text-indigo-200/60 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   Must be submitted and approved by Admin to unlock the Attendance and Evaluation forms.
                 </p>
               </div>
@@ -575,7 +575,7 @@ export default function MeetingReportWizardPage() {
             {/* Verification Inputs */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                   Convener Name *
                 </label>
                 <input
@@ -583,13 +583,13 @@ export default function MeetingReportWizardPage() {
                   disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
                   value={vForm.convenerName}
                   onChange={(e) => setVForm({ ...vForm, convenerName: e.target.value })}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                   placeholder="Convener / Host Pastor"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                   Church / Ministry Name *
                 </label>
                 <input
@@ -597,13 +597,13 @@ export default function MeetingReportWizardPage() {
                   disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
                   value={vForm.churchMinistryName}
                   onChange={(e) => setVForm({ ...vForm, churchMinistryName: e.target.value })}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                   placeholder="Church name"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                   State / District / City *
                 </label>
                 <input
@@ -611,13 +611,13 @@ export default function MeetingReportWizardPage() {
                   disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
                   value={vForm.stateDistrictCity}
                   onChange={(e) => setVForm({ ...vForm, stateDistrictCity: e.target.value })}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                   placeholder="e.g. Hyderabad, Telangana"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                   Contact Number *
                 </label>
                 <input
@@ -625,13 +625,13 @@ export default function MeetingReportWizardPage() {
                   disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
                   value={vForm.contactNumber}
                   onChange={(e) => setVForm({ ...vForm, contactNumber: e.target.value })}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                   placeholder="+91 XXXXXXXXXX"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                   Meeting Dates *
                 </label>
                 <input
@@ -639,14 +639,14 @@ export default function MeetingReportWizardPage() {
                   disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
                   value={vForm.meetingDates}
                   onChange={(e) => setVForm({ ...vForm, meetingDates: e.target.value })}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                   placeholder="e.g. Nov 15-17, 2026"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                     Days *
                   </label>
                   <input
@@ -655,11 +655,11 @@ export default function MeetingReportWizardPage() {
                     disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
                     value={vForm.numberOfDays}
                     onChange={(e) => setVForm({ ...vForm, numberOfDays: parseInt(e.target.value) || 1 })}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                     Expected Attendance *
                   </label>
                   <input
@@ -668,13 +668,13 @@ export default function MeetingReportWizardPage() {
                     disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
                     value={vForm.expectedAttendance}
                     onChange={(e) => setVForm({ ...vForm, expectedAttendance: parseInt(e.target.value) || 0 })}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                   />
                 </div>
 
                 {/* Field 1: Meeting Session */}
-                <div className="md:col-span-2 pt-2 border-t border-white/5">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                <div className="md:col-span-2 pt-2 border-t border-border">
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                     Meeting Session / Time of Day *
                   </label>
                   <div className="grid grid-cols-3 gap-2">
@@ -698,7 +698,7 @@ export default function MeetingReportWizardPage() {
 
                 {/* Field 2: Travel Mode */}
                 <div className="md:col-span-2">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                     Travel Mode *
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -725,7 +725,7 @@ export default function MeetingReportWizardPage() {
                         disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
                         value={vForm.travelOtherDetails || ""}
                         onChange={(e) => setVForm({ ...vForm, travelOtherDetails: e.target.value })}
-                        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-xs font-semibold placeholder:text-slate-500"
+                        className="w-full rounded-xl border border-border bg-background px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-xs font-semibold placeholder:text-slate-500"
                         placeholder="Please specify travel details..."
                       />
                     </div>
@@ -734,7 +734,7 @@ export default function MeetingReportWizardPage() {
 
                 {/* Field 3: Stay Location */}
                 <div className="md:col-span-2">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                     Stay Location *
                   </label>
                   <input
@@ -742,14 +742,14 @@ export default function MeetingReportWizardPage() {
                     disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
                     value={vForm.stayLocation || ""}
                     onChange={(e) => setVForm({ ...vForm, stayLocation: e.target.value })}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold placeholder:text-slate-500 disabled:opacity-60"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold placeholder:text-slate-500 disabled:opacity-60"
                     placeholder="Enter hotel name, address or accommodation location"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                   Years of Ministry
                 </label>
                 <input
@@ -758,12 +758,12 @@ export default function MeetingReportWizardPage() {
                   disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
                   value={vForm.yearsOfMinistry}
                   onChange={(e) => setVForm({ ...vForm, yearsOfMinistry: parseInt(e.target.value) || 0 })}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                   Church Members
                 </label>
                 <input
@@ -772,12 +772,12 @@ export default function MeetingReportWizardPage() {
                   disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
                   value={vForm.churchMembers}
                   onChange={(e) => setVForm({ ...vForm, churchMembers: parseInt(e.target.value) || 0 })}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                   Workers & Leaders
                 </label>
                 <input
@@ -786,24 +786,24 @@ export default function MeetingReportWizardPage() {
                   disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
                   value={vForm.workersLeaders}
                   onChange={(e) => setVForm({ ...vForm, workersLeaders: parseInt(e.target.value) || 0 })}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                 />
               </div>
 
-              <div className="md:col-span-2 pt-3 border-t border-white/10">
+              <div className="md:col-span-2 pt-3 border-t border-border">
                 <span className="text-[11px] font-black uppercase tracking-wider text-indigo-300 block mb-3">
                   WCM Connection & Background
                 </span>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       How they know about WCM
                     </label>
                     <select
                       disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
                       value={vForm.knowAboutWcm}
                       onChange={(e) => setVForm({ ...vForm, knowAboutWcm: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                     >
                       <option value="YouTube Messages" className="bg-slate-900">YouTube Messages</option>
                       <option value="WCM Books" className="bg-slate-900">WCM Books</option>
@@ -816,14 +816,14 @@ export default function MeetingReportWizardPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Read WCM Books?
                     </label>
                     <select
                       disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
                       value={vForm.readWcmBooks ? "true" : "false"}
                       onChange={(e) => setVForm({ ...vForm, readWcmBooks: e.target.value === "true" })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                     >
                       <option value="true" className="bg-slate-900">Yes</option>
                       <option value="false" className="bg-slate-900">No</option>
@@ -831,14 +831,14 @@ export default function MeetingReportWizardPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Attended Prophet Kiran Meeting?
                     </label>
                     <select
                       disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
                       value={vForm.attendedProphetMeeting ? "true" : "false"}
                       onChange={(e) => setVForm({ ...vForm, attendedProphetMeeting: e.target.value === "true" })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                     >
                       <option value="true" className="bg-slate-900">Yes</option>
                       <option value="false" className="bg-slate-900">No</option>
@@ -847,20 +847,20 @@ export default function MeetingReportWizardPage() {
                 </div>
               </div>
 
-              <div className="md:col-span-2 pt-3 border-t border-white/10">
+              <div className="md:col-span-2 pt-3 border-t border-border">
                 <span className="text-[11px] font-black uppercase tracking-wider text-indigo-300 block mb-3">
                   Meeting Arrangements & Facilities
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Meeting Hall / Stage
                     </label>
                     <select
                       disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
                       value={vForm.meetingHallStage}
                       onChange={(e) => setVForm({ ...vForm, meetingHallStage: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                     >
                       <option value="Good" className="bg-slate-900">Good</option>
                       <option value="Average" className="bg-slate-900">Average</option>
@@ -870,14 +870,14 @@ export default function MeetingReportWizardPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Sound System
                     </label>
                     <select
                       disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
                       value={vForm.soundSystem}
                       onChange={(e) => setVForm({ ...vForm, soundSystem: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                     >
                       <option value="Good" className="bg-slate-900">Good</option>
                       <option value="Average" className="bg-slate-900">Average</option>
@@ -887,14 +887,14 @@ export default function MeetingReportWizardPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Accommodation Team
                     </label>
                     <select
                       disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
                       value={vForm.accommodationTeam}
                       onChange={(e) => setVForm({ ...vForm, accommodationTeam: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                     >
                       <option value="Arranged" className="bg-slate-900">Arranged</option>
                       <option value="Good" className="bg-slate-900">Good</option>
@@ -904,14 +904,14 @@ export default function MeetingReportWizardPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Volunteer Support
                     </label>
                     <select
                       disabled={vStatus === "COMPLETED" || vStatus === "SUBMITTED" || vStatus === "FORWARDED_TO_STATE" || vStatus === "FORWARDED_TO_ADMIN"}
                       value={vForm.volunteerSupport}
                       onChange={(e) => setVForm({ ...vForm, volunteerSupport: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                     >
                       <option value="Strong" className="bg-slate-900">Strong</option>
                       <option value="Moderate" className="bg-slate-900">Moderate</option>
@@ -923,7 +923,7 @@ export default function MeetingReportWizardPage() {
               </div>
 
               {/* Verification Images Upload Section */}
-              <div className="md:col-span-2 pt-4 border-t border-white/10">
+              <div className="md:col-span-2 pt-4 border-t border-border">
                 <MediaUploader
                   category="VERIFICATION_IMAGE"
                   value={vImages}
@@ -939,8 +939,8 @@ export default function MeetingReportWizardPage() {
             </div>
 
             {/* Action Bar for Verification */}
-            <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
-              <span className="text-xs text-indigo-200/60 font-medium">
+            <div className="pt-4 border-t border-border flex flex-wrap items-center justify-between gap-3">
+              <span className="text-xs text-muted-foreground font-medium">
                 {vStatus === "COMPLETED" ? (
                   <span className="text-emerald-400 font-bold flex items-center gap-1.5">
                     <CheckCircle2 className="h-4 w-4" /> Verification Approved. Attendance & Evaluation forms are unlocked.
@@ -959,14 +959,14 @@ export default function MeetingReportWizardPage() {
                   <button
                     onClick={() => handleSaveForm("VERIFICATION")}
                     disabled={saving || submittingForm !== null}
-                    className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
+                    className="px-4 py-2 rounded-xl border border-border bg-card hover:bg-accent text-foreground shadow-xs text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Draft"}
                   </button>
                   <button
                     onClick={() => handleSubmitForm("VERIFICATION")}
                     disabled={submittingForm !== null || !checkVComplete()}
-                    className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-md disabled:opacity-50"
+                    className="px-5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white shadow-md active:scale-[0.97] text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-md disabled:opacity-50"
                   >
                     {submittingForm === "VERIFICATION" ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -982,13 +982,13 @@ export default function MeetingReportWizardPage() {
 
         {/* STEP 2: ATTENDANCE RECORD */}
         {activeStep === 2 && (
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 sm:p-8 space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-white/10">
+          <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 md:p-8 shadow-xs space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-border">
               <div>
                 <h3 className="text-base font-black text-white uppercase tracking-wider flex items-center gap-2">
                   2. Attendance Form (Post-Meeting)
                 </h3>
-                <p className="text-xs text-indigo-200/60 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   Record actual meeting attendance numbers and field executers.
                 </p>
               </div>
@@ -1004,12 +1004,12 @@ export default function MeetingReportWizardPage() {
                 </div>
                 <div>
                   <h4 className="text-base font-bold text-white uppercase tracking-wider">Attendance Form Locked</h4>
-                  <p className="text-xs text-indigo-200/70 mt-1 max-w-md mx-auto">
+                  <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
                     This form is locked until the Verification Form completes the approval sequence (Coordinator → Zonal Leader → State Leader → Admin) and receives final Admin approval.
                   </p>
                 </div>
                 <div className="inline-flex items-center gap-2 pt-2">
-                  <span className="text-xs text-indigo-200/50">Current Verification Status:</span>
+                  <span className="text-xs text-muted-foreground">Current Verification Status:</span>
                   <FormStatusBadge status={vStatus} />
                 </div>
                 <div>
@@ -1041,7 +1041,7 @@ export default function MeetingReportWizardPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Meeting Date *
                     </label>
                     <input
@@ -1049,12 +1049,12 @@ export default function MeetingReportWizardPage() {
                       disabled={aStatus === "COMPLETED" || aStatus === "SUBMITTED" || aStatus === "FORWARDED_TO_STATE" || aStatus === "FORWARDED_TO_ADMIN"}
                       value={aForm.date}
                       onChange={(e) => setAForm({ ...aForm, date: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Location / Venue *
                     </label>
                     <input
@@ -1062,13 +1062,13 @@ export default function MeetingReportWizardPage() {
                       disabled={aStatus === "COMPLETED" || aStatus === "SUBMITTED" || aStatus === "FORWARDED_TO_STATE" || aStatus === "FORWARDED_TO_ADMIN"}
                       value={aForm.location}
                       onChange={(e) => setAForm({ ...aForm, location: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                       placeholder="Meeting hall name and location"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Field Executer *
                     </label>
                     <input
@@ -1076,13 +1076,13 @@ export default function MeetingReportWizardPage() {
                       disabled={aStatus === "COMPLETED" || aStatus === "SUBMITTED" || aStatus === "FORWARDED_TO_STATE" || aStatus === "FORWARDED_TO_ADMIN"}
                       value={aForm.fieldExecuter}
                       onChange={(e) => setAForm({ ...aForm, fieldExecuter: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                       placeholder="Name of person executing on field"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Coordinator Name *
                     </label>
                     <input
@@ -1090,13 +1090,13 @@ export default function MeetingReportWizardPage() {
                       disabled={aStatus === "COMPLETED" || aStatus === "SUBMITTED" || aStatus === "FORWARDED_TO_STATE" || aStatus === "FORWARDED_TO_ADMIN"}
                       value={aForm.coordinator}
                       onChange={(e) => setAForm({ ...aForm, coordinator: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                       placeholder="Your coordinator name"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Members Attended
                     </label>
                     <input
@@ -1105,12 +1105,12 @@ export default function MeetingReportWizardPage() {
                       disabled={aStatus === "COMPLETED" || aStatus === "SUBMITTED" || aStatus === "FORWARDED_TO_STATE" || aStatus === "FORWARDED_TO_ADMIN"}
                       value={aForm.membersAttended}
                       onChange={(e) => setAForm({ ...aForm, membersAttended: parseInt(e.target.value) || 0 })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Pastors Attended
                     </label>
                     <input
@@ -1119,12 +1119,12 @@ export default function MeetingReportWizardPage() {
                       disabled={aStatus === "COMPLETED" || aStatus === "SUBMITTED" || aStatus === "FORWARDED_TO_STATE" || aStatus === "FORWARDED_TO_ADMIN"}
                       value={aForm.pastorsAttended}
                       onChange={(e) => setAForm({ ...aForm, pastorsAttended: parseInt(e.target.value) || 0 })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Total Headcount
                     </label>
                     <div className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-emerald-400 text-sm font-black flex items-center h-10.5">
@@ -1133,7 +1133,7 @@ export default function MeetingReportWizardPage() {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Remarks / Notes *
                     </label>
                     <textarea
@@ -1141,14 +1141,14 @@ export default function MeetingReportWizardPage() {
                       disabled={aStatus === "COMPLETED" || aStatus === "SUBMITTED" || aStatus === "FORWARDED_TO_STATE" || aStatus === "FORWARDED_TO_ADMIN"}
                       value={aForm.remarks}
                       onChange={(e) => setAForm({ ...aForm, remarks: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                       placeholder="Special observations or notes about meeting attendance..."
                     />
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
-                  <span className="text-xs text-indigo-200/60 font-medium">
+                <div className="pt-4 border-t border-border flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-xs text-muted-foreground font-medium">
                     {aStatus === "COMPLETED" ? (
                       <span className="text-emerald-400 font-bold flex items-center gap-1.5">
                         <CheckCircle2 className="h-4 w-4" /> Attendance Form Approved & Completed.
@@ -1167,14 +1167,14 @@ export default function MeetingReportWizardPage() {
                       <button
                         onClick={() => handleSaveForm("ATTENDANCE")}
                         disabled={saving || submittingForm !== null}
-                        className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
+                        className="px-4 py-2 rounded-xl border border-border bg-card hover:bg-accent text-foreground shadow-xs text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
                       >
                         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Draft"}
                       </button>
                       <button
                         onClick={() => handleSubmitForm("ATTENDANCE")}
                         disabled={submittingForm !== null || !checkAComplete()}
-                        className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-md disabled:opacity-50"
+                        className="px-5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white shadow-md active:scale-[0.97] text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-md disabled:opacity-50"
                       >
                         {submittingForm === "ATTENDANCE" ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -1192,13 +1192,13 @@ export default function MeetingReportWizardPage() {
 
         {/* STEP 3: AFTER-MEETING EVALUATION */}
         {activeStep === 3 && (
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 sm:p-8 space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-white/10">
+          <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 md:p-8 shadow-xs space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-border">
               <div>
                 <h3 className="text-base font-black text-white uppercase tracking-wider flex items-center gap-2">
                   3. After-Meeting Evaluation Form
                 </h3>
-                <p className="text-xs text-indigo-200/60 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   Record qualitative outcomes, ministry responses, and opportunities for WCM.
                 </p>
               </div>
@@ -1214,12 +1214,12 @@ export default function MeetingReportWizardPage() {
                 </div>
                 <div>
                   <h4 className="text-base font-bold text-white uppercase tracking-wider">Evaluation Form Locked</h4>
-                  <p className="text-xs text-indigo-200/70 mt-1 max-w-md mx-auto">
+                  <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
                     This form is locked until the Verification Form completes the approval sequence (Coordinator → Zonal Leader → State Leader → Admin) and receives final Admin approval.
                   </p>
                 </div>
                 <div className="inline-flex items-center gap-2 pt-2">
-                  <span className="text-xs text-indigo-200/50">Current Verification Status:</span>
+                  <span className="text-xs text-muted-foreground">Current Verification Status:</span>
                   <FormStatusBadge status={vStatus} />
                 </div>
                 <div>
@@ -1251,14 +1251,14 @@ export default function MeetingReportWizardPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Overall Meeting Outcome *
                     </label>
                     <select
                       disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
                       value={rForm.overallMeetingOutcome}
                       onChange={(e) => setRForm({ ...rForm, overallMeetingOutcome: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                     >
                       <option value="" className="bg-slate-900">Select outcome</option>
                       <option value="Exceptional" className="bg-slate-900">Exceptional</option>
@@ -1270,14 +1270,14 @@ export default function MeetingReportWizardPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Congregation Response *
                     </label>
                     <select
                       disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
                       value={rForm.congregationResponse}
                       onChange={(e) => setRForm({ ...rForm, congregationResponse: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                     >
                       <option value="" className="bg-slate-900">Select response</option>
                       <option value="Highly Receptive" className="bg-slate-900">Highly Receptive</option>
@@ -1288,14 +1288,14 @@ export default function MeetingReportWizardPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Desire to Continue Fellowship *
                     </label>
                     <select
                       disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
                       value={rForm.continueFellowship ? "true" : "false"}
                       onChange={(e) => setRForm({ ...rForm, continueFellowship: e.target.value === "true" })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                     >
                       <option value="true" className="bg-slate-900">Yes, Highly Interested</option>
                       <option value="false" className="bg-slate-900">No / Undecided</option>
@@ -1303,7 +1303,7 @@ export default function MeetingReportWizardPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Following WCM Members Count
                     </label>
                     <input
@@ -1312,19 +1312,19 @@ export default function MeetingReportWizardPage() {
                       disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
                       value={rForm.followingWcmMembersCount}
                       onChange={(e) => setRForm({ ...rForm, followingWcmMembersCount: parseInt(e.target.value) || 0 })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Local Church Influence
                     </label>
                     <select
                       disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
                       value={rForm.localChurchInfluence}
                       onChange={(e) => setRForm({ ...rForm, localChurchInfluence: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                     >
                       <option value="High" className="bg-slate-900">High</option>
                       <option value="Medium" className="bg-slate-900">Medium</option>
@@ -1334,14 +1334,14 @@ export default function MeetingReportWizardPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Network of Pastors
                     </label>
                     <select
                       disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
                       value={rForm.networkOfPastors}
                       onChange={(e) => setRForm({ ...rForm, networkOfPastors: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                     >
                       <option value="Extensive" className="bg-slate-900">Extensive</option>
                       <option value="Moderate" className="bg-slate-900">Moderate</option>
@@ -1350,7 +1350,7 @@ export default function MeetingReportWizardPage() {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">
                       Future Opportunities for WCM
                     </label>
                     <div className="flex flex-wrap gap-2">
@@ -1376,7 +1376,7 @@ export default function MeetingReportWizardPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Strengths Observed *
                     </label>
                     <textarea
@@ -1384,13 +1384,13 @@ export default function MeetingReportWizardPage() {
                       disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
                       value={rForm.strengthsObserved}
                       onChange={(e) => setRForm({ ...rForm, strengthsObserved: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                       placeholder="Strengths observed during the meeting..."
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Challenges Observed *
                     </label>
                     <textarea
@@ -1398,13 +1398,13 @@ export default function MeetingReportWizardPage() {
                       disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
                       value={rForm.challengesObserved}
                       onChange={(e) => setRForm({ ...rForm, challengesObserved: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                       placeholder="Challenges or areas for improvement..."
                     />
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Opportunity for WCM *
                     </label>
                     <textarea
@@ -1412,13 +1412,13 @@ export default function MeetingReportWizardPage() {
                       disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
                       value={rForm.opportunityForWcm}
                       onChange={(e) => setRForm({ ...rForm, opportunityForWcm: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                       placeholder="How can WCM follow up or partner with this church..."
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Coordinator Name *
                     </label>
                     <input
@@ -1426,13 +1426,13 @@ export default function MeetingReportWizardPage() {
                       disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
                       value={rForm.coordinatorName}
                       onChange={(e) => setRForm({ ...rForm, coordinatorName: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                       placeholder="Your name"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Designation *
                     </label>
                     <input
@@ -1440,13 +1440,13 @@ export default function MeetingReportWizardPage() {
                       disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
                       value={rForm.designation}
                       onChange={(e) => setRForm({ ...rForm, designation: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                       placeholder="e.g. Outreach Coordinator"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Signature / Consent *
                     </label>
                     <input
@@ -1454,13 +1454,13 @@ export default function MeetingReportWizardPage() {
                       disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
                       value={rForm.signature}
                       onChange={(e) => setRForm({ ...rForm, signature: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60 font-serif"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60 font-serif"
                       placeholder="Type name as digital signature"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                       Submission Date
                     </label>
                     <input
@@ -1468,13 +1468,13 @@ export default function MeetingReportWizardPage() {
                       disabled={rStatus === "COMPLETED" || rStatus === "SUBMITTED" || rStatus === "FORWARDED_TO_STATE" || rStatus === "FORWARDED_TO_ADMIN"}
                       value={rForm.submissionDate}
                       onChange={(e) => setRForm({ ...rForm, submissionDate: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold disabled:opacity-60"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-xs text-sm font-semibold disabled:opacity-60"
                     />
                   </div>
                 </div>
 
                 {/* Media Upload Sections: Evaluation Images & Evaluation Video */}
-                <div className="space-y-5 pt-4 border-t border-white/10">
+                <div className="space-y-5 pt-4 border-t border-border">
                   <MediaUploader
                     category="EVALUATION_IMAGE"
                     value={rImages}
@@ -1500,8 +1500,8 @@ export default function MeetingReportWizardPage() {
                   />
                 </div>
 
-                <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
-                  <span className="text-xs text-indigo-200/60 font-medium">
+                <div className="pt-4 border-t border-border flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-xs text-muted-foreground font-medium">
                     {rStatus === "COMPLETED" ? (
                       <span className="text-emerald-400 font-bold flex items-center gap-1.5">
                         <CheckCircle2 className="h-4 w-4" /> Evaluation Form Approved & Completed.
@@ -1520,14 +1520,14 @@ export default function MeetingReportWizardPage() {
                       <button
                         onClick={() => handleSaveForm("EVALUATION")}
                         disabled={saving || submittingForm !== null}
-                        className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
+                        className="px-4 py-2 rounded-xl border border-border bg-card hover:bg-accent text-foreground shadow-xs text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
                       >
                         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Draft"}
                       </button>
                       <button
                         onClick={() => handleSubmitForm("EVALUATION")}
                         disabled={submittingForm !== null || !checkRComplete()}
-                        className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-md disabled:opacity-50"
+                        className="px-5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white shadow-md active:scale-[0.97] text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-md disabled:opacity-50"
                       >
                         {submittingForm === "EVALUATION" ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -1552,14 +1552,14 @@ export default function MeetingReportWizardPage() {
               <p className="text-xs font-bold text-white uppercase tracking-wider">
                 Same-Session Submission
               </p>
-              <p className="text-xs text-indigo-200/70 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Both Attendance and Evaluation forms are unlocked. You can complete both and submit together.
               </p>
             </div>
             <button
               onClick={handleSubmitBoth}
               disabled={submittingForm !== null || !checkAComplete() || !checkRComplete()}
-              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-md disabled:opacity-50 cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white shadow-md active:scale-[0.97] text-xs font-bold uppercase tracking-wider transition-all shadow-md disabled:opacity-50 cursor-pointer"
             >
               {submittingForm === "BOTH" ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

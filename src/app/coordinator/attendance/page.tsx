@@ -232,16 +232,16 @@ function AttendanceFormContent() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.push("/coordinator/dashboard")}
-              className="rounded-xl p-2 text-slate-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+              className="rounded-xl p-2 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div>
-              <h2 className="text-xl font-black text-white uppercase tracking-wider flex items-center gap-2">
-                <FileSpreadsheet className="h-5 w-5 text-indigo-400" />
+              <h2 className="text-lg sm:text-xl font-black text-foreground uppercase tracking-wider flex items-center gap-2">
+                <FileSpreadsheet className="h-5 w-5 text-primary" />
                 Attendance Form
               </h2>
-              <p className="text-xs text-indigo-200/60 font-medium">
+              <p className="text-xs text-muted-foreground font-medium">
                 Record attendance statistics linked to an approved meeting.
               </p>
             </div>
@@ -249,16 +249,16 @@ function AttendanceFormContent() {
         </div>
 
         {/* Meeting Selector Card */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-3">
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+        <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 space-y-3 shadow-xs">
+          <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
             Select Linked Meeting ID *
           </label>
           {meetings.length === 0 ? (
-            <div className="p-4 rounded-xl bg-white/5 border border-white/5 text-center space-y-2">
-              <p className="text-xs text-indigo-200/70">No meetings found. Create a meeting and complete verification first.</p>
+            <div className="p-4 rounded-xl bg-accent/40 border border-border text-center space-y-2">
+              <p className="text-xs text-muted-foreground">No meetings found. Create a meeting and complete verification first.</p>
               <button
                 onClick={() => router.push("/coordinator/verification")}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors shadow-xs"
               >
                 <PlusCircle className="h-4 w-4" /> Go to Verification Form
               </button>
@@ -268,18 +268,18 @@ function AttendanceFormContent() {
               <select
                 value={selectedMeetingId}
                 onChange={(e) => setSelectedMeetingId(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-xs font-bold"
+                className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs font-bold"
               >
                 {meetings.map((m) => (
-                  <option key={m.id} value={m.id}>
+                  <option key={m.id} value={m.id} className="bg-card text-foreground">
                     {m.reportId} — {m.title || "Meeting"} ({m.verificationStatus})
                   </option>
                 ))}
               </select>
 
               {selectedMeeting && (
-                <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/5 border border-white/5 text-xs">
-                  <span className="text-slate-400 font-bold uppercase text-[9px]">Verification Status:</span>
+                <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-accent/40 border border-border text-xs">
+                  <span className="text-muted-foreground font-bold uppercase text-[9px]">Verification Status:</span>
                   <FormStatusBadge status={selectedMeeting.verificationStatus} size="sm" />
                 </div>
               )}
@@ -289,24 +289,24 @@ function AttendanceFormContent() {
 
         {/* Locked Warning or Form */}
         {selectedMeeting && isLocked ? (
-          <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-8 text-center space-y-4">
-            <div className="h-16 w-16 mx-auto rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center">
-              <Lock className="h-8 w-8" />
+          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 dark:bg-amber-500/5 p-6 sm:p-8 text-center space-y-4">
+            <div className="h-14 w-14 sm:h-16 sm:w-16 mx-auto rounded-2xl bg-amber-500/15 text-amber-500 border border-amber-500/30 flex items-center justify-center">
+              <Lock className="h-7 w-7 sm:h-8 sm:w-8" />
             </div>
             <div>
-              <h4 className="text-base font-bold text-white uppercase tracking-wider">Attendance Form Locked</h4>
-              <p className="text-xs text-indigo-200/70 mt-1 max-w-md mx-auto">
-                Meeting <span className="font-mono text-amber-300 font-bold">{selectedMeeting.reportId}</span> Verification Form must complete the approval workflow (Coordinator → Zonal Leader → State Leader → Admin) and receive final Admin approval before Attendance can be submitted.
+              <h4 className="text-base font-bold text-foreground uppercase tracking-wider">Attendance Form Locked</h4>
+              <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
+                Meeting <span className="font-mono text-amber-600 dark:text-amber-400 font-bold">{selectedMeeting.reportId}</span> Verification Form must complete the approval workflow (Coordinator → Zonal Leader → State Leader → Admin) and receive final Admin approval before Attendance can be submitted.
               </p>
             </div>
             <div className="inline-flex items-center gap-2 pt-2">
-              <span className="text-xs text-indigo-200/50">Current Verification Status:</span>
+              <span className="text-xs text-muted-foreground">Current Verification Status:</span>
               <FormStatusBadge status={selectedMeeting.verificationStatus} />
             </div>
             <div>
               <button
                 onClick={() => router.push(`/coordinator/report/${selectedMeeting.id}`)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-xs"
               >
                 View Meeting Lifecycle Details
               </button>
@@ -314,105 +314,105 @@ function AttendanceFormContent() {
           </div>
         ) : selectedMeeting ? (
           <form className="space-y-6">
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 sm:p-8 space-y-6">
-              <div className="flex items-center justify-between pb-4 border-b border-white/10">
-                <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider">
+            <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 md:p-8 space-y-6 shadow-xs">
+              <div className="flex items-center justify-between pb-4 border-b border-border">
+                <span className="text-xs font-bold text-primary uppercase tracking-wider">
                   Linked to Meeting: {selectedMeeting.reportId}
                 </span>
                 <FormStatusBadge status={selectedMeeting.attendanceStatus || "PENDING"} />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                     Meeting Date *
                   </label>
                   <input
                     type="date"
                     {...register("date", { required: true })}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs sm:text-sm font-semibold"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                     Location / Venue *
                   </label>
                   <input
                     type="text"
                     {...register("location", { required: true })}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs sm:text-sm font-semibold"
                     placeholder="Meeting hall name and location"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                     Field Executer *
                   </label>
                   <input
                     type="text"
                     {...register("fieldExecuter", { required: true })}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs sm:text-sm font-semibold"
                     placeholder="Field team leader"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                     Coordinator Name *
                   </label>
                   <input
                     type="text"
                     {...register("coordinator", { required: true })}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs sm:text-sm font-semibold"
                     placeholder="Coordinator"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                     Members Attended
                   </label>
                   <input
                     type="number"
                     min={0}
                     {...register("membersAttended")}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs sm:text-sm font-semibold"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                     Pastors Attended
                   </label>
                   <input
                     type="number"
                     min={0}
                     {...register("pastorsAttended")}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs sm:text-sm font-semibold"
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
                     Remarks / Highlights *
                   </label>
                   <textarea
                     rows={3}
                     {...register("remarks", { required: true })}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/20 text-sm font-semibold"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs sm:text-sm font-semibold"
                     placeholder="Key observations from this meeting..."
                   />
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="pt-4 border-t border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                 <button
                   type="button"
                   onClick={() => router.push(`/coordinator/report/${selectedMeeting.id}`)}
-                  className="text-xs text-indigo-300 hover:text-white font-bold uppercase tracking-wider transition-colors text-center sm:text-left py-2 cursor-pointer"
+                  className="text-xs text-primary hover:underline font-bold uppercase tracking-wider transition-colors text-center sm:text-left py-2 cursor-pointer"
                 >
                   View All 3 Forms
                 </button>
@@ -421,7 +421,7 @@ function AttendanceFormContent() {
                     type="button"
                     onClick={handleSubmit(handleSaveDraft)}
                     disabled={saving || submitting}
-                    className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50 min-h-11"
+                    className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-border bg-card hover:bg-accent text-foreground text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50 min-h-11 shadow-xs"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Draft"}
                   </button>
@@ -429,7 +429,7 @@ function AttendanceFormContent() {
                     type="button"
                     onClick={handleSubmit(handleSubmitAttendance)}
                     disabled={saving || submitting}
-                    className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black uppercase tracking-wider transition-colors cursor-pointer shadow-md disabled:opacity-50 min-h-11"
+                    className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-black uppercase tracking-wider transition-colors cursor-pointer shadow-md disabled:opacity-50 min-h-11 active:scale-[0.97]"
                   >
                     {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit Attendance"}
                   </button>
