@@ -9,7 +9,7 @@ import {
   MapPin, Users, Phone, ShieldCheck, CheckCircle2, 
   Clock, AlertCircle, PhoneCall, Eye, X, Building, 
   Check, Sunrise, Sun, Moon, 
-  Car, Plane, Train, Bus, Navigation, Hotel, 
+  Train, Bus, Navigation, Hotel, 
   AlertTriangle, Plus, 
   Search, Filter, CalendarDays, Compass, CalendarCheck, 
   ArrowRight, Info 
@@ -416,6 +416,19 @@ const MONTH_NAMES = [
 const WEEKDAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 /**
+ * Formats a YYYY-MM-DD key into a compact, readable label (e.g. "Nov 15")
+ */
+function formatShortDateKey(dateKey?: string | null): string {
+  if (!dateKey || typeof dateKey !== "string") return "";
+  const match = dateKey.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return dateKey;
+  const mIdx = Number(match[2]) - 1;
+  const dNum = Number(match[3]);
+  const mLabel = MONTH_NAMES[mIdx] ? MONTH_NAMES[mIdx].slice(0, 3) : match[2];
+  return `${mLabel} ${dNum}`;
+}
+
+/**
  * Status Badge for Confirmed / On Hold / Cancelled
  */
 export function BookingStatusBadge({ status }: { status: string }) {
@@ -482,33 +495,248 @@ export function SessionBadge({ session }: { session?: string | null }) {
 }
 
 /**
- * Travel Mode Icon and Badge
+ * Compact Custom Travel Asset Icon (uses exact Car SUV & Air India Flight assets)
  */
-export function TravelModeBadge({ mode, details }: { mode?: string | null; details?: string | null }) {
-  const norm = mode?.toLowerCase();
-  let Icon = Navigation;
-  let colorCls = "bg-primary/10 text-primary border-primary/20";
-  if (norm === "car") {
-    Icon = Car;
-    colorCls = "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20";
-  } else if (norm === "flight") {
-    Icon = Plane;
-    colorCls = "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20";
-  } else if (norm === "train") {
-    Icon = Train;
-    colorCls = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
-  } else if (norm === "bus") {
-    Icon = Bus;
-    colorCls = "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
+export function TravelModeAssetIcon({
+  mode,
+  size = "sm",
+  className = "",
+}: {
+  mode?: string | null;
+  size?: "2xs" | "xs" | "sm" | "md" | "lg";
+  className?: string;
+}) {
+  const norm = mode?.toLowerCase().trim() || "";
+  const dimCls =
+    size === "2xs"
+      ? "h-4 w-6 rounded-[4px]"
+      : size === "xs"
+      ? "h-5 w-[30px] rounded-[5px]"
+      : size === "sm"
+      ? "h-7 w-[42px] rounded-md"
+      : size === "lg"
+      ? "h-10 w-[60px] rounded-lg"
+      : "h-8 w-12 rounded-lg";
+
+  if (norm === "car" || norm.includes("car")) {
+    return (
+      <span
+        className={`inline-flex items-center justify-center overflow-hidden bg-white border border-blue-500/35 shadow-xs shrink-0 ${dimCls} ${className}`}
+        title="Travel by Car"
+      >
+        <img
+          src="/icons/travel-car.jpg"
+          alt="Car"
+          className="h-full w-full object-contain scale-[1.28]"
+          loading="lazy"
+        />
+      </span>
+    );
   }
 
-  const label = details ? `${mode || "Travel"} (${details})` : (mode || "Travel");
+  if (norm === "flight" || norm.includes("flight") || norm.includes("air") || norm.includes("plane")) {
+    return (
+      <span
+        className={`inline-flex items-center justify-center overflow-hidden bg-sky-50 border border-indigo-500/35 shadow-xs shrink-0 ${dimCls} ${className}`}
+        title="Travel by Flight"
+      >
+        <img
+          src="/icons/travel-flight.jpg"
+          alt="Flight"
+          className="h-full w-full object-cover scale-[1.06]"
+          loading="lazy"
+        />
+      </span>
+    );
+  }
+
+  const iconCls = size === "lg" ? "h-5 w-5" : size === "md" ? "h-4 w-4" : "h-3.5 w-3.5";
+  if (norm === "train") {
+    return <Train className={`${iconCls} text-emerald-600 dark:text-emerald-400 shrink-0 ${className}`} />;
+  }
+  if (norm === "bus") {
+    return <Bus className={`${iconCls} text-amber-600 dark:text-amber-400 shrink-0 ${className}`} />;
+  }
+  return <Navigation className={`${iconCls} text-primary shrink-0 ${className}`} />;
+}
+
+/**
+ * Travel Mode Icon and Badge
+ */
+export function TravelModeBadge({
+  mode,
+  details,
+  nextLocation,
+  iconSize = "xs",
+}: {
+  mode?: string | null;
+  details?: string | null;
+  nextLocation?: string | null;
+  iconSize?: "xs" | "sm";
+}) {
+  const norm = mode?.toLowerCase().trim() || "";
+  let colorCls = "bg-primary/10 text-primary border-primary/20";
+  if (norm === "car" || norm.includes("car")) {
+    colorCls = "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/25";
+  } else if (norm === "flight" || norm.includes("flight")) {
+    colorCls = "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/25";
+  } else if (norm === "train") {
+    colorCls = "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20";
+  } else if (norm === "bus") {
+    colorCls = "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20";
+  }
+
+  const baseLabel = details ? `${mode || "Travel"} (${details})` : (mode || "Travel");
+  const fullLabel = nextLocation ? `${baseLabel} • Next: ${nextLocation}` : baseLabel;
 
   return (
-    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold border shrink-0 ${colorCls}`} title={label}>
-      <Icon className="h-2.5 w-2.5 shrink-0" />
-      <span className="truncate max-w-40">{label}</span>
+    <span
+      className={`inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-lg text-[10px] font-bold border shrink-0 max-w-full ${colorCls}`}
+      title={fullLabel}
+    >
+      <TravelModeAssetIcon mode={mode} size={iconSize} />
+      <span className="leading-tight break-words">{fullLabel}</span>
     </span>
+  );
+}
+
+/**
+ * Shared Information-Rich Mobile & Agenda Event Card
+ * Priority: 1. Date & Full Village/Town Name + Status | 2. Prominent Travel Icon & Next Location | 3. Duration & Morning/Evening
+ */
+function CalendarEventCard({
+  booking,
+  dateKey,
+  nextStop,
+  onSelectDate,
+}: {
+  booking: any;
+  dateKey: string;
+  nextStop?: { villageTown: string; dateStr: string };
+  onSelectDate: (key: string) => void;
+}) {
+  const villageTown = extractVillageTownName(booking);
+  const districtName = extractDistrictName(booking);
+  const churchName = booking.verificationSheet?.churchMinistryName;
+  const duration = extractMeetingDuration(booking);
+  const isConfirmed = booking.status === "CONFIRMED";
+  const shortDate = formatShortDateKey(dateKey || booking.meetingDateStr);
+  const dateObj = dateKey ? new Date(`${dateKey}T00:00:00`) : null;
+  const weekdayShort = dateObj && !isNaN(dateObj.getTime())
+    ? WEEKDAY_NAMES[dateObj.getDay()]
+    : "";
+
+  const nextLocationText = nextStop
+    ? `Next: ${nextStop.villageTown} (${formatShortDateKey(nextStop.dateStr)})`
+    : booking.stayLocation
+    ? `Stay: ${booking.stayLocation}`
+    : booking.travelOtherDetails || null;
+
+  return (
+    <div
+      onClick={() => onSelectDate(dateKey)}
+      className={`rounded-2xl border bg-card/95 p-3.5 shadow-2xs hover:shadow-sm transition-all cursor-pointer border-l-[4px] space-y-2.5 text-left ${
+        isConfirmed
+          ? "border-emerald-500/30 border-l-emerald-500 hover:border-emerald-500/60"
+          : "border-amber-500/30 border-l-amber-500 hover:border-amber-500/60"
+      }`}
+    >
+      {/* TIER 1 (PRIMARY): Scheduled Date + Full Village/Town Name + Status */}
+      <div className="space-y-1.5">
+        <div className="flex flex-wrap items-center justify-between gap-1.5">
+          <span
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider ${
+              isConfirmed
+                ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30"
+                : "bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30"
+            }`}
+          >
+            <CalendarDays className="h-3 w-3 shrink-0" />
+            <span>{weekdayShort ? `${weekdayShort}, ${shortDate}` : shortDate}</span>
+          </span>
+          <div className="flex items-center gap-1">
+            {!isConfirmed && booking.queuePosition && (
+              <span className="px-1.5 py-0.5 rounded-md text-[9px] font-black bg-amber-500 text-white">
+                #{booking.queuePosition}
+              </span>
+            )}
+            <BookingStatusBadge status={booking.status} />
+          </div>
+        </div>
+
+        <div className="flex items-start gap-2">
+          <MapPin
+            className={`h-4 w-4 shrink-0 mt-0.5 ${
+              isConfirmed ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"
+            }`}
+          />
+          <div className="min-w-0 flex-1">
+            <h4 className="font-black text-[15px] sm:text-base text-foreground tracking-tight leading-snug break-words">
+              {villageTown}
+            </h4>
+            {(districtName || churchName) && (
+              <p className="text-[11px] font-semibold text-foreground/65 leading-snug break-words mt-0.5">
+                {[districtName, churchName].filter(Boolean).join(" • ")}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* TIER 2 (SECONDARY): Prominent Car/Flight Icon + Travel Mode + Next Travel Location */}
+      {(booking.travelMode || nextLocationText) && (
+        <div className="flex items-center gap-2.5 rounded-xl bg-accent/45 dark:bg-accent/30 border border-border/50 px-2.5 py-2">
+          {booking.travelMode && (
+            <TravelModeAssetIcon mode={booking.travelMode} size="md" />
+          )}
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <div className="text-[11px] font-extrabold text-foreground leading-tight">
+              {booking.travelMode ? `By ${booking.travelMode}` : "Travel Schedule"}
+              {booking.travelOtherDetails ? ` (${booking.travelOtherDetails})` : ""}
+            </div>
+            {nextLocationText && (
+              <div className="text-[11px] font-semibold text-foreground/75 leading-snug break-words flex items-start gap-1">
+                <ArrowRight className="h-3 w-3 text-primary shrink-0 mt-0.5" />
+                <span>{nextLocationText}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* TIER 2 (SECONDARY): Duration, Morning/Evening Session, Contact */}
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-border/30">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
+            <Clock className="h-2.5 w-2.5 shrink-0" />
+            {duration.numberOfDays} Day{duration.numberOfDays > 1 ? "s" : ""}
+          </span>
+          <SessionBadge session={booking.meetingSession} />
+          {booking.stayLocation && nextStop && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9.5px] font-medium bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20">
+              <Hotel className="h-2.5 w-2.5 text-rose-500 shrink-0" />
+              <span className="break-words">{booking.stayLocation}</span>
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 text-[11px] text-foreground/65">
+          {booking.clientName && (
+            <span className="font-semibold break-words">{booking.clientName}</span>
+          )}
+          {booking.phoneNumber && (
+            <a
+              href={`tel:${booking.phoneNumber}`}
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1 text-[10px] font-bold text-primary hover:underline shrink-0"
+            >
+              <Phone className="h-3 w-3" />
+              <span>{booking.phoneNumber}</span>
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -546,6 +774,7 @@ export function CompletedVerificationsCalendar({
 
   // Booking Management Drawer / Modal State (Date click)
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
+  const [mobileSelectedDateKey, setMobileSelectedDateKey] = useState<string | null>(null);
   const [activeDateModalTab, setActiveDateModalTab] = useState<"confirmed" | "hold" | "cancelled">("confirmed");
 
   // Add to Hold Modal State
@@ -748,6 +977,32 @@ export function CompletedVerificationsCalendar({
     return map;
   }, [filteredEvents]);
 
+  // Derive chronological Next Travel Location for each active booking
+  const nextTravelMap = useMemo(() => {
+    const map = new Map<string, { villageTown: string; dateStr: string }>();
+    const activeSorted = [...allEvents]
+      .filter((b) => b.status !== "CANCELLED" && typeof b.meetingDateStr === "string" && b.meetingDateStr.trim())
+      .sort((a, b) => a.meetingDateStr.localeCompare(b.meetingDateStr));
+
+    for (let i = 0; i < activeSorted.length; i++) {
+      const cur = activeSorted[i];
+      const curTown = extractVillageTownName(cur);
+      const next = activeSorted.find(
+        (candidate, idx) =>
+          idx > i &&
+          candidate.meetingDateStr >= cur.meetingDateStr &&
+          extractVillageTownName(candidate) !== curTown
+      );
+      if (next && cur.id) {
+        map.set(cur.id, {
+          villageTown: extractVillageTownName(next),
+          dateStr: next.meetingDateStr,
+        });
+      }
+    }
+    return map;
+  }, [allEvents]);
+
   // Days calculations
   const firstDayOfMonth = new Date(year, month, 1);
   const lastDayOfMonth = new Date(year, month + 1, 0);
@@ -827,6 +1082,7 @@ export function CompletedVerificationsCalendar({
 
   // Navigation handlers
   const handlePrev = () => {
+    setMobileSelectedDateKey(null);
     if (calendarView === "month" || calendarView === "agenda") {
       setCurrentDate(new Date(year, month - 1, 1));
     } else {
@@ -837,6 +1093,7 @@ export function CompletedVerificationsCalendar({
   };
 
   const handleNext = () => {
+    setMobileSelectedDateKey(null);
     if (calendarView === "month" || calendarView === "agenda") {
       setCurrentDate(new Date(year, month + 1, 1));
     } else {
@@ -847,6 +1104,7 @@ export function CompletedVerificationsCalendar({
   };
 
   const handleToday = () => {
+    setMobileSelectedDateKey(null);
     setCurrentDate(new Date());
   };
 
@@ -1286,318 +1544,525 @@ export function CompletedVerificationsCalendar({
 
       {/* 3. MONTH VIEW */}
       {calendarView === "month" && (
-        <div className="rounded-3xl border border-border/70 bg-card/50 backdrop-blur-md overflow-hidden shadow-sm">
-          {/* Weekday Columns Header */}
-          <div className="grid grid-cols-7 border-b border-border/60 bg-accent/30 text-center">
-            {WEEKDAY_NAMES.map((wName, idx) => (
-              <div
-                key={wName}
-                className={`py-3.5 text-[11px] font-black tracking-widest uppercase ${
-                  idx === 0 || idx === 6 ? "text-primary font-black" : "text-foreground/70"
-                }`}
-              >
-                {wName}
-              </div>
-            ))}
+        <div className="space-y-4">
+          <div className="rounded-3xl border border-border/70 bg-card/50 backdrop-blur-md overflow-hidden shadow-sm">
+            {/* Weekday Columns Header */}
+            <div className="grid grid-cols-7 border-b border-border/60 bg-accent/30 text-center">
+              {WEEKDAY_NAMES.map((wName, idx) => (
+                <div
+                  key={wName}
+                  className={`py-2.5 sm:py-3.5 text-[10px] sm:text-[11px] font-black tracking-widest uppercase ${
+                    idx === 0 || idx === 6 ? "text-primary font-black" : "text-foreground/70"
+                  }`}
+                >
+                  {wName}
+                </div>
+              ))}
+            </div>
+
+            {/* Days Grid - Compact Interactive Cells on Mobile, Full Event Cards on >= sm */}
+            <div className="grid grid-cols-7 gap-[1px] bg-border/40 p-[1px]">
+              {allCalendarDays.map((dayItem) => {
+                const dayData = dateBookingsMap.get(dayItem.key) || { confirmed: [], hold: [], cancelled: [] };
+                const totalMeetings = dayData.confirmed.length + dayData.hold.length;
+                const hasMeetings = totalMeetings > 0;
+                const isToday = dayItem.key === todayKey;
+                const isMobileSelected = mobileSelectedDateKey === dayItem.key;
+                const firstActive = dayData.confirmed[0] || dayData.hold[0];
+
+                return (
+                  <div
+                    key={dayItem.key}
+                    onClick={() => {
+                      if (typeof window !== "undefined" && window.innerWidth < 640) {
+                        setMobileSelectedDateKey((prev) => (prev === dayItem.key ? null : dayItem.key));
+                      } else {
+                        handleDateClick(dayItem.key);
+                      }
+                    }}
+                    className={`relative min-h-[56px] sm:min-h-[168px] md:min-h-[205px] lg:min-h-[230px] p-1 sm:p-2.5 transition-all group flex flex-col justify-between ${
+                      !dayItem.isCurrentMonth
+                        ? "bg-muted/15 dark:bg-muted/5 opacity-40 text-muted-foreground/60"
+                        : isMobileSelected
+                        ? "bg-primary/[0.08] text-foreground ring-2 ring-inset ring-primary shadow-xs sm:bg-card sm:ring-0"
+                        : isToday
+                        ? "bg-primary/[0.04] text-foreground ring-2 ring-inset ring-primary/40 shadow-xs"
+                        : hasMeetings
+                        ? "bg-card dark:bg-card/90 text-foreground"
+                        : "bg-card/70 dark:bg-card/40 hover:bg-card/90 text-foreground"
+                    } hover:bg-primary/[0.03] cursor-pointer`}
+                  >
+                    {/* Date Header Row */}
+                    <div className="flex items-center justify-between gap-1 sm:mb-2">
+                      <span
+                        className={`inline-flex items-center justify-center rounded-lg sm:rounded-xl transition-all ${
+                          isToday
+                            ? "h-6 w-6 sm:h-7 sm:w-7 bg-primary text-primary-foreground font-black text-[11px] sm:text-xs shadow-md ring-2 sm:ring-4 ring-primary/20"
+                            : hasMeetings
+                            ? "h-5 w-5 sm:h-6 sm:w-6 text-foreground font-black text-xs sm:text-sm group-hover:text-primary transition-colors"
+                            : "h-5 w-5 sm:h-6 sm:w-6 text-foreground/70 group-hover:text-primary font-bold text-[11px] sm:text-xs"
+                        }`}
+                      >
+                        {dayItem.dayNum}
+                      </span>
+
+                      {/* Micro count badges (Desktop / Tablet) */}
+                      <div className="hidden sm:flex items-center gap-1.5">
+                        {dayData.confirmed.length > 0 && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                            <span>{dayData.confirmed.length}</span>
+                          </span>
+                        )}
+                        {dayData.hold.length > 0 && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/25">
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                            <span>{dayData.hold.length}</span>
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Mobile status count pill (< sm) */}
+                      {hasMeetings && (
+                        <div className="sm:hidden flex items-center gap-0.5">
+                          {dayData.confirmed.length > 0 && (
+                            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                          )}
+                          {dayData.hold.length > 0 && (
+                            <span className="h-2 w-2 rounded-full bg-amber-500" />
+                          )}
+                          {totalMeetings > 1 && (
+                            <span className="text-[8px] font-black text-foreground/70 ml-0.5">
+                              {totalMeetings}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Mobile Clean Indicator Row (< sm) — Full Village/Town cards appear directly below grid */}
+                    <div className="sm:hidden flex items-center justify-center min-h-[20px] mt-0.5">
+                      {firstActive ? (
+                        firstActive.travelMode ? (
+                          <TravelModeAssetIcon mode={firstActive.travelMode} size="2xs" />
+                        ) : (
+                          <span
+                            className={`h-1.5 w-5 rounded-full ${
+                              dayData.confirmed.length > 0 ? "bg-emerald-500" : "bg-amber-500"
+                            }`}
+                          />
+                        )
+                      ) : null}
+                    </div>
+
+                    {/* Desktop Modern Event Cards Preview */}
+                    <div className="hidden sm:block space-y-1.5 flex-1 overflow-hidden">
+                      {/* Confirmed Meetings (Primary: Village/Town + Date; Secondary: Travel Icon, Duration, Session, Next Travel) */}
+                      {dayData.confirmed.slice(0, 2).map((m: any) => {
+                        const villageTown = extractVillageTownName(m);
+                        const districtName = extractDistrictName(m);
+                        const duration = extractMeetingDuration(m);
+                        const churchName = m.verificationSheet?.churchMinistryName;
+                        const nextStop = m.id ? nextTravelMap.get(m.id) : undefined;
+                        const nextTarget = nextStop?.villageTown || m.stayLocation;
+
+                        return (
+                          <div
+                            key={m.id}
+                            className="group/card rounded-xl p-2 bg-emerald-500/[0.06] dark:bg-emerald-500/[0.11] border border-emerald-500/25 hover:border-emerald-500/60 hover:bg-emerald-500/[0.10] shadow-2xs hover:shadow-xs transition-all space-y-1.5 text-left cursor-pointer relative overflow-hidden"
+                          >
+                            <div className="absolute left-0 top-1.5 bottom-1.5 w-1 bg-emerald-500 rounded-r-full" />
+
+                            {/* 1. Primary Hero: Village / Town Name & Scheduled Date + Prominent Travel Asset Icon */}
+                            <div className="flex items-start justify-between gap-1.5 pl-1.5">
+                              <div className="flex items-start gap-1 min-w-0 flex-1">
+                                <MapPin className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                                <div className="min-w-0 flex-1">
+                                  <span className="font-black text-[13px] text-foreground tracking-tight leading-snug break-words [word-break:break-word] group-hover/card:text-emerald-600 dark:group-hover/card:text-emerald-400 transition-colors block">
+                                    {villageTown}
+                                  </span>
+                                  <span className="text-[10px] font-bold text-emerald-700/85 dark:text-emerald-300/85 leading-snug break-words block mt-0.5">
+                                    {formatShortDateKey(dayItem.key)}
+                                    {(districtName || churchName) ? ` • ${districtName || churchName}` : ""}
+                                  </span>
+                                </div>
+                              </div>
+                              {m.travelMode && (
+                                <TravelModeAssetIcon mode={m.travelMode} size="sm" className="mt-0.5" />
+                              )}
+                            </div>
+
+                            {/* 2. Secondary Details: Duration, Morning/Evening & Next Travel Location */}
+                            <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-emerald-500/15 pl-1.5">
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8.5px] font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 shrink-0">
+                                <CalendarDays className="h-2.5 w-2.5 shrink-0" />
+                                {duration.numberOfDays}{duration.numberOfDays > 1 ? " Days" : " Day"}
+                              </span>
+                              <SessionBadge session={m.meetingSession} />
+                              {(m.travelMode || nextTarget) && (
+                                <span
+                                  className="inline-flex items-center gap-1 text-[9.5px] font-semibold text-foreground/75 break-words leading-tight"
+                                  title={nextTarget ? `Travel: ${m.travelMode || "Route"} → ${nextTarget}` : m.travelMode}
+                                >
+                                  {nextTarget ? `→ ${nextTarget}` : m.travelMode}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* Hold Meetings (Primary: Village/Town + Date; Secondary: Queue, Travel Icon, Duration, Session, Next Travel) */}
+                      {dayData.hold.slice(0, Math.max(0, 2 - dayData.confirmed.length)).map((h: any) => {
+                        const villageTown = extractVillageTownName(h);
+                        const districtName = extractDistrictName(h);
+                        const duration = extractMeetingDuration(h);
+                        const nextStop = h.id ? nextTravelMap.get(h.id) : undefined;
+                        const nextTarget = nextStop?.villageTown || h.stayLocation;
+
+                        return (
+                          <div
+                            key={h.id}
+                            className="group/card rounded-xl p-2 bg-amber-500/[0.06] dark:bg-amber-500/[0.11] border border-amber-500/25 hover:border-amber-500/60 hover:bg-amber-500/[0.10] shadow-2xs hover:shadow-xs transition-all space-y-1.5 text-left cursor-pointer relative overflow-hidden"
+                          >
+                            <div className="absolute left-0 top-1.5 bottom-1.5 w-1 bg-amber-500 rounded-r-full" />
+
+                            {/* 1. Primary Hero: Village / Town Name & Scheduled Date + Prominent Travel Asset Icon */}
+                            <div className="flex items-start justify-between gap-1.5 pl-1.5">
+                              <div className="flex items-start gap-1 min-w-0 flex-1">
+                                <MapPin className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                                <div className="min-w-0 flex-1">
+                                  <span className="font-black text-[13px] text-foreground tracking-tight leading-snug break-words [word-break:break-word] group-hover/card:text-amber-600 dark:group-hover/card:text-amber-400 transition-colors block">
+                                    {villageTown}
+                                  </span>
+                                  <span className="text-[10px] font-bold text-amber-700/85 dark:text-amber-300/85 leading-snug break-words block mt-0.5">
+                                    {formatShortDateKey(dayItem.key)} • Hold #{h.queuePosition || 1}
+                                    {districtName ? ` • ${districtName}` : ""}
+                                  </span>
+                                </div>
+                              </div>
+                              {h.travelMode && (
+                                <TravelModeAssetIcon mode={h.travelMode} size="sm" className="mt-0.5" />
+                              )}
+                            </div>
+
+                            {/* 2. Secondary Details: Duration, Morning/Evening & Next Travel Location */}
+                            <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-amber-500/15 pl-1.5">
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8.5px] font-bold bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/25 shrink-0">
+                                {duration.numberOfDays}D
+                              </span>
+                              <SessionBadge session={h.meetingSession} />
+                              {(h.travelMode || nextTarget) && (
+                                <span
+                                  className="inline-flex items-center gap-1 text-[9.5px] font-semibold text-foreground/75 break-words leading-tight"
+                                  title={nextTarget ? `Travel: ${h.travelMode || "Route"} → ${nextTarget}` : h.travelMode}
+                                >
+                                  {nextTarget ? `→ ${nextTarget}` : h.travelMode}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* "+ More" indicator if more than 2 meetings */}
+                      {totalMeetings > 2 && (
+                        <div className="pt-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDateClick(dayItem.key);
+                            }}
+                            className="w-full text-left px-2.5 py-1.5 rounded-xl text-[10px] font-black text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 transition-all flex items-center justify-between cursor-pointer"
+                          >
+                            <span>+{totalMeetings - 2} more meetings</span>
+                            <ArrowRight className="h-3 w-3 shrink-0" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Days Grid - Sharp 1px Grid Layout */}
-          <div className="grid grid-cols-7 gap-[1px] bg-border/40 p-[1px]">
-            {allCalendarDays.map((dayItem) => {
-              const dayData = dateBookingsMap.get(dayItem.key) || { confirmed: [], hold: [], cancelled: [] };
-              const totalMeetings = dayData.confirmed.length + dayData.hold.length;
-              const hasMeetings = totalMeetings > 0;
-              const isToday = dayItem.key === todayKey;
+          {/* Mobile Full-Width Schedule Feed (< sm) — Un-truncated Village/Town Names + Prominent Car/Flight Icons */}
+          <div className="sm:hidden space-y-3">
+            {(() => {
+              const targetDays = mobileSelectedDateKey
+                ? allCalendarDays.filter((d) => d.key === mobileSelectedDateKey)
+                : currentMonthDays.filter((d) => {
+                    const data = dateBookingsMap.get(d.key);
+                    return data && (data.confirmed.length > 0 || data.hold.length > 0);
+                  });
+
+              const scheduledItems: Array<{ booking: any; dateKey: string }> = [];
+              for (const d of targetDays) {
+                const data = dateBookingsMap.get(d.key);
+                if (!data) continue;
+                for (const m of data.confirmed) scheduledItems.push({ booking: m, dateKey: d.key });
+                for (const h of data.hold) scheduledItems.push({ booking: h, dateKey: d.key });
+              }
 
               return (
-                <div
-                  key={dayItem.key}
-                  onClick={() => handleDateClick(dayItem.key)}
-                  className={`relative min-h-[110px] sm:min-h-[160px] md:min-h-[200px] lg:min-h-[225px] p-2 sm:p-2.5 transition-all group flex flex-col justify-between ${
-                    !dayItem.isCurrentMonth
-                      ? "bg-muted/15 dark:bg-muted/5 opacity-40 text-muted-foreground/60"
-                      : isToday
-                      ? "bg-primary/[0.04] text-foreground ring-2 ring-inset ring-primary/40 shadow-xs"
-                      : hasMeetings
-                      ? "bg-card dark:bg-card/90 text-foreground"
-                      : "bg-card/70 dark:bg-card/40 hover:bg-card/90 text-foreground"
-                  } hover:bg-primary/[0.03] cursor-pointer`}
-                >
-                  {/* Date Header Row */}
-                  <div className="flex items-center justify-between gap-1 mb-1 sm:mb-2">
-                    <span
-                      className={`inline-flex items-center justify-center rounded-xl transition-all ${
-                        isToday
-                          ? "h-7 w-7 bg-primary text-primary-foreground font-black text-xs shadow-md ring-4 ring-primary/20"
-                          : hasMeetings
-                          ? "h-6 w-6 text-foreground font-black text-sm group-hover:text-primary transition-colors"
-                          : "h-6 w-6 text-foreground/70 group-hover:text-primary font-bold text-xs"
-                      }`}
-                    >
-                      {dayItem.dayNum}
-                    </span>
-
-                    {/* Micro count badges (Desktop / Tablet) */}
-                    <div className="hidden sm:flex items-center gap-1.5">
-                      {dayData.confirmed.length > 0 && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                          <span>{dayData.confirmed.length}</span>
-                        </span>
-                      )}
-                      {dayData.hold.length > 0 && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/25">
-                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                          <span>{dayData.hold.length}</span>
-                        </span>
+                <>
+                  <div className="flex items-center justify-between gap-2 px-1">
+                    <div>
+                      <h3 className="text-sm font-black text-foreground tracking-tight">
+                        {mobileSelectedDateKey
+                          ? `${formatShortDateKey(mobileSelectedDateKey)} Schedule`
+                          : `${MONTH_NAMES[month]} Tour Schedule`}
+                      </h3>
+                      <p className="text-[11px] font-semibold text-foreground/60">
+                        {scheduledItems.length} scheduled meeting{scheduledItems.length === 1 ? "" : "s"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {mobileSelectedDateKey && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleDateClick(mobileSelectedDateKey)}
+                            className="px-2.5 py-1.5 rounded-xl bg-primary text-primary-foreground text-[11px] font-bold shadow-2xs cursor-pointer"
+                          >
+                            Manage
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setMobileSelectedDateKey(null)}
+                            className="px-2.5 py-1.5 rounded-xl border border-border/60 bg-card text-foreground text-[11px] font-bold cursor-pointer"
+                          >
+                            All Month
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
 
-                  {/* Mobile Compact Day View (< sm) */}
-                  <div className="sm:hidden flex flex-col items-stretch justify-center gap-1 w-full my-auto py-1">
-                    {dayData.confirmed.length > 0 && (
-                      <div className="rounded-lg bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-1 text-[10px] font-black text-emerald-800 dark:text-emerald-200 text-center shadow-2xs leading-tight break-words [word-break:break-word]">
-                        {extractVillageTownName(dayData.confirmed[0])}
-                      </div>
-                    )}
-                    {dayData.confirmed.length === 0 && dayData.hold.length > 0 && (
-                      <div className="rounded-lg bg-amber-500/15 border border-amber-500/30 px-1.5 py-1 text-[10px] font-black text-amber-800 dark:text-amber-200 text-center shadow-2xs leading-tight break-words [word-break:break-word]">
-                        {extractVillageTownName(dayData.hold[0])}
-                      </div>
-                    )}
-                    {totalMeetings > 1 && (
-                      <span className="text-[9px] font-black text-primary text-center leading-none mt-0.5">
-                        +{totalMeetings - 1} more
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Desktop Modern Event Cards Preview */}
-                  <div className="hidden sm:block space-y-1.5 flex-1 overflow-hidden">
-                    {/* Confirmed Meetings (Modern sleek card with emerald accent border) */}
-                    {dayData.confirmed.slice(0, 2).map((m: any) => {
-                      const villageTown = extractVillageTownName(m);
-                      const districtName = extractDistrictName(m);
-                      const duration = extractMeetingDuration(m);
-                      const churchName = m.verificationSheet?.churchMinistryName;
-
-                      return (
-                        <div
-                          key={m.id}
-                          className="group/card rounded-xl p-2.5 bg-emerald-500/[0.05] dark:bg-emerald-500/[0.10] border border-emerald-500/25 hover:border-emerald-500/60 hover:bg-emerald-500/[0.09] shadow-2xs hover:shadow-xs transition-all space-y-1.5 text-left cursor-pointer relative overflow-hidden"
-                        >
-                          <div className="absolute left-0 top-1.5 bottom-1.5 w-1 bg-emerald-500 rounded-r-full" />
-
-                          {/* 1. Header: Status & Duration (Separate Row to prevent text collision) */}
-                          <div className="flex items-center justify-between gap-1 pl-1">
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8.5px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 shrink-0">
-                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                              CONFIRMED
-                            </span>
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8.5px] font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 shrink-0">
-                              <CalendarDays className="h-2.5 w-2.5" />
-                              {duration.numberOfDays} {duration.numberOfDays > 1 ? "Days" : "Day"}
-                            </span>
-                          </div>
-
-                          {/* 2. Village / Town Name (Full width, prominent, never overlaps with badges) */}
-                          <div className="flex items-start gap-1.5 pt-0.5 pl-1">
-                            <MapPin className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                            <div className="min-w-0 flex-1">
-                              <span className="font-black text-xs sm:text-[13px] text-foreground tracking-tight leading-snug break-words [word-break:break-word] group-hover/card:text-emerald-600 dark:group-hover/card:text-emerald-400 transition-colors block">
-                                {villageTown}
-                              </span>
-                              {(districtName || churchName) && (
-                                <span className="text-[10px] text-foreground/60 font-semibold leading-tight break-words [word-break:break-word] block mt-0.5">
-                                  {districtName || churchName}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* 3. Session & Logistics Badges */}
-                          <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-emerald-500/15 pl-1">
-                            <SessionBadge session={m.meetingSession} />
-                            {m.travelMode && <TravelModeBadge mode={m.travelMode} details={m.travelOtherDetails} />}
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                    {/* Hold Meetings (Modern sleek card with amber accent border) */}
-                    {dayData.hold.slice(0, Math.max(0, 2 - dayData.confirmed.length)).map((h: any) => {
-                      const villageTown = extractVillageTownName(h);
-                      const districtName = extractDistrictName(h);
-                      const duration = extractMeetingDuration(h);
-
-                      return (
-                        <div
-                          key={h.id}
-                          className="group/card rounded-xl p-2.5 bg-amber-500/[0.05] dark:bg-amber-500/[0.10] border border-amber-500/25 hover:border-amber-500/60 hover:bg-amber-500/[0.09] shadow-2xs hover:shadow-xs transition-all space-y-1.5 text-left cursor-pointer relative overflow-hidden"
-                        >
-                          <div className="absolute left-0 top-1.5 bottom-1.5 w-1 bg-amber-500 rounded-r-full" />
-
-                          {/* 1. Header: Status & Queue Info (Separate Row to prevent text collision) */}
-                          <div className="flex items-center justify-between gap-1 pl-1">
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8.5px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-800 dark:text-amber-200 border border-amber-500/30 shrink-0">
-                              <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                              ON HOLD
-                            </span>
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8.5px] font-bold bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/25 shrink-0">
-                              Queue #{h.queuePosition || 1} • {duration.numberOfDays}D
-                            </span>
-                          </div>
-
-                          {/* 2. Village / Town Name (Full width, prominent) */}
-                          <div className="flex items-start gap-1.5 pt-0.5 pl-1">
-                            <MapPin className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                            <div className="min-w-0 flex-1">
-                              <span className="font-black text-xs sm:text-[13px] text-foreground tracking-tight leading-snug break-words [word-break:break-word] group-hover/card:text-amber-600 dark:group-hover/card:text-amber-400 transition-colors block">
-                                {villageTown}
-                              </span>
-                              {districtName && (
-                                <span className="text-[10px] text-foreground/60 font-semibold leading-tight break-words [word-break:break-word] block mt-0.5">
-                                  {districtName}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* 3. Session */}
-                          <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-amber-500/15 pl-1">
-                            <SessionBadge session={h.meetingSession} />
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                    {/* "+ More" indicator if more than 2 meetings */}
-                    {totalMeetings > 2 && (
-                      <div className="pt-1">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDateClick(dayItem.key);
-                          }}
-                          className="w-full text-left px-2.5 py-1.5 rounded-xl text-[10px] font-black text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 transition-all flex items-center justify-between cursor-pointer"
-                        >
-                          <span>+{totalMeetings - 2} more meetings</span>
-                          <ArrowRight className="h-3 w-3 shrink-0" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                  {scheduledItems.length === 0 ? (
+                    <div className="p-5 rounded-2xl border border-dashed border-border/70 bg-card/60 text-center space-y-2.5">
+                      <p className="text-xs font-bold text-foreground/70">
+                        {mobileSelectedDateKey
+                          ? `No meetings scheduled on ${formatShortDateKey(mobileSelectedDateKey)}`
+                          : `No meetings scheduled in ${MONTH_NAMES[month]} ${year}`}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => openAddHoldModal(mobileSelectedDateKey || undefined)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 text-white text-xs font-bold shadow-xs cursor-pointer"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        <span>Add Booking / Hold</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {scheduledItems.map(({ booking, dateKey }) => (
+                        <CalendarEventCard
+                          key={`${dateKey}-${booking.id}`}
+                          booking={booking}
+                          dateKey={dateKey}
+                          nextStop={booking.id ? nextTravelMap.get(booking.id) : undefined}
+                          onSelectDate={handleDateClick}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
               );
-            })}
+            })()}
           </div>
         </div>
       )}
 
       {/* 6. WEEK VIEW */}
       {calendarView === "week" && (
-        <div className="rounded-3xl border border-border/70 bg-card/50 backdrop-blur-md overflow-hidden shadow-sm">
-          {/* Weekday Header */}
-          <div className="grid grid-cols-7 border-b border-border/60 bg-accent/30 text-center divide-x divide-border/20">
+        <div className="space-y-4">
+          {/* Mobile / Small Tablet Vertical Week Schedule (< md) */}
+          <div className="md:hidden space-y-3">
             {currentWeekDays.map((dayItem, idx) => {
+              const dayData = dateBookingsMap.get(dayItem.key) || { confirmed: [], hold: [], cancelled: [] };
+              const allBookings = [...dayData.confirmed, ...dayData.hold];
               const isToday = dayItem.key === todayKey;
+
               return (
-                <div key={dayItem.key} className="py-3 px-1">
-                  <span className={`text-[11px] font-black tracking-widest uppercase block ${
-                    idx === 0 || idx === 6 ? "text-primary" : "text-foreground/70"
-                  }`}>
-                    {WEEKDAY_NAMES[idx]}
-                  </span>
-                  <span className={`inline-flex items-center justify-center text-xs font-black rounded-xl mt-1 transition-all ${
-                    isToday ? "h-7 w-7 bg-primary text-primary-foreground shadow-md ring-4 ring-primary/20" : "h-7 w-7 text-foreground"
-                  }`}>
-                    {dayItem.dayNum}
-                  </span>
+                <div
+                  key={dayItem.key}
+                  className={`rounded-2xl border p-3.5 space-y-3 ${
+                    isToday
+                      ? "border-primary/40 bg-primary/[0.04]"
+                      : "border-border/60 bg-card/80"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 pb-2 border-b border-border/40">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-flex items-center justify-center h-7 w-7 text-xs font-black rounded-xl ${
+                          isToday
+                            ? "bg-primary text-primary-foreground shadow-xs"
+                            : "bg-accent text-foreground"
+                        }`}
+                      >
+                        {dayItem.dayNum}
+                      </span>
+                      <div>
+                        <span className="text-xs font-black uppercase tracking-wider text-foreground block">
+                          {WEEKDAY_NAMES[idx]} • {formatShortDateKey(dayItem.key)}
+                        </span>
+                        <span className="text-[10px] font-semibold text-foreground/60">
+                          {allBookings.length > 0
+                            ? `${dayData.confirmed.length} Confirmed • ${dayData.hold.length} On Hold`
+                            : "Available"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDateClick(dayItem.key)}
+                      className="px-2.5 py-1 rounded-xl border border-border/60 bg-card hover:bg-accent text-[11px] font-bold text-foreground cursor-pointer"
+                    >
+                      {allBookings.length > 0 ? "Manage" : "+ Hold"}
+                    </button>
+                  </div>
+
+                  {allBookings.length === 0 ? (
+                    <p className="text-[11px] font-medium text-foreground/45 py-1">
+                      No meetings scheduled
+                    </p>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {allBookings.map((b: any) => (
+                        <CalendarEventCard
+                          key={b.id}
+                          booking={b}
+                          dateKey={dayItem.key}
+                          nextStop={b.id ? nextTravelMap.get(b.id) : undefined}
+                          onSelectDate={handleDateClick}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
 
-          <div className="grid grid-cols-7 gap-[1px] bg-border/40 p-[1px] min-h-96">
-            {currentWeekDays.map((dayItem) => {
-              const dayData = dateBookingsMap.get(dayItem.key) || { confirmed: [], hold: [], cancelled: [] };
-              const allBookings = [...dayData.confirmed, ...dayData.hold];
+          {/* Desktop 7-Column Week Grid (>= md) */}
+          <div className="hidden md:block rounded-3xl border border-border/70 bg-card/50 backdrop-blur-md overflow-hidden shadow-sm">
+            {/* Weekday Header */}
+            <div className="grid grid-cols-7 border-b border-border/60 bg-accent/30 text-center divide-x divide-border/20">
+              {currentWeekDays.map((dayItem, idx) => {
+                const isToday = dayItem.key === todayKey;
+                return (
+                  <div key={dayItem.key} className="py-3 px-1">
+                    <span className={`text-[11px] font-black tracking-widest uppercase block ${
+                      idx === 0 || idx === 6 ? "text-primary" : "text-foreground/70"
+                    }`}>
+                      {WEEKDAY_NAMES[idx]}
+                    </span>
+                    <span className={`inline-flex items-center justify-center text-xs font-black rounded-xl mt-1 transition-all ${
+                      isToday ? "h-7 w-7 bg-primary text-primary-foreground shadow-md ring-4 ring-primary/20" : "h-7 w-7 text-foreground"
+                    }`}>
+                      {dayItem.dayNum}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
 
-              return (
-                <div 
-                  key={dayItem.key} 
-                  onClick={() => handleDateClick(dayItem.key)}
-                  className="p-2 space-y-2 cursor-pointer bg-card/60 dark:bg-card/40 hover:bg-primary/[0.04] transition-colors flex flex-col justify-start"
-                >
-                  {allBookings.length === 0 ? (
-                    <div className="py-20 text-center text-[11px] text-foreground/30 font-bold">
-                      Available
-                    </div>
-                  ) : (
-                    allBookings.map((b: any) => {
-                      const villageTown = extractVillageTownName(b);
-                      const districtName = extractDistrictName(b);
-                      const duration = extractMeetingDuration(b);
-                      const isConfirmed = b.status === "CONFIRMED";
+            <div className="grid grid-cols-7 gap-[1px] bg-border/40 p-[1px] min-h-96">
+              {currentWeekDays.map((dayItem) => {
+                const dayData = dateBookingsMap.get(dayItem.key) || { confirmed: [], hold: [], cancelled: [] };
+                const allBookings = [...dayData.confirmed, ...dayData.hold];
 
-                      return (
-                        <div
-                          key={b.id}
-                          className={`p-2.5 rounded-xl border text-left shadow-2xs space-y-1.5 transition-all relative overflow-hidden group/card ${
-                            isConfirmed
-                              ? "bg-emerald-500/[0.06] dark:bg-emerald-500/[0.12] border-emerald-500/25 hover:border-emerald-500/60"
-                              : "bg-amber-500/[0.06] dark:bg-amber-500/[0.12] border-amber-500/25 hover:border-amber-500/60"
-                          }`}
-                        >
-                          <div className={`absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full ${
-                            isConfirmed ? "bg-emerald-500" : "bg-amber-500"
-                          }`} />
+                return (
+                  <div
+                    key={dayItem.key}
+                    onClick={() => handleDateClick(dayItem.key)}
+                    className="p-2 space-y-2 cursor-pointer bg-card/60 dark:bg-card/40 hover:bg-primary/[0.04] transition-colors flex flex-col justify-start"
+                  >
+                    {allBookings.length === 0 ? (
+                      <div className="py-20 text-center text-[11px] text-foreground/30 font-bold">
+                        Available
+                      </div>
+                    ) : (
+                      allBookings.map((b: any) => {
+                        const villageTown = extractVillageTownName(b);
+                        const districtName = extractDistrictName(b);
+                        const duration = extractMeetingDuration(b);
+                        const isConfirmed = b.status === "CONFIRMED";
+                        const nextStop = b.id ? nextTravelMap.get(b.id) : undefined;
+                        const nextTarget = nextStop?.villageTown || b.stayLocation;
 
-                          <div className="flex items-center justify-between gap-1 pl-1">
-                            <BookingStatusBadge status={b.status} />
-                            <div className="flex items-center gap-1">
-                              <span className="text-[8.5px] font-bold px-1.5 py-0.2 rounded bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
+                        return (
+                          <div
+                            key={b.id}
+                            className={`p-2.5 rounded-xl border text-left shadow-2xs space-y-1.5 transition-all relative overflow-hidden group/card ${
+                              isConfirmed
+                                ? "bg-emerald-500/[0.06] dark:bg-emerald-500/[0.12] border-emerald-500/25 hover:border-emerald-500/60"
+                                : "bg-amber-500/[0.06] dark:bg-amber-500/[0.12] border-amber-500/25 hover:border-amber-500/60"
+                            }`}
+                          >
+                            <div className={`absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full ${
+                              isConfirmed ? "bg-emerald-500" : "bg-amber-500"
+                            }`} />
+
+                            {/* 1. PRIMARY: Village / Town Name + Date + Prominent Travel Asset Icon */}
+                            <div className="flex items-start justify-between gap-1.5 min-w-0 pl-1.5">
+                              <div className="flex items-start gap-1 min-w-0 flex-1">
+                                <MapPin className={`h-3.5 w-3.5 shrink-0 mt-0.5 ${isConfirmed ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`} />
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="font-black text-[13px] text-foreground tracking-tight leading-snug break-words [word-break:break-word]">
+                                    {villageTown}
+                                  </h4>
+                                  <span className={`text-[10px] font-bold block leading-snug break-words mt-0.5 ${isConfirmed ? "text-emerald-700/85 dark:text-emerald-300/85" : "text-amber-700/85 dark:text-amber-300/85"}`}>
+                                    {formatShortDateKey(dayItem.key)}
+                                    {districtName ? ` • ${districtName}` : ""}
+                                  </span>
+                                </div>
+                              </div>
+                              {b.travelMode && (
+                                <TravelModeAssetIcon mode={b.travelMode} size="sm" className="mt-0.5" />
+                              )}
+                            </div>
+
+                            {/* 2. SECONDARY: Duration, Session, Travel + Next Travel Location */}
+                            <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-border/30 pl-1.5">
+                              <BookingStatusBadge status={b.status} />
+                              <span className="text-[8.5px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 shrink-0">
                                 {duration.numberOfDays}D
                               </span>
                               <SessionBadge session={b.meetingSession} />
                             </div>
-                          </div>
 
-                          <div className="flex items-start gap-1.5 min-w-0 pl-1">
-                            <MapPin className={`h-3 w-3 shrink-0 mt-0.5 ${isConfirmed ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`} />
-                            <h4 className="font-black text-xs sm:text-[13px] text-foreground tracking-tight leading-snug break-words [word-break:break-word]">
-                              {villageTown}
-                            </h4>
-                          </div>
-
-                          {districtName && (
-                            <div className="text-[10px] text-foreground/60 font-semibold leading-tight break-words [word-break:break-word] pl-1">
-                              {districtName}
-                            </div>
-                          )}
-
-                          <div className="space-y-1 text-[10px] text-foreground/70 pt-1 border-t border-border/30 pl-1">
-                            <div className="text-[10px] text-foreground/60 font-semibold truncate">
-                              {b.clientName}
-                            </div>
-                            {b.travelMode && (
-                              <TravelModeBadge mode={b.travelMode} details={b.travelOtherDetails} />
-                            )}
-                            {b.stayLocation && (
-                              <div className="flex items-center gap-1 text-[9px] text-foreground/60 truncate">
-                                <Hotel className="h-2.5 w-2.5 text-rose-500 shrink-0" />
-                                <span className="truncate">{b.stayLocation}</span>
+                            {(b.travelMode || nextTarget) && (
+                              <div className="space-y-1 text-[10px] text-foreground/75 pl-1.5">
+                                {b.travelMode && (
+                                  <TravelModeBadge
+                                    mode={b.travelMode}
+                                    details={b.travelOtherDetails}
+                                    nextLocation={nextStop?.villageTown}
+                                    iconSize="sm"
+                                  />
+                                )}
+                                {b.stayLocation && (
+                                  <div className="flex items-start gap-1 text-[9.5px] text-foreground/65 leading-snug break-words">
+                                    <Hotel className="h-2.5 w-2.5 text-rose-500 shrink-0 mt-0.5" />
+                                    <span className="break-words">{b.stayLocation}</span>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              );
-            })}
+                        );
+                      })
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
@@ -1651,114 +2116,26 @@ export function CompletedVerificationsCalendar({
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {/* Confirmed Meetings */}
-                    {dayData.confirmed.map((m: any) => {
-                      const villageTown = extractVillageTownName(m);
-                      const districtName = extractDistrictName(m);
-                      const duration = extractMeetingDuration(m);
-                      return (
-                        <div
-                          key={m.id}
-                          className="p-4 rounded-xl border border-border/50 border-l-[4px] border-l-emerald-500 bg-card/90 space-y-2.5 shadow-2xs hover:shadow-xs transition-all text-left"
-                        >
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <MapPin className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                              <h4 className="font-black text-sm text-foreground tracking-tight leading-snug break-words">
-                                {villageTown}
-                              </h4>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-1.5 shrink-0 self-start sm:self-auto">
-                              <span className="text-[9px] font-black px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
-                                {duration.numberOfDays} Day{duration.numberOfDays > 1 ? "s" : ""}
-                              </span>
-                              <BookingStatusBadge status="CONFIRMED" />
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-2 text-xs text-foreground/80 pt-1">
-                            <div>
-                              <span className="text-[10px] uppercase font-bold text-foreground/50 block">Requester / Client</span>
-                              <span className="font-bold text-foreground leading-snug break-words block">{m.clientName}</span>
-                            </div>
-                            <div>
-                              <span className="text-[10px] uppercase font-bold text-foreground/50 block">District / Location</span>
-                              <span className="font-medium text-foreground leading-snug break-words block">{districtName || m.verificationSheet?.district || "Local Region"}</span>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-border/30">
-                            <SessionBadge session={m.meetingSession} />
-                            {m.phoneNumber && (
-                              <a href={`tel:${m.phoneNumber}`} className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1">
-                                <Phone className="h-3 w-3" />
-                                {m.phoneNumber}
-                              </a>
-                            )}
-                            {m.travelMode && (
-                              <TravelModeBadge mode={m.travelMode} details={m.travelOtherDetails} />
-                            )}
-                            {m.stayLocation && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20">
-                                <Hotel className="h-3 w-3 text-rose-500" />
-                                Stay: {m.stayLocation}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {dayData.confirmed.map((m: any) => (
+                      <CalendarEventCard
+                        key={m.id}
+                        booking={m}
+                        dateKey={dayItem.key}
+                        nextStop={m.id ? nextTravelMap.get(m.id) : undefined}
+                        onSelectDate={handleDateClick}
+                      />
+                    ))}
 
                     {/* Hold Meetings */}
-                    {dayData.hold.map((h: any) => {
-                      const villageTown = extractVillageTownName(h);
-                      const districtName = extractDistrictName(h);
-                      const duration = extractMeetingDuration(h);
-                      return (
-                        <div
-                          key={h.id}
-                          className="p-4 rounded-xl border border-border/50 border-l-[4px] border-l-amber-500 bg-card/90 space-y-2.5 shadow-2xs hover:shadow-xs transition-all text-left"
-                        >
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500 text-white shrink-0">
-                                #{h.queuePosition || 1}
-                              </span>
-                              <MapPin className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                              <h4 className="font-black text-sm text-foreground tracking-tight leading-snug break-words">
-                                {villageTown}
-                              </h4>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-1.5 shrink-0 self-start sm:self-auto">
-                              <span className="text-[9px] font-black px-2 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/20">
-                                {duration.numberOfDays} Day{duration.numberOfDays > 1 ? "s" : ""}
-                              </span>
-                              <BookingStatusBadge status="ON_HOLD" />
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-2 text-xs text-foreground/80 pt-1">
-                            <div>
-                              <span className="text-[10px] uppercase font-bold text-foreground/50 block">Requester / Client</span>
-                              <span className="font-bold text-foreground leading-snug break-words block">{h.clientName}</span>
-                            </div>
-                            <div>
-                              <span className="text-[10px] uppercase font-bold text-foreground/50 block">District / Location</span>
-                              <span className="font-medium text-foreground leading-snug break-words block">{districtName || "General Area"}</span>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-border/30">
-                            <SessionBadge session={h.meetingSession} />
-                            {h.phoneNumber && (
-                              <a href={`tel:${h.phoneNumber}`} className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1">
-                                <Phone className="h-3 w-3" />
-                                {h.phoneNumber}
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {dayData.hold.map((h: any) => (
+                      <CalendarEventCard
+                        key={h.id}
+                        booking={h}
+                        dateKey={dayItem.key}
+                        nextStop={h.id ? nextTravelMap.get(h.id) : undefined}
+                        onSelectDate={handleDateClick}
+                      />
+                    ))}
                   </div>
                 </div>
               );
@@ -1850,7 +2227,7 @@ export function CompletedVerificationsCalendar({
           <div className="p-3 rounded-2xl border border-indigo-500/20 bg-indigo-500/5 dark:bg-indigo-950/20 flex flex-col justify-between">
             <div className="flex items-center justify-between text-indigo-600 dark:text-indigo-400 mb-1">
               <span className="text-[10px] font-black uppercase tracking-wider">Flights</span>
-              <Plane className="h-3.5 w-3.5 text-indigo-500" />
+              <TravelModeAssetIcon mode="flight" size="md" />
             </div>
             <p className="text-xl sm:text-2xl font-black text-indigo-600 dark:text-indigo-400">{monthlyStats.flights}</p>
             <span className="text-[9px] text-indigo-700/60 dark:text-indigo-300/60 font-medium">Air trips</span>
@@ -1860,7 +2237,7 @@ export function CompletedVerificationsCalendar({
           <div className="p-3 rounded-2xl border border-border/50 glass-card flex flex-col justify-between">
             <div className="flex items-center justify-between text-foreground/50 mb-1">
               <span className="text-[10px] font-black uppercase tracking-wider">Car Trips</span>
-              <Car className="h-3.5 w-3.5 text-blue-500" />
+              <TravelModeAssetIcon mode="car" size="md" />
             </div>
             <p className="text-xl sm:text-2xl font-black text-foreground">{monthlyStats.cars}</p>
             <span className="text-[9px] text-foreground/50 font-medium">Road travel</span>
@@ -1894,12 +2271,12 @@ export function CompletedVerificationsCalendar({
               <Compass className="h-3.5 w-3.5 text-primary" />
               {MONTH_NAMES[month]} Tour Breakdown:
             </span>
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 font-bold">
-              <Plane className="h-3 w-3 text-indigo-500" />
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 font-bold">
+              <TravelModeAssetIcon mode="flight" size="sm" />
               {monthlyStats.flights} Flights
             </span>
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 font-bold">
-              <Car className="h-3 w-3 text-blue-500" />
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 font-bold">
+              <TravelModeAssetIcon mode="car" size="sm" />
               {monthlyStats.cars} Car Rides
             </span>
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 font-bold">
@@ -2036,6 +2413,7 @@ export function CompletedVerificationsCalendar({
                       const requesterName = booking.verificationSheet?.convenerName || booking.clientName;
                       const coordinatorName = booking.verificationSheet?.meetingReport?.leader?.name || booking.verificationSheet?.meetingReport?.leader?.username;
                       const churchName = booking.verificationSheet?.churchMinistryName;
+                      const nextStop = booking.id ? nextTravelMap.get(booking.id) : undefined;
 
                       return (
                         <div
@@ -2051,8 +2429,9 @@ export function CompletedVerificationsCalendar({
                                 </h4>
                                 <BookingStatusBadge status="CONFIRMED" />
                               </div>
-                              <p className="text-xs text-foreground/60 font-semibold mt-0.5">
-                                {stateDist || normalizePlaceName(booking.meetingCity)}
+                              <p className="text-xs text-foreground/70 font-bold mt-0.5">
+                                {formatShortDateKey(booking.meetingDateStr || selectedDateKey)}
+                                {(stateDist || normalizePlaceName(booking.meetingCity)) ? ` • ${stateDist || normalizePlaceName(booking.meetingCity)}` : ""}
                               </p>
                             </div>
 
@@ -2062,7 +2441,11 @@ export function CompletedVerificationsCalendar({
                               </span>
                               <SessionBadge session={booking.meetingSession} />
                               {booking.travelMode && (
-                                <TravelModeBadge mode={booking.travelMode} details={booking.travelOtherDetails} />
+                                <TravelModeBadge
+                                  mode={booking.travelMode}
+                                  details={booking.travelOtherDetails}
+                                  nextLocation={nextStop?.villageTown}
+                                />
                               )}
                             </div>
                           </div>
@@ -2101,13 +2484,18 @@ export function CompletedVerificationsCalendar({
                             <div className="space-y-1">
                               <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
                                 <Navigation className="h-4 w-4 shrink-0" />
-                                <span className="text-[10px] font-black uppercase tracking-wider">Travel</span>
+                                <span className="text-[10px] font-black uppercase tracking-wider">Travel & Next Stop</span>
                               </div>
-                              <div className="font-bold text-xs text-foreground break-words leading-snug">
-                                {booking.travelMode || "Direct Travel"}
+                              <div className="flex items-center gap-2.5 font-bold text-xs text-foreground break-words leading-snug">
+                                {booking.travelMode && (
+                                  <TravelModeAssetIcon mode={booking.travelMode} size="lg" />
+                                )}
+                                <span>{booking.travelMode || "Direct Travel"}</span>
                               </div>
-                              <div className="text-[10px] text-foreground/60 font-medium break-words leading-tight">
-                                {booking.travelOtherDetails || (booking.travelMode ? `${booking.travelMode} Route` : "Local Transit")}
+                              <div className="text-[10px] text-foreground/65 font-medium break-words leading-tight">
+                                {nextStop
+                                  ? `Next: ${nextStop.villageTown} (${formatShortDateKey(nextStop.dateStr)})`
+                                  : booking.travelOtherDetails || (booking.travelMode ? `${booking.travelMode} Route` : "Local Transit")}
                               </div>
                             </div>
 
@@ -2245,6 +2633,7 @@ export function CompletedVerificationsCalendar({
                       const stateDist = [districtName || booking.verificationSheet?.district, booking.verificationSheet?.state].filter(Boolean).join(", ");
                       const duration = extractMeetingDuration(booking);
                       const requesterName = booking.verificationSheet?.convenerName || booking.clientName;
+                      const nextStop = booking.id ? nextTravelMap.get(booking.id) : undefined;
 
                       return (
                         <div
@@ -2263,8 +2652,9 @@ export function CompletedVerificationsCalendar({
                                     {villageTown}
                                   </h4>
                                 </div>
-                                <p className="text-[11px] text-foreground/60 font-medium">
-                                  Priority: <span className="font-bold text-amber-600 dark:text-amber-400">{booking.priority || "MEDIUM"}</span> • {stateDist || normalizePlaceName(booking.meetingCity)}
+                                <p className="text-[11px] text-foreground/65 font-semibold">
+                                  {formatShortDateKey(booking.meetingDateStr || selectedDateKey)} • Priority: <span className="font-bold text-amber-600 dark:text-amber-400">{booking.priority || "MEDIUM"}</span>
+                                  {(stateDist || normalizePlaceName(booking.meetingCity)) ? ` • ${stateDist || normalizePlaceName(booking.meetingCity)}` : ""}
                                 </p>
                               </div>
                             </div>
@@ -2275,7 +2665,11 @@ export function CompletedVerificationsCalendar({
                               </span>
                               <SessionBadge session={booking.meetingSession} />
                               {booking.travelMode && (
-                                <TravelModeBadge mode={booking.travelMode} details={booking.travelOtherDetails} />
+                                <TravelModeBadge
+                                  mode={booking.travelMode}
+                                  details={booking.travelOtherDetails}
+                                  nextLocation={nextStop?.villageTown}
+                                />
                               )}
                             </div>
                           </div>
@@ -2314,13 +2708,18 @@ export function CompletedVerificationsCalendar({
                             <div className="space-y-1">
                               <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
                                 <Navigation className="h-4 w-4 shrink-0" />
-                                <span className="text-[10px] font-black uppercase tracking-wider">Travel</span>
+                                <span className="text-[10px] font-black uppercase tracking-wider">Travel & Next Stop</span>
                               </div>
-                              <div className="font-bold text-xs text-foreground break-words leading-snug">
-                                {booking.travelMode || "Direct Travel"}
+                              <div className="flex items-center gap-2.5 font-bold text-xs text-foreground break-words leading-snug">
+                                {booking.travelMode && (
+                                  <TravelModeAssetIcon mode={booking.travelMode} size="lg" />
+                                )}
+                                <span>{booking.travelMode || "Direct Travel"}</span>
                               </div>
-                              <div className="text-[10px] text-foreground/60 font-medium break-words leading-tight">
-                                {booking.travelOtherDetails || (booking.travelMode ? `${booking.travelMode} Route` : "Local Transit")}
+                              <div className="text-[10px] text-foreground/65 font-medium break-words leading-tight">
+                                {nextStop
+                                  ? `Next: ${nextStop.villageTown} (${formatShortDateKey(nextStop.dateStr)})`
+                                  : booking.travelOtherDetails || (booking.travelMode ? `${booking.travelMode} Route` : "Local Transit")}
                               </div>
                             </div>
 
